@@ -4,9 +4,17 @@ clear all
 close all
 clc
 
-dt = 0.05;
-mass = 1;
-kernelSize = 1;
+parameters = struct(...
+    'dt',0.05, ...
+    'mass',1, ...
+    'kernelSize',1, ...
+    'gasConstantK',1, ...
+    'viscosityConstant',1, ...
+    'restDensity', 0, ...
+    'leftBound', 0, ...
+    'rightBound', 10, ...
+    'bottomBound', 0, ...
+    'topBound', 10);
 
 %% Struct
 field1 = 'f'; value1 = 'some text';
@@ -30,29 +38,31 @@ particle = struct(...
 
 %% Several Particles
 
-for i = 1:100
+for i = 1:50
     particles(i) = particle;
     
     % Give each particle random velocity and position
     particles(i).position = [rand*10 rand*10];
-    particles(i).velocity = [2*rand-1 2*rand-1];
+    particles(i).velocity = 3*[(2*rand-1) (2*rand-1)];
 end
 
 %% Draw Particles
 
-drawParticles(particles);
+%drawParticles(particles);
 
 %% Calculate Properties
 figure;
 while true
     %tic;
     
-    particles = calculateForces(particles, mass, kernelSize);
-    particles = performTimestep(particles, dt);
+    particles = calculateForces(particles, parameters);
+    particles = performTimestep(particles, parameters.dt);
+    particles = checkBoundaries(particles, parameters);
     clf;
     hold on
+    
     drawParticles(particles);
-    axis([0 10 0 10]);
+    axis([-1 11 -1 11]);
     
     %toc
     pause(0.0001);

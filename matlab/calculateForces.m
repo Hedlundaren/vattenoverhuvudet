@@ -1,8 +1,6 @@
-function newParticles = calculateForces( particles, mass, kernelSize )
+function newParticles = calculateForces( particles, parameters )
 %CALCULATEFORCES Summary of this function goes here
 %   Detailed explanation goes here
-restDensity = 0;
-gasConstantK = 1;
 
 % Set all forces to zero and calculate their densities
 for i=1:length(particles)
@@ -12,14 +10,14 @@ for i=1:length(particles)
     
     for j=1:length(particles)
         relativePosition = particles(i).position - particles(j).position;
-        density = density + mass * Wpoly6(relativePosition, kernelSize);
+        density = density + parameters.mass * Wpoly6(relativePosition, parameters.kernelSize);
     end
     
     particles(i).density = density;
 end
 
 for i=1:length(particles)
-    iPressure = (particles(i).density - restDensity) * gasConstantK;
+    iPressure = (particles(i).density - parameters.restDensity) * parameters.gasConstantK;
     
     pressureForce = [0 0];
     viscosityForce = [0 0];
@@ -29,13 +27,15 @@ for i=1:length(particles)
         relativePosition = particles(i).position - particles(j).position;
         
         % Calculate particle j's pressure force on i
-        jPressure = (particles(j).density - restDensity) * gasConstantK;
-        pressureForce = pressureForce - mass * ...
+        jPressure = (particles(j).density - parameters.restDensity) * parameters.gasConstantK;
+        pressureForce = pressureForce - parameters.mass * ...
             ((iPressure + jPressure)/(2*particles(j).density)) * ...
-            gradWspiky(relativePosition, kernelSize);
+            gradWspiky(relativePosition, parameters.kernelSize);
         
         % Calculate particle j's viscosity force on i
-        
+        viscosityForce = viscosityForce + parameters.viscosityConstant * ...
+            parameters.mass * ((particles(j).velocity - particles(i).velocity)/particles(j).density) * ...
+            laplacianWviscosity(relativePosition, parameters.kernelSize);
         
         % Calculate particle j's tension force on i
     end
