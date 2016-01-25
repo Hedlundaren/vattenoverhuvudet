@@ -19,6 +19,8 @@ end
 for i=1:length(particles)
     iPressure = (particles(i).density - parameters.restDensity) * parameters.gasConstantK;
     
+    cs = 0;
+    
     pressureForce = [0 0];
     viscosityForce = [0 0];
     tensionForce = [0 0];
@@ -38,6 +40,10 @@ for i=1:length(particles)
             laplacianWviscosity(relativePosition, parameters.kernelSize);
         
         % Calculate particle j's tension force on i
+        
+        
+        % Calculate particle j's "color" (for surface generation)
+        
     end
     
     % Add any external forces on i
