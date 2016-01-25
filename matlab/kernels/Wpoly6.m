@@ -7,7 +7,6 @@ function [ w ] = Wpoly6( r, h )
         w = (315/(64*pi*h^9)) * (h^2 - radius^2)^3;
     else
         w = 0;
-        
     end
 end
 

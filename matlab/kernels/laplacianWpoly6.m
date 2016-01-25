@@ -4,7 +4,7 @@ function laplacian = laplacianWpoly6( r, h )
 radius = norm(r);
 
 if radius < h && radius >= 0
-    laplacian = ((315/(64*pi*h^9)) * 24 * radius^2 * (h^2 - radius^2));
+    laplacian = (315/(64*pi*h^9)) * (24 * radius^2 * (h^2 - radius^2) - 6 * (h^2 - radius^2)^2);
 else
     laplacian = 0;
 end
