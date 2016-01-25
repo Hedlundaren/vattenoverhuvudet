@@ -44,17 +44,16 @@ drawParticles(particles);
 
 %% Calculate Properties
 figure;
-axis([0 10 0 10]);
-
 while true
-    tic;
+    %tic;
     
     particles = calculateForces(particles, mass, kernelSize);
     particles = performTimestep(particles, dt);
     clf;
     hold on
     drawParticles(particles);
+    axis([0 10 0 10]);
     
-    toc
-    pause(0.01);
+    %toc
+    pause(0.0001);
 end
