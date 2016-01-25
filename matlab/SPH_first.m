@@ -4,7 +4,7 @@ clear all
 close all
 clc
 
-dt = 0.1;
+dt = 0.05;
 
 %% Struct
 field1 = 'f'; value1 = 'some text';
@@ -41,9 +41,15 @@ end
 drawParticles(particles);
 
 %% Calculate Properties
-while waitforbuttonpress
-    calculateForces(particles);
-    performTimestep(particles);
+figure;
+axis([0 10 0 10]);
+
+while true
+    particles = calculateForces(particles);
+    particles = performTimestep(particles, dt);
     clf;
+    hold on
     drawParticles(particles);
+    
+    pause(0.01);
 end
