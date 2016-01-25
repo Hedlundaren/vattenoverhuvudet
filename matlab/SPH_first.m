@@ -5,6 +5,8 @@ close all
 clc
 
 dt = 0.05;
+mass = 1;
+kernelSize = 1;
 
 %% Struct
 field1 = 'f'; value1 = 'some text';
@@ -45,11 +47,14 @@ figure;
 axis([0 10 0 10]);
 
 while true
-    particles = calculateForces(particles);
+    tic;
+    
+    particles = calculateForces(particles, mass, kernelSize);
     particles = performTimestep(particles, dt);
     clf;
     hold on
     drawParticles(particles);
     
+    toc
     pause(0.01);
 end
