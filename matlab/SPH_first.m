@@ -4,6 +4,8 @@ clear all
 close all
 clc
 
+dt = 0.1;
+
 %% Struct
 field1 = 'f'; value1 = 'some text';
 s = struct(field1,value1)
@@ -33,16 +35,22 @@ for i = 1:100
    
    % Give each particle random velocity and position
    particles(i).location = [rand*10 rand*10];
-   particles(i).velocity = [rand rand];
+   particles(i).velocity = [2*rand-1 2*rand-1];
 end
 
 %% Draw Particles
 
-for j = 1:length(particles)
-    pos = particles(j).location;
-    plot(pos(1), pos(2), 'ob');
-    axis([0 10 0 10]);
-    hold on
-end
+drawParticles(particles);
 
 %% Calculate Properties
+while waitforbuttonpress
+  for k = 1:length(particles)
+    position = particles(k).location;
+
+    position = position + particles(k).velocity * dt;
+    particles(k).location = position;
+  end
+
+  clf;
+  drawParticles(particles);
+end
