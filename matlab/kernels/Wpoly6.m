@@ -1,6 +1,7 @@
 function [ w ] = Wpoly6( r, h )
-%WPOLY6 Summary of this function goes here
-%   Detailed explanation goes here
+%WPOLY6 Smoothing kernel
+%   Used for most common calculations (e.g. density and surface tension)
+
     radius = norm(r);
 
     if radius < h && radius >= 0

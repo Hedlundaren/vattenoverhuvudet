@@ -1,11 +1,11 @@
 function newParticles = calculateForces( particles, parameters )
-%CALCULATEFORCES Summary of this function goes here
-%   Detailed explanation goes here
+%CALCULATEFORCES - Calculate all forces acting on the particles
+%   Calculate density, pressure force, viscosity force, tension force and
+%   external forces.
 
 % Set all forces to zero and calculate their densities
 for i=1:length(particles)
     particles(i).force = 0;
-    
     density = 0;
     
     for j=1:length(particles)

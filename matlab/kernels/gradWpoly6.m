@@ -1,6 +1,7 @@
 function [ gradient ] = gradWpoly6( r, h )
-%DWPOLY6 Summary of this function goes here
-%   Detailed explanation goes here
+%GRADWPOLY6 - Gradient of Wpoly6
+%   Used for surface normal (n)
+
 radius = norm(r);
 
 if radius < h && radius >= 0

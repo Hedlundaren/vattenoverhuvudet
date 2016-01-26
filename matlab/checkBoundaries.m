@@ -1,6 +1,7 @@
 function newParticles = checkBoundaries( particles, parameters )
-%CHECKBOUNDARIES Summary of this function goes here
-%   Detailed explanation goes here
+%CHECKBOUNDARIES - Checks if the particles are outside of the bucket
+%defined by boundaries in parameters
+
 for i=1:length(particles)
     position = particles(i).position;
     velocity = particles(i).velocity;
