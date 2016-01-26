@@ -1,2 +1,3 @@
 # ignore output folder
 render
+*.m~

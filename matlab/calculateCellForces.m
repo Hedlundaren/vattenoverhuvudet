@@ -7,7 +7,7 @@ n_neighbouring = length(neighbouringCellsParticles);
 
 % Calculate their densities
 for i=1:n_center
-    iPressure = (particles(i).density - parameters.restDensity) * parameters.gasConstantK;
+    iPressure = (centerCellParticles(i).density - parameters.restDensity) * parameters.gasConstantK;
     
     cs = 0;
     n = [0 0];
@@ -17,57 +17,57 @@ for i=1:n_center
     viscosityForce = [0 0];
     
     for j=1:n_center
-        relativePosition = particles(i).position - particles(j).position;
+        relativePosition = centerCellParticles(i).position - centerCellParticles(j).position;
         
         % Calculate particle j's pressure force on i
-        jPressure = (particles(j).density - parameters.restDensity) * parameters.gasConstantK;
+        jPressure = (centerCellParticles(j).density - parameters.restDensity) * parameters.gasConstantK;
         pressureForce = pressureForce - parameters.mass * ...
-            ((iPressure + jPressure)/(2*particles(j).density)) * ...
+            ((iPressure + jPressure)/(2*centerCellParticles(j).density)) * ...
             gradWspiky(relativePosition, parameters.kernelSize);
         
         % Calculate particle j's viscosity force on i
         viscosityForce = viscosityForce + parameters.viscosityConstant * ...
-            parameters.mass * ((particles(j).velocity - particles(i).velocity)/particles(j).density) * ...
+            parameters.mass * ((centerCellParticles(j).velocity - centerCellParticles(i).velocity)/centerCellParticles(j).density) * ...
             laplacianWviscosity(relativePosition, parameters.kernelSize);
         
         % Calculate "color" for particle j
-        cs = cs + parameters.mass * (1 / particles(j).density) * ...
+        cs = cs + parameters.mass * (1 / centerCellParticles(j).density) * ...
             Wpoly6(relativePosition, parameters.kernelSize);
         
         % Calculate gradient of "color" for particle j
-        n = n + parameters.mass * (1 / particles(j).density) * ...
+        n = n + parameters.mass * (1 / centerCellParticles(j).density) * ...
             gradWpoly6(relativePosition, parameters.kernelSize);
         
         % Calculate laplacian of "color" for particle j
-        laplacianCs = laplacianCs + parameters.mass * (1 / particles(j).density) * ...
+        laplacianCs = laplacianCs + parameters.mass * (1 / centerCellParticles(j).density) * ...
             laplacianWpoly6(relativePosition, parameters.kernelSize);
     end
     
     % Ugly code duplication but whatevveaaaaaa
     for j=1:n_neighbouring
-        relativePosition = particles(i).position - particles(j).position;
+        relativePosition = centerCellParticles(i).position - neighbouringCellsParticles(j).position;
         
         % Calculate particle j's pressure force on i
-        jPressure = (particles(j).density - parameters.restDensity) * parameters.gasConstantK;
+        jPressure = (neighbouringCellsParticles(j).density - parameters.restDensity) * parameters.gasConstantK;
         pressureForce = pressureForce - parameters.mass * ...
-            ((iPressure + jPressure)/(2*particles(j).density)) * ...
+            ((iPressure + jPressure)/(2*neighbouringCellsParticles(j).density)) * ...
             gradWspiky(relativePosition, parameters.kernelSize);
         
         % Calculate particle j's viscosity force on i
         viscosityForce = viscosityForce + parameters.viscosityConstant * ...
-            parameters.mass * ((particles(j).velocity - particles(i).velocity)/particles(j).density) * ...
+            parameters.mass * ((neighbouringCellsParticles(j).velocity - centerCellParticles(i).velocity)/neighbouringCellsParticles(j).density) * ...
             laplacianWviscosity(relativePosition, parameters.kernelSize);
         
         % Calculate "color" for particle j
-        cs = cs + parameters.mass * (1 / particles(j).density) * ...
+        cs = cs + parameters.mass * (1 / neighbouringCellsParticles(j).density) * ...
             Wpoly6(relativePosition, parameters.kernelSize);
         
         % Calculate gradient of "color" for particle j
-        n = n + parameters.mass * (1 / particles(j).density) * ...
+        n = n + parameters.mass * (1 / neighbouringCellsParticles(j).density) * ...
             gradWpoly6(relativePosition, parameters.kernelSize);
         
         % Calculate laplacian of "color" for particle j
-        laplacianCs = laplacianCs + parameters.mass * (1 / particles(j).density) * ...
+        laplacianCs = laplacianCs + parameters.mass * (1 / neighbouringCellsParticles(j).density) * ...
             laplacianWpoly6(relativePosition, parameters.kernelSize);
     end
     

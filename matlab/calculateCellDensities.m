@@ -9,12 +9,12 @@ for i=1:n_center
     density = 0;
     
     for j=1:n_center
-        relativePosition = particles(i).position - particles(j).position;
+        relativePosition = centerCellParticles(i).position - centerCellParticles(j).position;
         density = density + parameters.mass * Wpoly6(relativePosition, parameters.kernelSize);
     end
     
     for j=1:n_neighbouring
-        relativePosition = particles(i).position - particles(j).position;
+        relativePosition = centerCellParticles(i).position - neighbouringCellsParticles(j).position;
         density = density + parameters.mass * Wpoly6(relativePosition, parameters.kernelSize);
     end
     

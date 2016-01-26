@@ -65,8 +65,9 @@ while frame <= frames
         particles(i+1).velocity = [7-rand*0.5 -rand];
         particles(i+2).velocity = [7-rand*0.5 -rand];
     end
-    
-    particles = calculateForces(particles, parameters);
+    tic
+    particles = calculateForcesGrid(particles, parameters);
+    toc
     particles = performTimestep(particles, parameters.dt);
     particles = checkBoundaries(particles, parameters);
     clf;
