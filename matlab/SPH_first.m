@@ -31,20 +31,31 @@ particle = struct(...
 
 %% Several Particles
 
-for i = 1:50
-    particles(i) = particle;
+
+for i = 1:5
+    particles(i) = particle
+    particles(i).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
     
+    particles(i).velocity = [3 0];
     % Give each particle random velocity and position
-    particles(i).position = ...
-        [rand*(parameters.rightBound-parameters.leftBound)+parameters.leftBound ...
-        rand*(parameters.topBound-parameters.bottomBound)+parameters.bottomBound];
-    particles(i).velocity = 3*[(2*rand-1) (2*rand-1)];
+    %%particles(i).position = ...
+    %%    [rand*(parameters.rightBound-parameters.leftBound)+parameters.leftBound ...
+    %%    rand*(parameters.topBound-parameters.bottomBound)+parameters.bottomBound];
+    %%particles(i).velocity = 3*[(2*rand-1) (2*rand-1)];
 end
 
 %% Calculate Properties
-figure;
+figure
+i = 6;
 while true
-    %tic;
+
+    particles(i).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
+    particles(i+1).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
+    particles(i+2).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
+    particles(i).velocity = [7-rand*0.5 -rand];
+    particles(i+1).velocity = [7-rand*0.5 -rand];
+    particles(i+2).velocity = [7-rand*0.5 -rand];
+
     
     particles = calculateForces(particles, parameters);
     particles = performTimestep(particles, parameters.dt);
@@ -53,8 +64,11 @@ while true
     hold on
     
     drawParticles(particles);
+
     axis([(parameters.leftBound-1) (parameters.rightBound+1) (parameters.bottomBound-1) (parameters.topBound+1)]);
     
-    %toc
+
+    i = i + 3;
+
     pause(0.01);
 end
