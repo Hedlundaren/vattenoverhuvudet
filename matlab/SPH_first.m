@@ -4,8 +4,14 @@ clear all
 close all
 clc
 
+FPS = 30;
+simulationTime = 20; %seconds
+frames = simulationTime * FPS;
+
+n_particles = 1000;
+
 parameters = struct(...
-    'dt',0.05, ...
+    'dt', 1 / FPS, ...
     'mass',1, ...
     'kernelSize',1, ...
     'gasConstantK',1, ...
@@ -45,17 +51,20 @@ for i = 1:5
 end
 
 %% Calculate Properties
-figure
+
 i = 6;
-while true
+frame = 1;
 
-    particles(i).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
-    particles(i+1).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
-    particles(i+2).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
-    particles(i).velocity = [7-rand*0.5 -rand];
-    particles(i+1).velocity = [7-rand*0.5 -rand];
-    particles(i+2).velocity = [7-rand*0.5 -rand];
-
+figure;
+while frame <= frames
+    if (length(particles) < n_particles)
+        particles(i).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
+        particles(i+1).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
+        particles(i+2).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
+        particles(i).velocity = [7-rand*0.5 -rand];
+        particles(i+1).velocity = [7-rand*0.5 -rand];
+        particles(i+2).velocity = [7-rand*0.5 -rand];
+    end
     
     particles = calculateForces(particles, parameters);
     particles = performTimestep(particles, parameters.dt);
@@ -70,5 +79,9 @@ while true
 
     i = i + 3;
 
-    pause(0.01);
+    pause(0.0001);
+
+    % Render figure to PNG file
+    print(['render/fluid_simulation_00' sprintf('%03d',frame)], '-dpng');
+    frame = frame + 1;
 end
