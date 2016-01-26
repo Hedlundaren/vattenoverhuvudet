@@ -3,19 +3,6 @@ function newParticles = calculateForces( particles, parameters )
 %   Calculate density, pressure force, viscosity force, tension force and
 %   external forces.
 
-% Set all forces to zero and calculate their densities
-for i=1:length(particles)
-    particles(i).force = 0;
-    density = 0;
-    
-    for j=1:length(particles)
-        relativePosition = particles(i).position - particles(j).position;
-        density = density + parameters.mass * Wpoly6(relativePosition, parameters.kernelSize);
-    end
-    
-    particles(i).density = density;
-end
-
 for i=1:length(particles)
     iPressure = (particles(i).density - parameters.restDensity) * parameters.gasConstantK;
     
