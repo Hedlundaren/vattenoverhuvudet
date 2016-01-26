@@ -6,11 +6,11 @@ for i=1:length(particles)
     velocity = particles(i).velocity;
     if(position(2) < parameters.bottomBound || position(2) > parameters.topBound)
         position(2) = max(min(position(2),parameters.topBound),parameters.bottomBound);
-        velocity(2) = -velocity(2);
+        velocity(2) = parameters.wallDamper * (-velocity(2));
     end
     if(position(1) < parameters.leftBound || position(1) > parameters.rightBound)
         position(1) = max(min(position(1),parameters.rightBound),parameters.leftBound);
-        velocity(1) = -velocity(1);
+        velocity(1) = parameters.wallDamper * (-velocity(1));
     end
     particles(i).position = position;
     particles(i).velocity = velocity;
