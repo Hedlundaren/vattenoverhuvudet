@@ -1,4 +1,7 @@
 function [laplacian] = laplacianWviscosity(r, h)
+%LAPLACIANWVISCOSITY - Laplacian of Wviscosity
+%   Used for Viscosity force
+
 	radius = norm(r);
 
 	if radius < h && radius >= 0

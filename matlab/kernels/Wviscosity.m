@@ -1,6 +1,7 @@
 function [ w ] = Wviscosity( r, h )
-%WVISCOSITY Summary of this function goes here
-%   Detailed explanation goes here
+%WVISCOSITY Smoothing kernel
+%   Used for viscosity computation
+
     radius = norm(r);
 
     if radius < h && radius >= 0

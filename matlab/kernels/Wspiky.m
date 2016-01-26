@@ -1,6 +1,7 @@
 function [ w ] = Wspiky( r, h )
-%WSPIKY Summary of this function goes here
-%   Detailed explanation goes here
+%WSPIKY Smoothing kernel
+%   Used for pressure computations
+
     radius = norm(r);
 
     if radius < h && radius >= 0

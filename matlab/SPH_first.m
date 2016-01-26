@@ -43,7 +43,7 @@ end
 %% Calculate Properties
 figure;
 while true
-    tic;
+    %tic;
     
     particles = calculateForces(particles, parameters);
     particles = performTimestep(particles, parameters.dt);
@@ -54,6 +54,6 @@ while true
     drawParticles(particles);
     axis([-1 11 -1 11]);
     
-    toc
+    %toc
     pause(0.01);
 end

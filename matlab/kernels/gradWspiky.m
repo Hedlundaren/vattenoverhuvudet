@@ -1,4 +1,7 @@
 function [gradient] = gradWspiky(r, h)
+%GRADWSPIKY - Gradient of Wspiky
+%   Used for pressure force
+
 	radius = norm(r);
 
 	if radius < h && radius > 0

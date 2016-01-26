@@ -1,6 +1,7 @@
 function laplacian = laplacianWpoly6( r, h )
-%LAPLACIANWPOLY6 Summary of this function goes here
-%   Detailed explanation goes here
+%LAPLACIANWPOLY6 - Laplacian of Wpoly6
+%   Used for curvatore of surface (k(cs))
+
 radius = norm(r);
 
 if radius < h && radius >= 0

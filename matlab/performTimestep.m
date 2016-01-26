@@ -1,6 +1,7 @@
 function newParticles = performTimestep( particles, dt )
-%PERFORMTIMESTEP Summary of this function goes here
-%   Detailed explanation goes here
+%PERFORMTIMESTEP
+%   Euler time step
+
 for k = 1:length(particles)
     % Perform acceleration integration to receive velocity
     velocity = particles(k).velocity;
@@ -14,6 +15,7 @@ for k = 1:length(particles)
     particles(k).position = position;
 end
 
+%Update to new positions
 newParticles = particles;
 
 end
