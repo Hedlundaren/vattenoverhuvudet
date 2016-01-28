@@ -10,10 +10,6 @@ int main() {
 
     Particle particles[n_Particles];
 
-    for(int i = 0; i < n_Particles; i++) {
-        particles[i] = Particle();
-    }
-
     cout << "Hello, World!" << endl;
     return 0;
 }
