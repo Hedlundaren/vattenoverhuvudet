@@ -7,7 +7,7 @@
 #include <cmath>
 #include <math.h>
 
-#include "kernels.h"
+#include "sph_kernels.h"
 
 float normVector(std::vector<float> v) {
     float sum = 0.0f;

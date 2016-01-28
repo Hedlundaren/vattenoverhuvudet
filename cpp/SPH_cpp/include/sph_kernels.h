@@ -1,5 +1,5 @@
-#ifndef KERNEL_H
-#define KERNEL_H
+#ifndef SPH_KERNELS_H
+#define SPH_KERNELS_H
 
 #include <iostream>
 #include <vector>
