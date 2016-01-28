@@ -3,10 +3,23 @@ project(SPH_cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build)
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
 set(PROJECT_CPP_DIR ${PROJECT_SOURCE_DIR}/src)
 set(PROJECT_EXT_DIR ${PROJECT_SOURCE_DIR}/external)
+
+# 32bit or 64bit shenanigans
+if (CMAKE_SIZEOF_VOID_P EQUAL 8)
+    MESSAGE(WARNING "64 bits compiler detected")
+    SET(EX_PLATFORM 64)
+    SET(EX_PLATFORM_NAME "x64")
+else (CMAKE_SIZEOF_VOID_P EQUAL 8)
+    MESSAGE(WARNING "32 bits compiler detected")
+    SET(EX_PLATFORM 32)
+    SET(EX_PLATFORM_NAME "x86")
+endif (CMAKE_SIZEOF_VOID_P EQUAL 8)
 
 ##########################
 ### External libraries ###
@@ -14,6 +27,16 @@ set(PROJECT_EXT_DIR ${PROJECT_SOURCE_DIR}/external)
 
 ### GLM ###
 set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_EXT_DIR}/glm)
+
+### OpenCL ###
+find_package(OPENCL)
+set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${OPENCL_INCLUDE_DIRS})
+
+if (EX_PLATFORM EQUAL 64)
+    SET(OPENCL_LIBRARIES ${_OPENCL_64_LIBRARIES})
+elseif (EX_PLATFORM EQUAL 64)
+    SET(OPENCL_LIBRARIES ${_OPENCL_32_LIBRARIES})
+endif (EX_PLATFORM EQUAL 64)
 
 # Lump all external- and project includes into one variable
 set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
@@ -26,3 +49,5 @@ file(GLOB_RECURSE PROJECT_CPP_FILES ${PROJECT_CPP_DIR}/*.cpp)
 
 set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES})
 add_executable(SPH_cpp ${SOURCE_FILES})
+
+target_link_libraries(SPH_cpp ${OPENCL_LIBRARIES})

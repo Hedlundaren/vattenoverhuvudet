@@ -1,7 +1,13 @@
 #include <iostream>
+
+#ifdef __APPLE__
+#include <OpenCL/opencl.h>
+#else
+#include <CL/cl.hpp>
+#endif
+
 #include "Particle.h"
 #include "kernels.h"
-//#include <GLFW/glfw3.h>
 
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
