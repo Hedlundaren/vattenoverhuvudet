@@ -1,7 +1,7 @@
 #include <iostream>
 #include "Particle.h"
 #include "Parameters.h"
-#include "kernels.h"
+#include "sph_kernels.h"
 //#include <GLFW/glfw3.h>
 
 #include "glm/glm.hpp"
