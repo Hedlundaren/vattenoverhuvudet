@@ -1,5 +1,3 @@
-#include <iostream>
-#include <algorithm>
 
 
 using namespace std;
@@ -42,12 +40,3 @@ ostream& operator<<(ostream& out, const Particle& p)
 
     return out;
 }
-
- int main(){
-
-    Particle* P = new Particle();
-
-    cout << *P;
-
- return 0;
- }
