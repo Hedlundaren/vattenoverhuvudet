@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Particle.cpp"
+#include "Particle.h"
 #include "kernels.h"
 //#include <GLFW/glfw3.h>
 
