@@ -45,9 +45,9 @@ set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES})
 add_executable(SPH_cpp ${SOURCE_FILES})
 
 # Hardcoded fix for correct Windows DLL linking
-if (NOT DEFINED ${OPENCL_LIBRARIES})
+if (NOT DEFINED OPENCL_LIBRARIES)
     message(WARNING "Whoopsie")
     set(OPENCL_LIBRARIES "C:/Windows/System32/OpenCL.dll")
-endif (NOT DEFINED ${OPENCL_LIBRARIES})
+endif (NOT DEFINED OPENCL_LIBRARIES)
 
 target_link_libraries(SPH_cpp ${OPENCL_LIBRARIES})

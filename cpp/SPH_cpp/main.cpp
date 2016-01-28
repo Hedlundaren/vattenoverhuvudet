@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
