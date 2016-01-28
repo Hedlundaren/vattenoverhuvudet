@@ -1,5 +1,6 @@
 #include <iostream>
 #include "Particle.h"
+#include "Parameters.h"
 #include "kernels.h"
 //#include <GLFW/glfw3.h>
 
@@ -15,6 +16,12 @@ int main() {
     const int n_Particles = 100;
 
     Particle particles[n_Particles];
+    Parameters p;
+
+    std::cout << "gas constant: " << p.gasConstantK << std::endl;
+
+
+    std::cout << "First particle: " << particles[0];
 
     std::cout << "Hello, World!" << std::endl;
     return 0;

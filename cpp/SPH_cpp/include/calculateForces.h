@@ -3,12 +3,14 @@
 #define CFORCES_H
 
 #include <iostream>
+#include "glm/glm.hpp"
+#include "glm/ext.hpp"
 
-float calcPressureForce(std::vector<float> p, float h);
+float calcPressureForce(glm::vec3 p);
 
-float calcPressureForce(std::vector<float> p, float h);
+float calcViscosityForce(glm::vec3 p);
 
-float calcPressureForce(std::vector<float> p, float h);
+float calcTensionForce(glm::vec3 p);
 
 
 

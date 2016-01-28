@@ -24,5 +24,5 @@ include_directories(${ALL_INCLUDES})
 # Get all source files by traversing the source directory recursively
 file(GLOB_RECURSE PROJECT_CPP_FILES ${PROJECT_CPP_DIR}/*.cpp)
 
-set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES})
+set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES} src/calculateForces.cpp include/Parameters.h src/Parameters.cpp)
 add_executable(SPH_cpp ${SOURCE_FILES})
