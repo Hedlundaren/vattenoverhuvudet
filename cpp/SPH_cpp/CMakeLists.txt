@@ -12,7 +12,7 @@ else (CMAKE_SIZEOF_VOID_P EQUAL 8)
     SET(EX_PLATFORM_NAME "x86")
 endif (CMAKE_SIZEOF_VOID_P EQUAL 8)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11  -DGL_GLEXT_PROTOTYPES")
 
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -61,5 +61,5 @@ if (NOT DEFINED OPENCL_LIBRARIES)
     set(OPENCL_LIBRARIES "C:/Windows/System32/OpenCL.dll")
 endif (NOT DEFINED OPENCL_LIBRARIES)
 
-target_link_libraries(SPH_cpp glfw ${GLFW_LIBRARIES})
+target_link_libraries(SPH_cpp glfw ${OPENGL_glu_LIBRARY} ${GLFW_LIBRARIES})
 target_link_libraries(SPH_cpp ${OPENCL_LIBRARIES})
