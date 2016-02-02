@@ -1,21 +1,9 @@
 #include <iostream>
-#include <fstream>
-#include <vector>
-
-#include "Particle.h"
-#include "Parameters.h"
-#include "sph_kernels.h"
-
-#include "glm/glm.hpp"
-#include "glm/ext.hpp"
-
-#include "math/randomized.hpp"
-#include "common/stream_utils.hpp"
-
-#include "opencl_context_info.hpp"
 
 #include "GLFW/glfw3.h"
-#include <unistd.h>
+
+#include "opencl_context_info.hpp"
+#include "rendering/ShaderProgram.hpp"
 
 int main() {
     PrintOpenClContextInfo();
@@ -26,6 +14,11 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
     window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
     if (!window) {
         glfwTerminate();
@@ -35,6 +28,9 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
+    ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.frag");
+    particlesShader();
+
     while (!glfwWindowShouldClose(window)) {
         float ratio;
         int width, height;
@@ -43,20 +39,6 @@ int main() {
         ratio = width / (float) height;
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT);
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        glRotatef((float) glfwGetTime() * 50.f, 0.f, 0.f, 1.f);
-        glBegin(GL_TRIANGLES);
-        glColor3f(1.f, 0.f, 0.f);
-        glVertex3f(-0.6f, -0.4f, 0.f);
-        glColor3f(0.f, 1.f, 0.f);
-        glVertex3f(0.6f, -0.4f, 0.f);
-        glColor3f(0.f, 0.f, 1.f);
-        glVertex3f(0.f, 0.6f, 0.f);
-        glEnd();
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
