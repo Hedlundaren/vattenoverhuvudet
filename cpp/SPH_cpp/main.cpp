@@ -20,42 +20,48 @@
 int main() {
     PrintOpenClContextInfo();
 
-    const GLFWvidmode *vidmode;  // GLFW struct to hold information about the display
-    GLFWwindow *window;    // GLFW struct to hold information about the window
+    GLFWwindow *window;
 
-    // Initialise GLFW
-    glfwInit();
-
-    // Determine the desktop size
-    vidmode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-
-    // Make sure we are getting a GL context of at least version 3.3
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    // Exclude old legacy cruft from the context. We don't need it, and we don't want it.
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-
-    // Open a square window (aspect 1:1) to fill half the screen height
-    window = glfwCreateWindow(800, 600, "FluidSPH", NULL, NULL);
-    if (!window) {
-        glfwTerminate(); // No window was opened, so we can't continue in any useful way
-        return -1;
+    if (!glfwInit()) {
+        exit(EXIT_FAILURE);
     }
 
-    // Make the newly created window the "current context" for OpenGL
-    // (This step is strictly required, or things will simply not work)
+    window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+    if (!window) {
+        glfwTerminate();
+        exit(EXIT_FAILURE);
+    }
+
     glfwMakeContextCurrent(window);
+    glfwSwapInterval(1);
 
     while (!glfwWindowShouldClose(window)) {
-        // Exit if the ESC key is pressed (and also if the window is closed).
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
-            glfwSetWindowShouldClose(window, GL_TRUE);
-        }
+        float ratio;
+        int width, height;
+
+        glfwGetFramebufferSize(window, &width, &height);
+        ratio = width / (float) height;
+        glViewport(0, 0, width, height);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glOrtho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        glRotatef((float) glfwGetTime() * 50.f, 0.f, 0.f, 1.f);
+        glBegin(GL_TRIANGLES);
+        glColor3f(1.f, 0.f, 0.f);
+        glVertex3f(-0.6f, -0.4f, 0.f);
+        glColor3f(0.f, 1.f, 0.f);
+        glVertex3f(0.6f, -0.4f, 0.f);
+        glColor3f(0.f, 0.f, 1.f);
+        glVertex3f(0.f, 0.6f, 0.f);
+        glEnd();
+        glfwSwapBuffers(window);
+        glfwPollEvents();
     }
 
     glfwDestroyWindow(window);
     glfwTerminate();
-
-    return 0;
+    exit(EXIT_SUCCESS);
 }
