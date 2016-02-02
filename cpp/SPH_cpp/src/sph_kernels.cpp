@@ -32,6 +32,19 @@ float Wpoly6(std::vector<float> r, float h) {
     return w;
 }
 
+float laplacianWpoly6(std::vector<float> r, float h) {
+	float radius = normVector(r);
+	float laplacian = 0;
+
+	if (radius < h && radius > 0) {
+		laplacian = (315/(64*M_PI*pow(h, 9))) * (24 * pow(radius, 2) * (pow(h, 2) - pow(radius, 2)) - 6 * pow(pow(h, 2) - pow(radius, 2), 2));
+	} else {
+		laplacian = 0;
+	}
+
+	return laplacian;
+}
+
 std::vector<float> gradWspiky(std::vector<float> r, float h) {
 	std::vector<float> gradient; 
 	float radius = normVector(r);
@@ -60,5 +73,5 @@ std::vector<float> gradWspiky(std::vector<float> r, float h) {
 	}
 
 	return gradient;
-
 }
+
