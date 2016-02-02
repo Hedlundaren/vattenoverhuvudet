@@ -43,6 +43,7 @@ inline std::vector<glm::vec3> generate_uniform_vec3s(int N,
     int counter = 0;
     while (counter < N) {
         randoms[counter] = glm::vec3(random_x[counter], random_y[counter], random_z[counter]);
+        ++counter;
     }
 
     return randoms;
