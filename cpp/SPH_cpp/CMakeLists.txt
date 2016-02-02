@@ -32,8 +32,14 @@ set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_EXT_DIR}/glm)
 find_package(OPENCL)
 set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${OPENCL_INCLUDE_DIRS})
 
+### GLFW ###
+set(GLFW_DIR ${PROJECT_EXT_DIR}/glfw-3.1.2)
+add_subdirectory(${GLFW_DIR})
+set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${GLFW_DIR}/include)
+
 # Lump all external- and project includes into one variable
 set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
+message(WARNING "External include dirs: ${EXTERNAL_INCLUDE_DIRS}")
 
 # Set the include directories so that #include statements work
 include_directories(${ALL_INCLUDES})
@@ -50,4 +56,5 @@ if (NOT DEFINED OPENCL_LIBRARIES)
     set(OPENCL_LIBRARIES "C:/Windows/System32/OpenCL.dll")
 endif (NOT DEFINED OPENCL_LIBRARIES)
 
+target_link_libraries(SPH_cpp glfw ${GLFW_LIBRARIES})
 target_link_libraries(SPH_cpp ${OPENCL_LIBRARIES})
