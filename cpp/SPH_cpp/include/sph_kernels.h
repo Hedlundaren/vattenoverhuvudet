@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 
+// Return the norm of a vector v
 float normVector(std::vector<float> v);
 
 // Smoothing kernel
