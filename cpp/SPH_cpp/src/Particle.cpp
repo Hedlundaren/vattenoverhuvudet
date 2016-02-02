@@ -1,14 +1,8 @@
 #include "Particle.h"
 
-Particle::Particle() {
-    position[0] = rand();
-    position[1] = rand();
-    position[2] = rand();
-}
-
-
-Particle::~Particle() {
-
+Particle::Particle(glm::vec3 pos, glm::vec3 vel)
+        : position(pos), velocity(vel),
+          force(0), density(0), pressure(0), color_field(0) {
 }
 
 std::ostream &operator<<(std::ostream &out, const Particle &p) {

@@ -1,29 +1,19 @@
-#ifndef PARTICLE_H
-#define PARTICLE_H
-#endif
+#pragma once
 
 #include <iostream>
 
-/**********************************
-* Class Particle               *
-***********************************/
+#include "glm/glm.hpp"
 
-class Particle {
-public:
+/// @brief Simple struct for a particle
+struct Particle {
+    Particle(glm::vec3 pos, glm::vec3 vel);
 
-    //Constructor
-    Particle();
-
-    ~Particle();
-
-    float position[3] = {0.0f, 0.0f, 0.0f};
-    float velocity[3] = {0.0f, 0.0f, 0.0f};
-    float force[3] = {0.0f, 0.0f, 0.0f};
-    float density = 0.0f;
-    float pressure = 0.0f;
-    float cs = 0.0f;
-
-    friend std::ostream &operator<<(std::ostream &os, const Particle &P);
-
+    glm::vec3 position;
+    glm::vec3 velocity;
+    glm::vec3 force;
+    float density;
+    float pressure;
+    float color_field;
 };
 
+std::ostream &operator<<(std::ostream &os, const Particle &P);

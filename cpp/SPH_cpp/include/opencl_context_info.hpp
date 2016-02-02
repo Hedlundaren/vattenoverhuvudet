@@ -105,4 +105,6 @@ int PrintOpenClContextInfo() {
     clReleaseCommandQueue(queue);
 
     clReleaseContext(context);
+
+    return 0;
 }
