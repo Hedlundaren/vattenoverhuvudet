@@ -22,4 +22,8 @@ float laplacianWpoly6(std::vector<float> r, float h);
 // Used for pressure force
 std::vector<float> gradWspiky(std::vector<float> r, float h); 
 
+// Laplacian of Wviscosity
+// Used for Viscosity force
+float laplacianWviscosity(std::vector<float> r, float h); 
+
 #endif

@@ -95,3 +95,17 @@ std::vector<float> gradWspiky(std::vector<float> r, float h) {
 	return gradient;
 }
 
+float laplacianWviscosity(std::vector<float> r, float h) {
+	float radius = normVector(r);
+	float laplacian;
+
+	std::cout << "radius = " << radius << std::endl;
+
+	if (radius < h && radius > 0) {
+		laplacian = (45/(M_PI * pow(h, 6))) * (h - radius);
+	} else {
+		laplacian = 0;
+	}
+
+	return laplacian;
+}
