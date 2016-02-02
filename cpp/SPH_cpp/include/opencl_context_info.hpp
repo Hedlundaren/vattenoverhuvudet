@@ -11,6 +11,8 @@
 #include <CL/cl.hpp>
 #endif
 
+#include <vector>
+
 std::string GetPlatformName(cl_platform_id id) {
     size_t size = 0;
     clGetPlatformInfo(id, CL_PLATFORM_NAME, 0, nullptr, &size);
