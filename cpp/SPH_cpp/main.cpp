@@ -6,6 +6,8 @@
 #include "opencl_context_info.hpp"
 #include "rendering/ShaderProgram.hpp"
 #include "math/randomized.hpp"
+#include "common/Rotator.hpp"
+#include "common/MatrixStack.hpp"
 
 int main() {
     PrintOpenClContextInfo();
@@ -26,6 +28,14 @@ int main() {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
+
+    //Generate rotator!!!!! :D
+    MouseRotator rotator;
+    rotator.init(window);
+
+    //Initialize
+    MatrixStack MVstack;
+    MVstack.init();
 
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
@@ -71,21 +81,23 @@ int main() {
         ratio = width / (float) height;
         glViewport(0, 0, width, height);
 
-
+        // Get mouse handle (input)
+        rotator.poll(window);
+        //printf("phi = %6.2f, theta = %6.2f\n", rotator.phi, rotator.theta);
 
         glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glBindVertexArray (vao);
-        glDrawArrays (GL_POINTS, 0, n_particles);
 
+        MVstack.push();
+            MVstack.rotX(rotator.theta);
+            MVstack.rotY(rotator.phi);
+
+            glBindVertexArray (vao);
+            glDrawArrays (GL_POINTS, 0, n_particles);
+
+        MVstack.pop();
         if (glfwGetKey (window, GLFW_KEY_ESCAPE)) {
             glfwSetWindowShouldClose (window, 1);
         }
-
-        // insert location binding code here
-        glBindAttribLocation (particlesShader, 0, "position");
-        glBindAttribLocation (particlesShader, 1, "velocity");
-
-        //glLinkProgram (particlesShader);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
