@@ -4,27 +4,24 @@
 #include <iostream>
 #include <vector>
 
-// Return the norm of a vector v
-float normVector(std::vector<float> v);
-
 // Smoothing kernel
 // Used for most common calculations (e.g. density and surface tension)
-float Wpoly6(std::vector<float> r, float h);
+float Wpoly6(glm::vec3 r, float h);
 
 // Gradient of Wpoly6
 // Used for surface normal (n)
-std::vector<float> gradWpoly6(std::vector<float> r, float h); 
+glm::vec3 gradWpoly6(glm::vec3 r, float h);
 
 // Laplacian of Wpoly6
 // Used for curvatore of surface (k(cs))
-float laplacianWpoly6(std::vector<float> r, float h); 
+float laplacianWpoly6(glm::vec3 r, float h);
 
 // Gradient of Wspiky
 // Used for pressure force
-std::vector<float> gradWspiky(std::vector<float> r, float h); 
+glm::vec3 gradWspiky(glm::vec3 r, float h);
 
 // Laplacian of Wviscosity
 // Used for Viscosity force
-float laplacianWviscosity(std::vector<float> r, float h); 
+float laplacianWviscosity(glm::vec3 r, float h);
 
 #endif
