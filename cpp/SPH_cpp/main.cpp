@@ -11,6 +11,10 @@
 #include "common/Rotator.hpp"
 #include "common/MatrixStack.hpp"
 
+#include "ParticleSimulator.hpp"
+#include "CppParticleSimulator.hpp"
+#include "OpenClParticleSimulator.hpp"
+
 int main() {
     PrintOpenClContextInfo();
 
@@ -42,6 +46,14 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
+    ParticleSimulator *simulator;
+
+#ifdef USE_OPENCL_SIMULATION
+    simulator = new OpenClParticleSimulator();
+#else
+    simulator = new CppParticleSimulator();
+#endif
+
     //Generate particles
     const int n_particles = 5000;
     std::vector <glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
@@ -57,6 +69,8 @@ int main() {
     glGenBuffers (1, &vel_vbo);
     glBindBuffer (GL_ARRAY_BUFFER, vel_vbo);
     glBufferData (GL_ARRAY_BUFFER, n_particles * 3 * sizeof (float), velocities.data(), GL_STATIC_DRAW);
+    
+    simulator->setupSimulation(positions, velocities, pos_vbo, vel_vbo);
 
     // Generate VAO with all VBOs
     GLuint vao = 0;
@@ -87,13 +101,7 @@ int main() {
         std::cout << "Seconds: " << 1e-3 * dt_ms.count() << "\n";
         const float dt_s = 1e-3 * dt_ms.count();
 
-        // Update velocities with Euler integration
-        for (int i = 0; i < positions.size(); ++i) {
-            positions[i] +=  dt_s * velocities[i];
-        }
-
-        glBindBuffer (GL_ARRAY_BUFFER, pos_vbo);
-        glBufferData (GL_ARRAY_BUFFER, n_particles * 3 * sizeof (float), positions.data(), GL_STATIC_DRAW);
+        simulator->updateSimulation(dt_s);
 
         float ratio;
         int width, height;
