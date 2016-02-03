@@ -1,7 +1,9 @@
 #include <iostream>
+#include <chrono>
+
 #include <glm/glm.hpp>
 
-#include "GLFW/glfw3.h"
+#include <GLFW/glfw3.h>
 
 #include "opencl_context_info.hpp"
 #include "rendering/ShaderProgram.hpp"
@@ -73,7 +75,26 @@ int main() {
     ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.frag");
     particlesShader();
 
+    std::chrono::high_resolution_clock::time_point tp_last = std::chrono::high_resolution_clock::now();
+
     while (!glfwWindowShouldClose(window)) {
+        std::chrono::high_resolution_clock::time_point tp_now = std::chrono::high_resolution_clock::now();
+        std::chrono::high_resolution_clock::duration delta_time = tp_now - tp_last;
+        tp_last = tp_now;
+
+        std::chrono::milliseconds dt_ms = std::chrono::duration_cast<std::chrono::milliseconds>(delta_time);
+
+        std::cout << "Seconds: " << 1e-3 * dt_ms.count() << "\n";
+        const float dt_s = 1e-3 * dt_ms.count();
+
+        // Update velocities with Euler integration
+        for (int i = 0; i < positions.size(); ++i) {
+            positions[i] +=  dt_s * velocities[i];
+        }
+
+        glBindBuffer (GL_ARRAY_BUFFER, pos_vbo);
+        glBufferData (GL_ARRAY_BUFFER, n_particles * 3 * sizeof (float), positions.data(), GL_STATIC_DRAW);
+
         float ratio;
         int width, height;
 
