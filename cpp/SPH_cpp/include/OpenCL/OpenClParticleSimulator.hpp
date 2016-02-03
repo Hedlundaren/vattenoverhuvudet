@@ -10,4 +10,7 @@ public:
                          const GLuint &vbo_velocities);
 
     void updateSimulation(float dt_seconds);
+
+private:
+    bool initOpenCL();
 };
