@@ -14,16 +14,16 @@ parameters = struct(...
     'dt', 1 / FPS, ...
     'mass',1, ...
     'kernelSize',1, ...
-    'gasConstantK',462, ...
-    'viscosityConstant', 8.9e-4, ...
-    'restDensity', 1, ...
+    'gasConstantK',1, ...
+    'viscosityConstant', 5, ...
+    'restDensity', 0, ...
     'sigma', 72e-3, ...
     'nThreshold', 0.02, ...
     'gravity', [0 -9.82], ...
     'leftBound', 0, ...
-    'rightBound', 100, ...
+    'rightBound', 2, ...
     'bottomBound', 0, ...
-    'topBound', 100, ...
+    'topBound', 5, ...
     'wallDamper', 0.6);
 
 %% One Particle
@@ -38,50 +38,39 @@ particle = struct(...
 %% Several Particles
 
 
-for i = 1:5
-    particles(i) = particle
-    particles(i).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
-    
-    particles(i).velocity = [3 0];
-    % Give each particle random velocity and position
-    %%particles(i).position = ...
-    %%    [rand*(parameters.rightBound-parameters.leftBound)+parameters.leftBound ...
-    %%    rand*(parameters.topBound-parameters.bottomBound)+parameters.bottomBound];
-    %%particles(i).velocity = 3*[(2*rand-1) (2*rand-1)];
+for i = 1:50
+    particles(i) = particle;
+    particles(i).position = [parameters.leftBound+rand*(parameters.rightBound - parameters.leftBound), ...
+                             parameters.bottomBound+0.5*rand];
+    particles(i).velocity = [0 0];
+end
+
+for i = 51: 70
+    particles(i) = particle;
+    particles(i).position = [ 0.6*rand - 0.3 + (parameters.leftBound + parameters.rightBound)/2, parameters.topBound - 0.5*rand ];
+    particles(i).velocity = [0 -5];
 end
 
 %% Calculate Properties
-
-i = 6;
-frame = 1;
-
 figure;
-while frame <= frames
-    if (length(particles) < n_particles)
-        particles(i).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
-        particles(i+1).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
-        particles(i+2).position = [parameters.leftBound+0.5*rand, parameters.topBound-0.5*rand];
-        particles(i).velocity = [7-rand*0.5 -rand];
-        particles(i+1).velocity = [7-rand*0.5 -rand];
-        particles(i+2).velocity = [7-rand*0.5 -rand];
-    end
-    
+while true
+    1+1
+    tic;
+
     particles = calculateForces(particles, parameters);
+    toc;
+    tic;
     particles = performTimestep(particles, parameters.dt);
+    toc;
+    tic;
     particles = checkBoundaries(particles, parameters);
+    toc;
     clf;
     hold on
     
     drawParticles(particles);
 
     axis([(parameters.leftBound-1) (parameters.rightBound+1) (parameters.bottomBound-1) (parameters.topBound+1)]);
-    
-
-    i = i + 3;
 
     pause(0.0001);
-
-    % Render figure to PNG file
-    print(['render/fluid_simulation_00' sprintf('%03d',frame)], '-dpng');
-    frame = frame + 1;
 end
