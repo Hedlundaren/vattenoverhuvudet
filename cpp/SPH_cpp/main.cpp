@@ -11,9 +11,16 @@
 #include "math/randomized.hpp"
 #include "common/Rotator.hpp"
 
+#include "ParticleSimulator.hpp"
+#include "CppParticleSimulator.hpp"
+#include "OpenClParticleSimulator.hpp"
+
+#include "common/tic_toc.hpp"
+
 int main() {
     PrintOpenClContextInfo();
 
+    tic();
     GLFWwindow *window;
 
     if (!glfwInit()) {
@@ -36,7 +43,7 @@ int main() {
     }
 
 
-    //Generate rotator!!!!! :D
+    //Generate rotator
     MouseRotator rotator;
     rotator.init(window);
 
@@ -44,6 +51,15 @@ int main() {
     //Set the GLFW-context the current window
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
+
+
+    ParticleSimulator *simulator;
+
+#ifdef USE_OPENCL_SIMULATION
+    simulator = new OpenClParticleSimulator();
+#else
+    simulator = new CppParticleSimulator();
+#endif
 
 
     //Generate particles
@@ -61,6 +77,8 @@ int main() {
     glGenBuffers (1, &vel_vbo);
     glBindBuffer (GL_ARRAY_BUFFER, vel_vbo);
     glBufferData (GL_ARRAY_BUFFER, n_particles * 3 * sizeof (float), velocities.data(), GL_STATIC_DRAW);
+    
+    simulator->setupSimulation(positions, velocities, pos_vbo, vel_vbo);
 
     // Generate VAO with all VBOs
     GLuint vao = 0;
@@ -81,13 +99,13 @@ int main() {
     particlesShader();
 
 
-    //For rotation
+    //Declare uniform locations
     GLint MVP_Loc = -1;
     MVP_Loc = glGetUniformLocation(particlesShader, "MVP");
     glm::mat4 MVP;
     glm::mat4 M = glm::mat4(1.0f);
 
-    //Specify which pixels to draw to, doesn't need to be in draw-loop?
+    //Specify which pixels to draw to
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
@@ -105,14 +123,8 @@ int main() {
         //std::cout << "Seconds: " << 1e-3 * dt_ms.count() << "\n";
         const float dt_s = 1e-3 * dt_ms.count();
 
-        // Update velocities with Euler integration
-        for (int i = 0; i < positions.size(); ++i) {
-            positions[i] +=  dt_s * velocities[i];
-        }
 
-        // Update the buffer
-        glBindBuffer (GL_ARRAY_BUFFER, pos_vbo);
-        glBufferData (GL_ARRAY_BUFFER, n_particles * 3 * sizeof (float), positions.data(), GL_STATIC_DRAW);
+        simulator->updateSimulation(dt_s);
 
 
         // Get rotation input
@@ -147,5 +159,6 @@ int main() {
 
     glfwDestroyWindow(window);
     glfwTerminate();
+    toc();
     exit(EXIT_SUCCESS);
 }
