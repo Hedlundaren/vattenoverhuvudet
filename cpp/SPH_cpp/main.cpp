@@ -5,19 +5,15 @@
 
 #include <GLFW/glfw3.h>
 
-#include "opencl_context_info.hpp"
 #include "rendering/ShaderProgram.hpp"
 #include "math/randomized.hpp"
 #include "common/Rotator.hpp"
 #include "common/MatrixStack.hpp"
 
 #include "ParticleSimulator.hpp"
-#include "CppParticleSimulator.hpp"
-#include "OpenClParticleSimulator.hpp"
+#include "OpenCL/OpenClParticleSimulator.hpp"
 
 int main() {
-    PrintOpenClContextInfo();
-
     GLFWwindow *window;
 
     if (!glfwInit()) {
