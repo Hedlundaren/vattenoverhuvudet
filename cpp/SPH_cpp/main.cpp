@@ -15,9 +15,12 @@
 #include "CppParticleSimulator.hpp"
 #include "OpenClParticleSimulator.hpp"
 
+#include "common/tic_toc.hpp"
+
 int main() {
     PrintOpenClContextInfo();
 
+    tic();
     GLFWwindow *window;
 
     if (!glfwInit()) {
@@ -134,5 +137,6 @@ int main() {
 
     glfwDestroyWindow(window);
     glfwTerminate();
+    toc();
     exit(EXIT_SUCCESS);
 }
