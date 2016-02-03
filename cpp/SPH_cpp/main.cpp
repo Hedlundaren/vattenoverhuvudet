@@ -56,34 +56,34 @@ int main() {
 
     //Generate particles
     const int n_particles = 5000;
-    std::vector <glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
-    std::vector <glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
+    std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
+    std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
 
     //Generate VBOs
     GLuint pos_vbo = 0;
-    glGenBuffers (1, &pos_vbo);
-    glBindBuffer (GL_ARRAY_BUFFER, pos_vbo);
-    glBufferData (GL_ARRAY_BUFFER, n_particles * 3 * sizeof (float), positions.data(), GL_STATIC_DRAW);
+    glGenBuffers(1, &pos_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, pos_vbo);
+    glBufferData(GL_ARRAY_BUFFER, n_particles * 3 * sizeof(float), positions.data(), GL_STATIC_DRAW);
 
     GLuint vel_vbo = 0;
-    glGenBuffers (1, &vel_vbo);
-    glBindBuffer (GL_ARRAY_BUFFER, vel_vbo);
-    glBufferData (GL_ARRAY_BUFFER, n_particles * 3 * sizeof (float), velocities.data(), GL_STATIC_DRAW);
-    
+    glGenBuffers(1, &vel_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vel_vbo);
+    glBufferData(GL_ARRAY_BUFFER, n_particles * 3 * sizeof(float), velocities.data(), GL_STATIC_DRAW);
+
     simulator->setupSimulation(positions, velocities, pos_vbo, vel_vbo);
 
     // Generate VAO with all VBOs
     GLuint vao = 0;
-    glGenVertexArrays (1, &vao);
-    glBindVertexArray (vao);
-    glBindBuffer (GL_ARRAY_BUFFER, pos_vbo);
-    glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, NULL); //position
-    glBindBuffer (GL_ARRAY_BUFFER, vel_vbo);
-    glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 0, NULL); //velocity
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, pos_vbo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL); //position
+    glBindBuffer(GL_ARRAY_BUFFER, vel_vbo);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL); //velocity
 
     //How many attributes do we have? Enable them!
-    glEnableVertexAttribArray (0);
-    glEnableVertexAttribArray (1);
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
 
 
     ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.frag");
@@ -114,18 +114,18 @@ int main() {
         rotator.poll(window);
         //printf("phi = %6.2f, theta = %6.2f\n", rotator.phi, rotator.theta);
 
-        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         MVstack.push();
-            MVstack.rotX(rotator.theta);
-            MVstack.rotY(rotator.phi);
+        MVstack.rotX(rotator.theta);
+        MVstack.rotY(rotator.phi);
 
-            glBindVertexArray (vao);
-            glDrawArrays (GL_POINTS, 0, n_particles);
+        glBindVertexArray(vao);
+        glDrawArrays(GL_POINTS, 0, n_particles);
 
         MVstack.pop();
-        if (glfwGetKey (window, GLFW_KEY_ESCAPE)) {
-            glfwSetWindowShouldClose (window, 1);
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
+            glfwSetWindowShouldClose(window, 1);
         }
 
         glfwSwapBuffers(window);
