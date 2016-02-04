@@ -22,7 +22,7 @@ void CppParticleSimulator::setupSimulation(const std::vector <glm::vec3> &partic
 
 void CppParticleSimulator::updateSimulation(float dt_seconds) {
 
-    //Set forces to 0 and calculate densities
+    // Set forces to 0 and calculate densities
     for (int i = 0; i < positions.size(); ++i) {
         forces[i] = {0, 0, 0};
         float density = 0;
@@ -35,6 +35,7 @@ void CppParticleSimulator::updateSimulation(float dt_seconds) {
         densities[i] = density;
     }
 
+    // Calculate forces
     for (int i = 0; i < positions.size(); ++i) {
         float iPressure = (densities[i] - Parameters::restDensity) * Parameters::gasConstantK;
         float cs = 0;
@@ -80,10 +81,7 @@ void CppParticleSimulator::updateSimulation(float dt_seconds) {
         forces[i] = pressureForce + viscosityForce + tensionForce + Parameters::gravity;
 
         // Euler time step
-        // Acceleration integration
-        velocities[i] += velocities[i] + (forces[i] / densities[i]) * dt_seconds;
-
-        // Velocity integration
+        velocities[i] += (forces[i] / densities[i]) * dt_seconds;
         positions[i] += velocities[i] * dt_seconds;
 
     }
@@ -91,7 +89,7 @@ void CppParticleSimulator::updateSimulation(float dt_seconds) {
     checkBoundaries();
 
     glBindBuffer (GL_ARRAY_BUFFER, vbo_pos);
-    glBufferData (GL_ARRAY_BUFFER, positions.size() * 3 * sizeof (float), positions.data(), GL_DYNAMIC_DRAW);
+    glBufferData (GL_ARRAY_BUFFER, positions.size() * 3 * sizeof (float), positions.data(), GL_STATIC_DRAW);
 }
 
 void CppParticleSimulator::checkBoundaries() {
