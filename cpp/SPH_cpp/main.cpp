@@ -32,8 +32,6 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
 
     //Open a window
     window = glfwCreateWindow(640, 480, "Looks like fluid right!?", NULL, NULL);
@@ -42,6 +40,8 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
 
     //Generate rotator
     MouseRotator rotator;
