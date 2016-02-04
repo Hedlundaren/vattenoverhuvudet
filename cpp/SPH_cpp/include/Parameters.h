@@ -21,7 +21,7 @@ namespace Parameters {
     float restDensity =  1.0f;
     float sigma = 0.0072;
     float nThreshold = 0.02;
-    //const glm::vec3 gravity(0.0f, -9.82f, 0.0f);
+    glm::vec3 gravity(0.0f, -9.82f, 0.0f);
     int leftBound = 0;
     int rightBound = 100;
     int bottomBound = 0;

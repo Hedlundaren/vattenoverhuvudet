@@ -16,8 +16,6 @@
 #include "OpenClParticleSimulator.hpp"
 
 int main() {
-    PrintOpenClContextInfo();
-
     GLFWwindow *window;
 
     if (!glfwInit()) {
@@ -55,7 +53,7 @@ int main() {
 #endif
 
     //Generate particles
-    const int n_particles = 5000;
+    const int n_particles = 100;
     std::vector <glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     std::vector <glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
 
