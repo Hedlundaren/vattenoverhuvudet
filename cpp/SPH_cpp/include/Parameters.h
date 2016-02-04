@@ -14,10 +14,10 @@
 
 namespace Parameters {
     float dt = 1.0f / 30.0f;
-    float mass = 1.0f;
-    float kernelSize = 1.0f;
+    float mass = 0.5f;
+    float kernelSize = 0.5f;
     float gasConstantK = 1.0f;
-    float viscosityConstant = 5.0f;
+    float viscosityConstant = 10.0f;
     float restDensity = 0.0f;
     float sigma = 0.0072f;
     float nThreshold = 0.02f;

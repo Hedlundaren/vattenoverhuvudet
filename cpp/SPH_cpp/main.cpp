@@ -63,7 +63,7 @@ int main() {
 
 
     //Generate particles
-    const int n_particles = 100;
+    const int n_particles = 150;
     std::vector <glm::vec3> positions = generate_uniform_vec3s(n_particles, -0.9f, 0.9f, -0.9f, 0.9f, -0.9f, 0.9f);
     std::vector <glm::vec3> velocities = generate_uniform_vec3s(n_particles, -0.1f, 0.1f, -0.1f, 0.1f, -0.1f, 0.1f);
 
