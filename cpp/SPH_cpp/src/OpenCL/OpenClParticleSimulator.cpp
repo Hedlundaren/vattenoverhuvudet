@@ -115,8 +115,8 @@ void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
     error = clEnqueueReleaseGLObjects(command_queue, 1, &cl_velocities, 0, NULL, &event);
     CheckError(error);
 
-    error = clFlush(command_queue);
-    CheckError(error);
+    //error = clFlush(command_queue);
+    //CheckError(error);
 
     clWaitForEvents(1, &event);
 
@@ -177,7 +177,7 @@ void OpenClParticleSimulator::initOpenCL() {
     cl_context_properties properties[] = {
         CL_GL_CONTEXT_KHR, (cl_context_properties) wglGetCurrentContext(),
         CL_WGL_HDC_KHR, (cl_context_properties) wglGetCurrentDC(),
-        CL_CONTEXT_PLATFORM, (cl_context_properties) platform,
+        CL_CONTEXT_PLATFORM, (cl_context_properties) platformIds[0],
         0
     };
 #elif defined TARGET_OS_MAC

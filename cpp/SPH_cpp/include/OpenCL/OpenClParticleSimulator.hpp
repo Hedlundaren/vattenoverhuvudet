@@ -11,6 +11,10 @@
 #include <CL/cl.hpp>
 #endif
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <vector>
 
 class OpenClParticleSimulator : public ParticleSimulator {

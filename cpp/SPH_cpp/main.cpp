@@ -2,9 +2,10 @@
 #include <chrono>
 
 #include <glm/glm.hpp>
-
-#include <GLFW/glfw3.h>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include "GL/glew.h"
+#include "GLFW/glfw3.h"
 
 #include "rendering/ShaderProgram.hpp"
 #include "math/randomized.hpp"
@@ -42,11 +43,18 @@ int main() {
     MouseRotator rotator;
     rotator.init(window);
 
-
     //Set the GLFW-context the current window
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
+    glewExperimental = GL_TRUE;
+    GLenum err = glewInit();
+    if (GLEW_OK != err)
+    {
+        /* Problem: glewInit failed, something is seriously wrong. */
+        std::cout << "GLEW init error: " << glewGetErrorString(err) << "\n";
+        return -1;
+    }
 
     ParticleSimulator *simulator;
 
@@ -90,7 +98,8 @@ int main() {
 
 
     // Declare which shader to use and bind it
-    ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.frag", "../shaders/particles.geom");
+    ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.frag",
+                                  "../shaders/particles.geom");
     particlesShader();
 
 
@@ -127,25 +136,26 @@ int main() {
         //printf("phi = %6.2f, theta = %6.2f\n", rotator.phi, rotator.theta);
         glm::mat4 VRotX = glm::rotate(M, rotator.phi, glm::vec3(0.0f, 1.0f, 0.0f)); //Rotation around y-axis
         glm::mat4 VRotY = glm::rotate(M, rotator.theta, glm::vec3(1.0f, 0.0f, 0.0f)); //Rotation around x-axis
-        glm::mat4 V = VRotX*VRotY*glm::lookAt(glm::vec3(0.0f,0.0f,1.0f),glm::vec3(0.0f,0.0f,0.0f),glm::vec3(0.0f,1.0f,0.0f));
+        glm::mat4 V = VRotX * VRotY * glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
+                                                  glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 P = glm::perspectiveFov(50.0f, 640.0f, 480.0f, 0.1f, 100.0f);
-        MVP = P*V*M;
+        MVP = P * V * M;
         glUniformMatrix4fv(MVP_Loc, 1, GL_FALSE, &MVP[0][0]);
 
         // Clear the buffers
-        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_BACK);
 
 
         //Send VAO to the GPU
-        glBindVertexArray (vao);
-        glDrawArrays (GL_POINTS, 0, n_particles);
+        glBindVertexArray(vao);
+        glDrawArrays(GL_POINTS, 0, n_particles);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        if (glfwGetKey (window, GLFW_KEY_ESCAPE)) {
-            glfwSetWindowShouldClose (window, 1);
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
+            glfwSetWindowShouldClose(window, 1);
         }
     }
 

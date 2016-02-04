@@ -37,24 +37,47 @@ set(PROJECT_EXT_DIR ${PROJECT_SOURCE_DIR}/external)
 ### External libraries ###
 ##########################
 
+### OpenGL ###
+set(ALL_LIBRARIES ${ALL_LIBRARIES} ${OPENGL_glu_LIBRARY})
+
 ### GLM ###
 set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_EXT_DIR}/glm)
 
 ### OpenCL ###
 find_package(OPENCL)
 set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${OPENCL_INCLUDE_DIRS})
+if (NOT DEFINED OPENCL_LIBRARIES)
+    # Hardcoded fix for correct Windows DLL linking
+    message(WARNING "Whoopsie")
+    set(OPENCL_LIBRARIES "C:/Windows/System32/OpenCL.dll")
+endif (NOT DEFINED OPENCL_LIBRARIES)
+set(ALL_LIBRARIES ${ALL_LIBRARIES} ${OPENCL_LIBRARIES})
 
 ### GLFW ###
 set(GLFW_DIR ${PROJECT_EXT_DIR}/glfw-3.1.2)
 add_subdirectory(${GLFW_DIR})
 set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${GLFW_DIR}/include)
+set(ALL_LIBRARIES ${ALL_LIBRARIES} glfw ${OPENGL_glu_LIBRARY} ${GLFW_LIBRARIES})
+
+### GLEW on Windows
+if (MINGW)
+    set(GLEW_DIR ${PROJECT_EXT_DIR}/glew)
+
+    set(GLEW_INCLUDE_DIR ${GLEW_DIR}/include)
+    #set(GLEW_LIBRARIES ${GLEW_DIR}/lib/Release/x64/glew32s.lib)
+    #set(GLEW_LIBRARIES "C:/Windows/System32/glew32.dll")
+    set(GLEW_LIBRARIES ${GLEW_DIR}/bin/Release/x64/glew32.dll)
+
+    set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${GLEW_INCLUDE_DIR})
+    set(ALL_LIBRARIES ${ALL_LIBRARIES} ${GLEW_LIBRARIES})
+endif (MINGW)
 
 # Lump all external- and project includes into one variable
 set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR} ${PROJECT_KERNELS_DIR})
-message(WARNING "All include dirs: ${ALL_INCLUDES}")
 
 # Set the include directories so that #include statements work
 include_directories(${ALL_INCLUDES})
+message(WARNING "All include dirs: ${ALL_INCLUDES}")
 
 # Get all source files by traversing the source directory recursively
 file(GLOB_RECURSE PROJECT_CPP_FILES ${PROJECT_CPP_DIR}/*.cpp)
@@ -62,11 +85,5 @@ file(GLOB_RECURSE PROJECT_CPP_FILES ${PROJECT_CPP_DIR}/*.cpp)
 set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES})
 add_executable(SPH_cpp ${SOURCE_FILES})
 
-# Hardcoded fix for correct Windows DLL linking
-if (NOT DEFINED OPENCL_LIBRARIES)
-    message(WARNING "Whoopsie")
-    set(OPENCL_LIBRARIES "C:/Windows/System32/OpenCL.dll")
-endif (NOT DEFINED OPENCL_LIBRARIES)
-
-target_link_libraries(SPH_cpp glfw ${OPENGL_glu_LIBRARY} ${GLFW_LIBRARIES})
-target_link_libraries(SPH_cpp ${OPENCL_LIBRARIES})
+target_link_libraries(SPH_cpp ${ALL_LIBRARIES})
+message(WARNING "All libraries: ${ALL_LIBRARIES}")
