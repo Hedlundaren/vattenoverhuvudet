@@ -7,7 +7,7 @@ out vec3 in_color;
 
 uniform mat4 MVP;
 
-const float triangle_size = 0.02;
+const float triangle_size = 0.01;
 
 const vec3 RED = vec3(1.0, 0.0, 0.0);
 const vec3 GREEN = vec3(0.0, 1.0, 0.0);
@@ -19,17 +19,17 @@ void make_face(vec3 a, vec3 b, vec3 c, vec3 face_color) {
 
     normal = face_normal;
     in_color = face_color;
-    gl_Position = MVP * vec4(a, 1.0);
+    gl_Position = MVP * vec4(a, 7.0);
     EmitVertex();
 
     normal = face_normal;
     in_color = face_color;
-    gl_Position = MVP * vec4(b, 1.0);
+    gl_Position = MVP * vec4(b, 7.0);
     EmitVertex();
 
     normal = face_normal;
     in_color = face_color;
-    gl_Position = MVP * vec4(c, 1.0);
+    gl_Position = MVP * vec4(c, 7.0);
     EmitVertex();
 }
 
