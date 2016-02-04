@@ -67,12 +67,12 @@ int main() {
     GLuint pos_vbo = 0;
     glGenBuffers(1, &pos_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, pos_vbo);
-    glBufferData(GL_ARRAY_BUFFER, n_particles * 3 * sizeof(float), positions.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, n_particles * 3 * sizeof(float), positions.data(), GL_DYNAMIC_DRAW);
 
     GLuint vel_vbo = 0;
     glGenBuffers(1, &vel_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, vel_vbo);
-    glBufferData(GL_ARRAY_BUFFER, n_particles * 3 * sizeof(float), velocities.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, n_particles * 3 * sizeof(float), velocities.data(), GL_DYNAMIC_DRAW);
 
     simulator->setupSimulation(positions, velocities, pos_vbo, vel_vbo);
 

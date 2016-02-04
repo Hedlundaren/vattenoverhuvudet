@@ -30,7 +30,11 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
 
     cl_positions = clCreateFromGLBuffer(context, CL_MEM_READ_WRITE, vbo_positions, &error);
     CheckError(error);
+    error = clRetainMemObject(cl_positions);
+    CheckError(error);
     cl_velocities = clCreateFromGLBuffer(context, CL_MEM_READ_WRITE, vbo_velocities, &error);
+    CheckError(error);
+    error = clRetainMemObject(cl_velocities);
     CheckError(error);
 
     // todo is this needed?
@@ -97,7 +101,8 @@ void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
     CheckError(error);
 
     cl_event *event = NULL;
-    error = clEnqueueTask(command_queue, kernel, 0, NULL, event);
+    error = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, (const size_t *) &n_particles, NULL, 0, 0, 0);
+    //error = clEnqueueTask(command_queue, kernel, 0, NULL, event);
     CheckError(error);
 
     clWaitForEvents(1, event);
