@@ -90,7 +90,7 @@ int main() {
 
 
     // Declare which shader to use and bind it
-    ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.frag");
+    ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.frag", "../shaders/particles.geom");
     particlesShader();
 
 
