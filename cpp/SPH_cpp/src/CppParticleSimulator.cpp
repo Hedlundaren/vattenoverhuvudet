@@ -85,9 +85,30 @@ void CppParticleSimulator::updateSimulation(float dt_seconds) {
 
         // Velocity integration
         positions[i] += velocities[i] * dt_seconds;
+
     }
 
+    checkBoundaries();
 
     glBindBuffer (GL_ARRAY_BUFFER, vbo_pos);
     glBufferData (GL_ARRAY_BUFFER, positions.size() * 3 * sizeof (float), positions.data(), GL_DYNAMIC_DRAW);
+}
+
+void CppParticleSimulator::checkBoundaries() {
+    for (int i = 0; i < positions.size(); ++i) {
+        if (positions[i].x < Parameters::leftBound || positions[i].x > Parameters::rightBound) {
+            positions[i].x = fmax(fmin(positions[i].x, Parameters::rightBound), Parameters::leftBound);
+            velocities[i].x = Parameters::wallDamper * (- velocities[i].x);
+        }
+
+        if (positions[i].y < Parameters::bottomBound || positions[i].y > Parameters::topBound) {
+            positions[i].y = fmax(fmin(positions[i].y, Parameters::topBound), Parameters::bottomBound);
+            velocities[i].y = Parameters::wallDamper * (- velocities[i].y);
+        }
+
+        if (positions[i].z < Parameters::nearBound || positions[i].z > Parameters::farBound) {
+            positions[i].z = fmax(fmin(positions[i].z, Parameters::farBound), Parameters::nearBound);
+            velocities[i].z = Parameters::wallDamper * (- velocities[i].z);
+        }
+    }
 }

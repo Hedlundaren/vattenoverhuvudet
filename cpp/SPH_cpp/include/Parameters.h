@@ -23,8 +23,10 @@ namespace Parameters {
     float nThreshold = 0.02;
     glm::vec3 gravity(0.0f, -9.82f, 0.0f);
     int leftBound = 0;
-    int rightBound = 100;
+    int rightBound = 1;
     int bottomBound = 0;
-    int topBound = 100;
+    int topBound = 1;
+    int nearBound = 0;
+    int farBound = 1;
     float wallDamper = 0.6;
 }
