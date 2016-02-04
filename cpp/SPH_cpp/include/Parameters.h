@@ -13,20 +13,20 @@
 #include "glm/ext.hpp"
 
 namespace Parameters {
-    float dt = 1.0 / 30;
+    float dt = 1.0f / 30.0f;
     float mass = 1.0f;
-    float kernelSize = 10.0f;
-    float gasConstantK = 462.0f;
-    float viscosityConstant = 0.001f;
-    float restDensity =  1.0f;
-    float sigma = 0.0072;
-    float nThreshold = 0.02;
-    glm::vec3 gravity(0.0f, -9.82f, 0.0f);
-    int leftBound = 0;
-    int rightBound = 1;
-    int bottomBound = 0;
-    int topBound = 1;
-    int nearBound = 0;
-    int farBound = 1;
-    float wallDamper = 0.6;
+    float kernelSize = 1.0f;
+    float gasConstantK = 1.0f;
+    float viscosityConstant = 5.0f;
+    float restDensity = 0.0f;
+    float sigma = 0.0072f;
+    float nThreshold = 0.02f;
+    const glm::vec3 gravity(0.0f, -9.82f, 0.0f);
+    float leftBound = -0.9f;
+    float rightBound = 0.9f;
+    float bottomBound = -0.9f;
+    float topBound = 0.9f;
+    float nearBound = -0.9f;
+    float farBound = 0.9f;
+    float wallDamper = 1.0f;
 }
