@@ -7,6 +7,8 @@
 
 #include "common/FileReader.hpp"
 
+#include "common/tic_toc.hpp"
+
 void Exit() {
     std::exit(1);
 }
@@ -78,7 +80,7 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
 }
 
 void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
-    dispatch_semaphore_t dsema = dispatch_semaphore_create(0);
+    //tic();
 
     // Set kernel arguments
     cl_int error;
@@ -99,50 +101,26 @@ void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
     CheckError(error);
     error = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *) &cl_velocities);
     CheckError(error);
+    error = clSetKernelArg(kernel, 2, sizeof(float), (void *) &dt_seconds);
+    CheckError(error);
 
-    cl_event *event = NULL;
+    cl_event event;
+
     error = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, (const size_t *) &n_particles, NULL, 0, 0, 0);
     //error = clEnqueueTask(command_queue, kernel, 0, NULL, event);
     CheckError(error);
 
-    clWaitForEvents(1, event);
-
     error = clEnqueueReleaseGLObjects(command_queue, 1, &cl_positions, 0, NULL, NULL);
     CheckError(error);
-    error = clEnqueueReleaseGLObjects(command_queue, 1, &cl_velocities, 0, NULL, NULL);
+    error = clEnqueueReleaseGLObjects(command_queue, 1, &cl_velocities, 0, NULL, &event);
     CheckError(error);
 
     error = clFlush(command_queue);
     CheckError(error);
 
-    /*
-    dispatch_async(command_queue, ^{
-        // This kernel is written such that each work item processes one pixel.
-        // Thus, it executes over a two-dimensional range, with the width and
-        // height of the image determining the dimensions
-        // of execution.
-        cl_ndrange range = {
-                1,                  // Using a two-dimensional execution.
-                {0},                // Start at the beginning of the range.
-                3 * n_particles,    // Execute width * height work items.
-                {0}                 // And let OpenCL decide how to divide
-                // the work items into work-groups.
-        };
-        // Copy the host-side, initial pixel data to the image memory object on
-        // the OpenCL device.  Here, we copy the whole image, but you could use
-        // the origin and region parameters to specify an offset and sub-region
-        // of the image, if you'd like.
-        // Do it!
-        taskParallelIntegrateVelocity(dt_seconds, cl_positions_buffer, cl_velocities_buffer);
-        // Read back the results; then reuse the host-side buffer we
-        // started with.
-        // Let the host know we're done.
-        dispatch_semaphore_signal(dsema);
-    });
-    // Do other work, if you'd like...
-    // ... but eventually, you will want to wait for OpenCL to finish up.
-    dispatch_semaphore_wait(dsema, DISPATCH_TIME_FOREVER);
-     */
+    clWaitForEvents(1, &event);
+
+    //toc();
 }
 
 void OpenClParticleSimulator::initOpenCL() {

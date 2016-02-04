@@ -13,10 +13,9 @@
 #include "ParticleSimulator.hpp"
 #include "OpenCL/OpenClParticleSimulator.hpp"
 
-#include "common/tic_toc.hpp"
+//#include "common/tic_toc.hpp"
 
 int main() {
-    tic();
     GLFWwindow *window;
 
     if (!glfwInit()) {
@@ -116,8 +115,8 @@ int main() {
 
         std::chrono::milliseconds dt_ms = std::chrono::duration_cast<std::chrono::milliseconds>(delta_time);
 
-        //std::cout << "Seconds: " << 1e-3 * dt_ms.count() << "\n";
         const float dt_s = 1e-3 * dt_ms.count();
+        std::cout << "Seconds: " << dt_s << "\n";
 
 
         simulator->updateSimulation(dt_s);
@@ -152,6 +151,5 @@ int main() {
 
     glfwDestroyWindow(window);
     glfwTerminate();
-    toc();
     exit(EXIT_SUCCESS);
 }
