@@ -4,16 +4,19 @@
 #include <glm/glm.hpp>
 
 #include <GLFW/glfw3.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "rendering/ShaderProgram.hpp"
 #include "math/randomized.hpp"
 #include "common/Rotator.hpp"
-#include "common/MatrixStack.hpp"
 
 #include "ParticleSimulator.hpp"
 #include "OpenCL/OpenClParticleSimulator.hpp"
 
+#include "common/tic_toc.hpp"
+
 int main() {
+    tic();
     GLFWwindow *window;
 
     if (!glfwInit()) {
@@ -21,26 +24,30 @@ int main() {
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    window = glfwCreateWindow(640, 480, "Simple example", NULL, NULL);
+
+    //Open a window
+    window = glfwCreateWindow(640, 480, "Looks like fluid right!?", NULL, NULL);
     if (!window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
 
-    //Generate rotator!!!!! :D
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+
+    //Generate rotator
     MouseRotator rotator;
     rotator.init(window);
 
-    //Initialize
-    MatrixStack MVstack;
-    MVstack.init();
 
+    //Set the GLFW-context the current window
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
+
 
     ParticleSimulator *simulator;
 
@@ -49,6 +56,7 @@ int main() {
 #else
     simulator = new CppParticleSimulator();
 #endif
+
 
     //Generate particles
     const int n_particles = 5000;
@@ -82,8 +90,22 @@ int main() {
     glEnableVertexAttribArray(1);
 
 
+    // Declare which shader to use and bind it
     ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.frag");
     particlesShader();
+
+
+    //Declare uniform locations
+    GLint MVP_Loc = -1;
+    MVP_Loc = glGetUniformLocation(particlesShader, "MVP");
+    glm::mat4 MVP;
+    glm::mat4 M = glm::mat4(1.0f);
+
+    //Specify which pixels to draw to
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    glViewport(0, 0, width, height);
+
 
     std::chrono::high_resolution_clock::time_point tp_last = std::chrono::high_resolution_clock::now();
 
@@ -94,41 +116,42 @@ int main() {
 
         std::chrono::milliseconds dt_ms = std::chrono::duration_cast<std::chrono::milliseconds>(delta_time);
 
-        std::cout << "Seconds: " << 1e-3 * dt_ms.count() << "\n";
+        //std::cout << "Seconds: " << 1e-3 * dt_ms.count() << "\n";
         const float dt_s = 1e-3 * dt_ms.count();
+
 
         simulator->updateSimulation(dt_s);
 
-        float ratio;
-        int width, height;
 
-        glfwGetFramebufferSize(window, &width, &height);
-        ratio = width / (float) height;
-        glViewport(0, 0, width, height);
-
-        // Get mouse handle (input)
+        // Get rotation input
         rotator.poll(window);
         //printf("phi = %6.2f, theta = %6.2f\n", rotator.phi, rotator.theta);
+        glm::mat4 VRotX = glm::rotate(M, rotator.phi, glm::vec3(0.0f, 1.0f, 0.0f)); //Rotation around y-axis
+        glm::mat4 VRotY = glm::rotate(M, rotator.theta, glm::vec3(1.0f, 0.0f, 0.0f)); //Rotation around x-axis
+        glm::mat4 V = VRotX*VRotY*glm::lookAt(glm::vec3(0.0f,0.0f,1.0f),glm::vec3(0.0f,0.0f,0.0f),glm::vec3(0.0f,1.0f,0.0f));
+        glm::mat4 P = glm::perspectiveFov(50.0f, 640.0f, 480.0f, 0.1f, 100.0f);
+        MVP = P*V*M;
+        glUniformMatrix4fv(MVP_Loc, 1, GL_FALSE, &MVP[0][0]);
 
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        // Clear the buffers
+        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glCullFace(GL_BACK);
 
-        MVstack.push();
-        MVstack.rotX(rotator.theta);
-        MVstack.rotY(rotator.phi);
 
-        glBindVertexArray(vao);
-        glDrawArrays(GL_POINTS, 0, n_particles);
-
-        MVstack.pop();
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
-            glfwSetWindowShouldClose(window, 1);
-        }
+        //Send VAO to the GPU
+        glBindVertexArray (vao);
+        glDrawArrays (GL_POINTS, 0, n_particles);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        if (glfwGetKey (window, GLFW_KEY_ESCAPE)) {
+            glfwSetWindowShouldClose (window, 1);
+        }
     }
 
     glfwDestroyWindow(window);
     glfwTerminate();
+    toc();
     exit(EXIT_SUCCESS);
 }

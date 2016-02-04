@@ -12,19 +12,7 @@
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
 
-/**********************************
-* Class Particle               *
-***********************************/
-
-class Parameters {
-public:
-
-    //Constructor
-    Parameters();
-
-    ~Parameters();
-
-
+namespace Parameters {
     float dt = 1.0 / 30;
     float mass = 1.0f;
     float kernelSize = 10.0f;
@@ -39,5 +27,4 @@ public:
     int bottomBound = 0;
     int topBound = 100;
     float wallDamper = 0.6;
-
-};
+}

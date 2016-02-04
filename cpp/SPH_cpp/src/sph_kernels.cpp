@@ -6,23 +6,13 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <math.h>
+#include "glm/glm.hpp"
 
 #include "sph_kernels.h"
 
-float normVector(std::vector<float> v) {
-    float sum = 0.0f;
-
-    //c++11
-    for (float f : v) {
-        sum += f * f;
-    }
-
-    return sqrt(sum);
-}
-
-float Wpoly6(std::vector<float> r, float h) {
+float Wpoly6(glm::vec3 r, float h) {
     float w = 0.0f;
-    float radius = normVector(r);
+    float radius = glm::length(r);
 
     if (radius < h && radius >= 0)
         w = (315 / (64 * M_PI * std::pow(h, 9))) * std::pow((std::pow(h, 2) - std::pow(radius, 2)), 3);
@@ -32,26 +22,21 @@ float Wpoly6(std::vector<float> r, float h) {
     return w;
 }
 
-std::vector<float> gradWpoly6(std::vector<float> r, float h) {
-	float radius = normVector(r);
-	std::vector<float> gradient; 
+glm::vec3 gradWpoly6(glm::vec3 r, float h) {
+	float radius = glm::length(r);
+	glm::vec3 gradient;
 
 	if (radius < h && radius > 0) {
-		float constant = -((315/(64*M_PI*pow(h, 9))) * 6 * pow(pow(h, 2) - pow(radius, 2), 2));
-		gradient.push_back(constant * r[0]);
-		gradient.push_back(constant * r[1]);
-		gradient.push_back(constant * r[2]);
+		gradient = (float) -((315/(64*M_PI*pow(h, 9))) * 6 * pow(pow(h, 2) - pow(radius, 2), 2)) * r;
 	} else {
-		gradient.push_back(0);
-		gradient.push_back(0);
-		gradient.push_back(0);
+		gradient = {0, 0, 0};
 	}
 
 	return gradient;
 }
 
-float laplacianWpoly6(std::vector<float> r, float h) {
-	float radius = normVector(r);
+float laplacianWpoly6(glm::vec3 r, float h) {
+	float radius = glm::length(r);
 	float laplacian = 0;
 
 	if (radius < h && radius > 0) {
@@ -63,43 +48,22 @@ float laplacianWpoly6(std::vector<float> r, float h) {
 	return laplacian;
 }
 
-std::vector<float> gradWspiky(std::vector<float> r, float h) {
-	std::vector<float> gradient; 
-	float radius = normVector(r);
-	float neg_r[3];
-
-	for (int i = 0; i < 3; ++i) {
-		neg_r[i] = -r[i];
-	}
-
-	//negative r divided by radius
-	//this should be improved
-	float neg_r_by_radius[3];
-	for (int i = 0; i < 3; ++i) {
-		neg_r_by_radius[i] = -r[i] / radius;
-	}
+glm::vec3 gradWspiky(glm::vec3 r, float h) {
+	glm::vec3 gradient;
+	float radius = glm::length(r);
 
 	if (radius < h && radius > 0) {
-		float constant = (15 / (M_PI * std::pow(h, 6)) * 3 * std::pow((h - radius), 2)); 
-		gradient.push_back(constant * neg_r_by_radius[0]);
-		gradient.push_back(constant * neg_r_by_radius[1]);
-		gradient.push_back(constant * neg_r_by_radius[2]);
-	}
-
-	else {
-		gradient.push_back(0);
-		gradient.push_back(0);
-		gradient.push_back(0);
+		gradient = (float) ((15 / (M_PI * std::pow(h, 6))) * 3.0f * std::pow((h - radius), 2)) * (-r / radius);
+	} else {
+		gradient = {0, 0, 0};
 	}
 
 	return gradient;
 }
 
-float laplacianWviscosity(std::vector<float> r, float h) {
-	float radius = normVector(r);
+float laplacianWviscosity(glm::vec3 r, float h) {
+	float radius = glm::length(r);
 	float laplacian;
-
-	std::cout << "radius = " << radius << std::endl;
 
 	if (radius < h && radius > 0) {
 		laplacian = (45/(M_PI * pow(h, 6))) * (h - radius);
