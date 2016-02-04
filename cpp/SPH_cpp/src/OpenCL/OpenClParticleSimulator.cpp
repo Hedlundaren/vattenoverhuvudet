@@ -89,8 +89,8 @@ void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
     error = clEnqueueAcquireGLObjects(command_queue, 1, &cl_velocities, 0, NULL, NULL);
     CheckError(error);
 
-    //error = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *) &cl_dt_obj);
-    CheckError(error);
+    // error = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *) &cl_dt_obj);
+    // CheckError(error);
     error = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *) &cl_positions);
     CheckError(error);
     error = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *) &cl_velocities);
@@ -182,6 +182,7 @@ void OpenClParticleSimulator::initOpenCL() {
     cl_int error = CL_SUCCESS;
 
 #ifdef linux
+#define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
     cl_context_properties properties[] = {
         CL_GL_CONTEXT_KHR, (cl_context_properties) glXGetCurrentContext(),
         CL_GLX_DISPLAY_KHR, (cl_context_properties) glXGetCurrentDisplay(),
@@ -189,6 +190,7 @@ void OpenClParticleSimulator::initOpenCL() {
         0
     };
 #elif defined _WIN32
+#define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
     cl_context_properties properties[] = {
         CL_GL_CONTEXT_KHR, (cl_context_properties) wglGetCurrentContext(),
         CL_WGL_HDC_KHR, (cl_context_properties) wglGetCurrentDC(),
@@ -196,6 +198,8 @@ void OpenClParticleSimulator::initOpenCL() {
         0
     };
 #elif defined TARGET_OS_MAC
+#define GL_SHARING_EXTENSION "cl_APPLE_gl_sharing"
+
     CGLContextObj glContext = CGLGetCurrentContext();
     CGLShareGroupObj shareGroup = CGLGetShareGroup(glContext);
     cl_context_properties properties[] = {
@@ -220,4 +224,39 @@ void OpenClParticleSimulator::initOpenCL() {
                                          0, &error);
 
     CheckError(error);
+
+    // Check that context sharing is supported
+    bool cgl_context_sharing_supported = false;
+
+    size_t extensionSize;
+    error = clGetDeviceInfo(deviceIds[chosen_device_id - 1], CL_DEVICE_EXTENSIONS, 0, NULL, &extensionSize);
+
+    CheckError(error);
+
+    if (extensionSize > 0) {
+        char *extensions = (char *) malloc(extensionSize);
+        error = clGetDeviceInfo(deviceIds[chosen_device_id - 1], CL_DEVICE_EXTENSIONS, extensionSize, extensions,
+                                &extensionSize);
+        CheckError(error);
+
+        std::string stdDevString(extensions);
+        free(extensions);
+
+        size_t szOldPos = 0;
+        size_t szSpacePos = stdDevString.find(' ', szOldPos); // extensions string is space delimited
+        while (szSpacePos != stdDevString.npos) {
+            if (strcmp(GL_SHARING_EXTENSION, stdDevString.substr(szOldPos, szSpacePos - szOldPos).c_str()) == 0) {
+                // Device supports context sharing with OpenGL
+                cgl_context_sharing_supported = true;
+                break;
+            }
+            do {
+                szOldPos = szSpacePos + 1;
+                szSpacePos = stdDevString.find(' ', szOldPos);
+            }
+            while (szSpacePos == szOldPos);
+        }
+    }
+
+    std::cout << (cgl_context_sharing_supported ? "CL-GL sharing supported" : "CL-GL sharing NOT supported") << "\n";
 }
