@@ -18,6 +18,7 @@ if (APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGLFW_INCLUDE_GLCOREARB")
 endif (APPLE)
 
+## Comment out this line to use C++ simulation
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENCL_SIMULATION")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -28,6 +29,7 @@ set(CMAKE_BINARY_DIR ${PROJECT_SOURCE_DIR}/build)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/build)
 
 set(PROJECT_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include)
+set(PROJECT_KERNELS_DIR ${PROJECT_SOURCE_DIR}/kernels)
 set(PROJECT_CPP_DIR ${PROJECT_SOURCE_DIR}/src)
 set(PROJECT_EXT_DIR ${PROJECT_SOURCE_DIR}/external)
 
@@ -48,8 +50,8 @@ add_subdirectory(${GLFW_DIR})
 set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${GLFW_DIR}/include)
 
 # Lump all external- and project includes into one variable
-set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
-message(WARNING "External include dirs: ${EXTERNAL_INCLUDE_DIRS}")
+set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR} ${PROJECT_KERNELS_DIR})
+message(WARNING "All include dirs: ${ALL_INCLUDES}")
 
 # Set the include directories so that #include statements work
 include_directories(${ALL_INCLUDES})
