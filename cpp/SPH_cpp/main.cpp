@@ -64,38 +64,39 @@ int main() {
 
     //Generate particles
     const int n_particles = 150;
-    std::vector <glm::vec3> positions = generate_uniform_vec3s(n_particles, -0.9f, 0.9f, -0.9f, 0.9f, -0.9f, 0.9f);
-    std::vector <glm::vec3> velocities = generate_uniform_vec3s(n_particles, -0.1f, 0.1f, -0.1f, 0.1f, -0.1f, 0.1f);
+    std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -0.9f, 0.9f, -0.9f, 0.9f, -0.9f, 0.9f);
+    std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, -0.1f, 0.1f, -0.1f, 0.1f, -0.1f, 0.1f);
 
     //Generate VBOs
     GLuint pos_vbo = 0;
-    glGenBuffers (1, &pos_vbo);
-    glBindBuffer (GL_ARRAY_BUFFER, pos_vbo);
-    glBufferData (GL_ARRAY_BUFFER, n_particles * 3 * sizeof (float), positions.data(), GL_STATIC_DRAW);
+    glGenBuffers(1, &pos_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, pos_vbo);
+    glBufferData(GL_ARRAY_BUFFER, n_particles * 3 * sizeof(float), positions.data(), GL_STATIC_DRAW);
 
     GLuint vel_vbo = 0;
-    glGenBuffers (1, &vel_vbo);
-    glBindBuffer (GL_ARRAY_BUFFER, vel_vbo);
-    glBufferData (GL_ARRAY_BUFFER, n_particles * 3 * sizeof (float), velocities.data(), GL_STATIC_DRAW);
-    
+    glGenBuffers(1, &vel_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vel_vbo);
+    glBufferData(GL_ARRAY_BUFFER, n_particles * 3 * sizeof(float), velocities.data(), GL_STATIC_DRAW);
+
     simulator->setupSimulation(positions, velocities, pos_vbo, vel_vbo);
 
     // Generate VAO with all VBOs
     GLuint vao = 0;
-    glGenVertexArrays (1, &vao);
-    glBindVertexArray (vao);
-    glBindBuffer (GL_ARRAY_BUFFER, pos_vbo);
-    glVertexAttribPointer (0, 3, GL_FLOAT, GL_FALSE, 0, NULL); //position
-    glBindBuffer (GL_ARRAY_BUFFER, vel_vbo);
-    glVertexAttribPointer (1, 3, GL_FLOAT, GL_FALSE, 0, NULL); //velocity
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, pos_vbo);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL); //position
+    glBindBuffer(GL_ARRAY_BUFFER, vel_vbo);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL); //velocity
 
     //How many attributes do we have? Enable them!
-    glEnableVertexAttribArray (0);
-    glEnableVertexAttribArray (1);
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
 
 
     // Declare which shader to use and bind it
-    ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.frag", "../shaders/particles.geom");
+    ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.frag",
+                                  "../shaders/particles.geom");
     particlesShader();
 
 
@@ -130,28 +131,32 @@ int main() {
         //printf("phi = %6.2f, theta = %6.2f\n", rotator.phi, rotator.theta);
         glm::mat4 VRotX = glm::rotate(M, rotator.phi, glm::vec3(0.0f, 1.0f, 0.0f)); //Rotation about y-axis
         glm::mat4 VRotY = glm::rotate(M, rotator.theta, glm::vec3(1.0f, 0.0f, 0.0f)); //Rotation about x-axis
-        glm::mat4 V = VRotX*VRotY*glm::lookAt(glm::vec3(0.0f,0.0f,1.0f),glm::vec3(0.0f,0.0f,0.0f),glm::vec3(0.0f,1.0f,0.0f));
+
+        glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+
+        glm::mat4 V = glm::lookAt(glm::vec3(eye_position), glm::vec3(0.0f, 0.0f, 0.0f),
+                                  glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 P = glm::perspectiveFov(50.0f, 640.0f, 480.0f, 0.1f, 100.0f);
-        MVP = P*V*M;
+        MVP = P * V * M;
         glUniformMatrix4fv(MVP_Loc, 1, GL_FALSE, &MVP[0][0]);
 
 
 
         // Clear the buffers
-        glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_BACK);
 
 
         //Send VAO to the GPU
-        glBindVertexArray (vao);
-        glDrawArrays (GL_POINTS, 0, n_particles);
+        glBindVertexArray(vao);
+        glDrawArrays(GL_POINTS, 0, n_particles);
 
 
         glfwSwapBuffers(window);
         glfwPollEvents();
 
-        if (glfwGetKey (window, GLFW_KEY_ESCAPE)) {
-            glfwSetWindowShouldClose (window, 1);
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
+            glfwSetWindowShouldClose(window, 1);
         }
     }
 
