@@ -4,7 +4,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#ifdef _WIN32
 #include "GL/glew.h"
+#endif
+
 #include "GLFW/glfw3.h"
 
 #include "rendering/ShaderProgram.hpp"
@@ -38,6 +41,7 @@ int main() {
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+    glDepthFunc(GL_GREATER);
 
     //Generate rotator
     MouseRotator rotator;
@@ -47,6 +51,7 @@ int main() {
     glfwMakeContextCurrent(window);
     glfwSwapInterval(1);
 
+#ifdef _WIN32
     glewExperimental = GL_TRUE;
     GLenum err = glewInit();
     if (GLEW_OK != err)
@@ -55,6 +60,8 @@ int main() {
         std::cout << "GLEW init error: " << glewGetErrorString(err) << "\n";
         return -1;
     }
+#endif
+
 
     ParticleSimulator *simulator;
 
@@ -66,7 +73,7 @@ int main() {
 
 
     //Generate particles
-    const int n_particles = 5000;
+    const int n_particles = 100000;
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
 
