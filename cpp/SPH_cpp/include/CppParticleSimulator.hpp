@@ -11,7 +11,11 @@ public:
 
     void updateSimulation(float dt_seconds);
 
+    void checkBoundaries();
+
 private:
     std::vector<glm::vec3> positions, velocities;
     GLuint vbo_pos, vbo_vel;
+    std::vector<glm::vec3> forces;
+    std::vector<float> densities;
 };

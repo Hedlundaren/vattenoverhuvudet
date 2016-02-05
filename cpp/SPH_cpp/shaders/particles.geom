@@ -7,7 +7,7 @@ out vec3 in_color;
 
 uniform mat4 MVP;
 
-const float triangle_size = 0.02;
+const float triangle_size = 0.01;
 
 const vec3 RED = vec3(1.0, 0.0, 0.0);
 const vec3 GREEN = vec3(0.0, 1.0, 0.0);

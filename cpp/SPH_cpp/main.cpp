@@ -33,7 +33,7 @@ int main() {
 
 
     //Open a window
-    window = glfwCreateWindow(640, 480, "Looks like fluid right!?", NULL, NULL);
+    window = glfwCreateWindow(640, 480, "Totally fluids", NULL, NULL);
     if (!window) {
         glfwTerminate();
         exit(EXIT_FAILURE);
@@ -73,7 +73,7 @@ int main() {
 
 
     //Generate particles
-    const int n_particles = 100000;
+    const int n_particles = 5000;
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
 
@@ -134,17 +134,18 @@ int main() {
         const float dt_s = 1e-3 * dt_ms.count();
         std::cout << "Seconds: " << dt_s << "\n";
 
-
         simulator->updateSimulation(dt_s);
-
 
         // Get rotation input
         rotator.poll(window);
         //printf("phi = %6.2f, theta = %6.2f\n", rotator.phi, rotator.theta);
-        glm::mat4 VRotX = glm::rotate(M, rotator.phi, glm::vec3(0.0f, 1.0f, 0.0f)); //Rotation around y-axis
-        glm::mat4 VRotY = glm::rotate(M, rotator.theta, glm::vec3(1.0f, 0.0f, 0.0f)); //Rotation around x-axis
-        glm::mat4 V = VRotX * VRotY * glm::lookAt(glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-                                                  glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 VRotX = glm::rotate(M, rotator.phi, glm::vec3(0.0f, 1.0f, 0.0f)); //Rotation about y-axis
+        glm::mat4 VRotY = glm::rotate(M, rotator.theta, glm::vec3(1.0f, 0.0f, 0.0f)); //Rotation about x-axis
+
+        glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+
+        glm::mat4 V = glm::lookAt(glm::vec3(eye_position), glm::vec3(0.0f, 0.0f, 0.0f),
+                                  glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 P = glm::perspectiveFov(50.0f, 640.0f, 480.0f, 0.1f, 100.0f);
         MVP = P * V * M;
         glUniformMatrix4fv(MVP_Loc, 1, GL_FALSE, &MVP[0][0]);
