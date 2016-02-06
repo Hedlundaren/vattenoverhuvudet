@@ -5,6 +5,8 @@
 
 #include "glm/glm.hpp"
 
+std::random_device random_device;
+
 /// Generates a vector of floats uniformly distributed in the specified range
 /// The vector of random floats
 inline std::vector<float> generate_uniform_floats(int N,
@@ -12,7 +14,6 @@ inline std::vector<float> generate_uniform_floats(int N,
                                                   float upper_bound_exclusive = 1.0f) {
     std::vector<float> randoms(N);
 
-    std::random_device random_device;
     std::mt19937 mt(random_device());
     std::uniform_real_distribution<float> distribution(lower_bound_inclusive, upper_bound_exclusive);
 

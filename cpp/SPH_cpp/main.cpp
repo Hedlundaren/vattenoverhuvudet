@@ -13,11 +13,11 @@
 #include "rendering/ShaderProgram.hpp"
 #include "math/randomized.hpp"
 #include "common/Rotator.hpp"
+#include "common/stream_utils.hpp"
 
 #include "ParticleSimulator.hpp"
 #include "OpenCL/OpenClParticleSimulator.hpp"
-
-//#include "common/tic_toc.hpp"
+#include "CppParticleSimulator.hpp"
 
 int main() {
     GLFWwindow *window;
@@ -73,9 +73,12 @@ int main() {
 
 
     //Generate particles
-    const int n_particles = 5000;
+    const int n_particles = 200;
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
+
+    std::cout << to_string(positions, ", ") << "\n";
+    std::cout << to_string(velocities, ", ") << "\n";
 
     //Generate VBOs
     GLuint pos_vbo = 0;
