@@ -13,7 +13,7 @@
 #include "rendering/ShaderProgram.hpp"
 #include "math/randomized.hpp"
 #include "common/Rotator.hpp"
-#include "common/stream_utils.hpp"
+#include "constants.hpp"
 
 #include "ParticleSimulator.hpp"
 #include "OpenCL/OpenClParticleSimulator.hpp"
@@ -77,9 +77,6 @@ int main() {
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
 
-    std::cout << to_string(positions, ", ") << "\n";
-    std::cout << to_string(velocities, ", ") << "\n";
-
     //Generate VBOs
     GLuint pos_vbo = 0;
     glGenBuffers(1, &pos_vbo);
@@ -121,9 +118,13 @@ int main() {
 
     //Specify which pixels to draw to
     int width, height;
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
 
+    // Calculate midpoint of scene
+    const glm::vec3 scene_center(-(Parameters::leftBound + Parameters::rightBound) / 2,
+                                 (Parameters::bottomBound + Parameters::topBound) / 2,
+                                 - (Parameters::nearBound + Parameters::farBound) / 2);
+    std::cout << glm::to_string(scene_center) << "\n";
+    const float max_volume_side = Parameters::get_max_volume_side();
 
     std::chrono::high_resolution_clock::time_point tp_last = std::chrono::high_resolution_clock::now();
 
@@ -137,6 +138,10 @@ int main() {
         const float dt_s = 1e-3 * dt_ms.count();
         std::cout << "Seconds: " << dt_s << "\n";
 
+        // Update window size
+        glfwGetFramebufferSize(window, &width, &height);
+        glViewport(0, 0, width, height);
+
         simulator->updateSimulation(dt_s);
 
         // Get rotation input
@@ -145,11 +150,11 @@ int main() {
         glm::mat4 VRotX = glm::rotate(M, rotator.phi, glm::vec3(0.0f, 1.0f, 0.0f)); //Rotation about y-axis
         glm::mat4 VRotY = glm::rotate(M, rotator.theta, glm::vec3(1.0f, 0.0f, 0.0f)); //Rotation about x-axis
 
-        glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+        glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
 
-        glm::mat4 V = glm::lookAt(glm::vec3(eye_position), glm::vec3(0.0f, 0.0f, 0.0f),
+        glm::mat4 V = glm::lookAt(glm::vec3(eye_position), scene_center,
                                   glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 P = glm::perspectiveFov(50.0f, 640.0f, 480.0f, 0.1f, 100.0f);
+        glm::mat4 P = glm::perspectiveFov(50.0f, static_cast<float>(width), static_cast<float>(height), 0.1f, 100.0f);
         MVP = P * V * M;
         glUniformMatrix4fv(MVP_Loc, 1, GL_FALSE, &MVP[0][0]);
 
