@@ -1,3 +1,15 @@
+/* Struct containing a fluid particle
+Total memory size = 12 + 12 + 4 + 12 + 4 = 44 bytes */
+struct __attribute__ ((packed)) Particle {
+    float3 position;    // 12 bytes
+    float3 velocity;    // 12 bytes
+
+    float density;      // 4 bytes
+
+    float3 force;       // 12 bytes
+    float color_field;  // 4 bytes
+};
+
 __kernel void taskParallelIntegrateVelocity(__global float3* positions,
                                             __global float3* velocities,
                                             const float dt) {
