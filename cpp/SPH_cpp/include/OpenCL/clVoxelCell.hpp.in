@@ -5,6 +5,5 @@
 #include "clParticle.hpp"
 
 struct clVoxelCell {
-    cl_uint particle_counter;
     clParticle particles[VOXEL_CELL_PARTICLE_COUNT];
 };

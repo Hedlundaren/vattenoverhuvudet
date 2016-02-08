@@ -29,19 +29,21 @@ public:
     void updateSimulation(float dt_seconds);
 
 private:
+    std::vector<cl_mem> cgl_objects;
+
     int n_particles;
 
     void *cl_positions_buffer, *cl_velocities_buffer;
 
     cl_mem cl_positions, cl_velocities;
 
-    cl_mem cl_positions_readonly, cl_velocities_readonly;
-
-    cl_mem cl_positions_writeonly, cl_velocities_writeonly;
-
     cl_mem cl_voxel_grid;
 
     cl_int3 cl_voxel_grid_cell_count;
+
+    cl_mem cl_voxel_grid_cells_particle_counter;
+
+    unsigned int grid_cell_count;
 
     std::vector<cl_platform_id> platformIds;
 
@@ -57,6 +59,8 @@ private:
 
     cl_mem cl_utility_particle_counter;
 
+    std::vector<cl_int> voxel_grid_cells_particle_counters_zeroes;
+
     void initOpenCL();
 
     void setupSharedBuffers(const GLuint &vbo_positions, const GLuint &vbo_velocities);
@@ -69,23 +73,23 @@ private:
 
     /// A simple, stand-alone kernel that integrates the positions based on the velocities
     /// Is not a part of the fluid simulation processing chain
-    void runSimpleIntegratePositionsKernel(float dt_seconds, std::vector<cl_event> &events);
+    void runSimpleIntegratePositionsKernel(float dt_seconds);
 
     cl_kernel simple_integration = NULL;
 
-    void runPopulateVoxelGridKernel(float dt_seconds, std::vector<cl_event> &events);
+    void runPopulateVoxelGridKernel(float dt_seconds);
 
     cl_kernel populate_voxel_grid = NULL;
 
-    void runCalculateParticleDensitiesKernel(float dt_seconds, std::vector<cl_event> &events);
+    void runCalculateParticleDensitiesKernel(float dt_seconds);
 
     cl_kernel calculate_particle_densities = NULL;
 
-    void runCalculateParticleForcesAndIntegrateStatesKernel(float dt_seconds, std::vector<cl_event> &events);
+    void runCalculateParticleForcesAndIntegrateStatesKernel(float dt_seconds);
 
     cl_kernel calculate_particle_forces_integrate = NULL;
 
-    void runMoveParticlesToOpenGlBufferKernel(float dt_seconds, std::vector<cl_event> &events);
+    void runMoveParticlesToOpenGlBufferKernel(float dt_seconds);
 
     cl_kernel move_particles_to_ogl = NULL;
 };
