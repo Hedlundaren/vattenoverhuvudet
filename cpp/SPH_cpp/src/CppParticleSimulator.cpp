@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include "sph_kernels.h"
+#include "Parameters.h"
 
 void CppParticleSimulator::setupSimulation(const std::vector <glm::vec3> &particle_positions,
                                            const std::vector <glm::vec3> &particle_velocities,

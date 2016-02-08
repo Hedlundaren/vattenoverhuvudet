@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ParticleSimulator.hpp"
-#include "Parameters.h"
 
 class CppParticleSimulator : public ParticleSimulator {
 public:

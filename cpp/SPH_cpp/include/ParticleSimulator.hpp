@@ -10,6 +10,8 @@
 
 #include "glm/glm.hpp"
 
+#include "Parameters.h"
+
 class ParticleSimulator {
 public:
     virtual void setupSimulation(const std::vector<glm::vec3> &particle_positions,

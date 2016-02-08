@@ -41,6 +41,8 @@ private:
 
     cl_mem cl_voxel_grid;
 
+    cl_int3 cl_voxel_grid_cell_count;
+
     std::vector<cl_platform_id> platformIds;
 
     std::vector<cl_device_id> deviceIds;

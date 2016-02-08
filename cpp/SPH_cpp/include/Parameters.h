@@ -10,6 +10,14 @@
 #include "glm/glm.hpp"
 #include "glm/ext.hpp"
 
+#ifdef __APPLE__
+
+#include <OpenCL/opencl.h>
+
+#else
+#include <CL/cl.hpp>
+#endif
+
 namespace Parameters {
     constexpr float mass = 0.5f;
     constexpr float kernelSize = 0.2f;
@@ -41,5 +49,14 @@ namespace Parameters {
 
     constexpr float get_volume_size_z() {
         return farBound - nearBound;
+    }
+
+    inline const cl_float3 get_volume_origin_corner_cl() {
+        cl_float3 origin;
+        origin.s[0] = leftBound;
+        origin.s[1] = bottomBound;
+        origin.s[2] = nearBound;
+
+        return origin;
     }
 }
