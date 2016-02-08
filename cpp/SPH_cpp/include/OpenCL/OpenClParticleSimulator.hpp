@@ -51,13 +51,13 @@ private:
 
     cl_command_queue command_queue;
 
-    cl_kernel kernel = NULL;
-
     cl_mem cl_dt_obj;
 
     void initOpenCL();
 
     void setupSharedBuffers(const GLuint &vbo_positions, const GLuint &vbo_velocities);
+
+    void createAndBuildKernel(cl_kernel &kernel_out, std::string kernel_name, std::string kernel_file_name);
 
     void allocateVoxelGridBuffer();
 
@@ -67,11 +67,21 @@ private:
     /// Is not a part of the fluid simulation processing chain
     void runSimpleIntegratePositionsKernel(float dt_seconds, std::vector<cl_event> &events);
 
+    cl_kernel simple_integration = NULL;
+
     void runPopulateVoxelGridKernel(float dt_seconds, std::vector<cl_event> &events);
+
+    cl_kernel populate_voxel_grid = NULL;
 
     void runCalculateParticleDensitiesKernel(float dt_seconds, std::vector<cl_event> &events);
 
+    cl_kernel calculate_particle_densities = NULL;
+
     void runCalculateParticleForcesAndIntegrateStatesKernel(float dt_seconds, std::vector<cl_event> &events);
 
+    cl_kernel calculate_particle_forces_integrate = NULL;
+
     void runCopyParticlesToOpenGlBufferKernel(float dt_seconds, std::vector<cl_event> &events);
+
+    cl_kernel copy_particles_to_ogl = NULL;
 };
