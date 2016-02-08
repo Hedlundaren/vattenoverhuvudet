@@ -12,7 +12,7 @@
 
 namespace Parameters {
     constexpr float mass = 0.5f;
-    constexpr float kernelSize = 0.5f;
+    constexpr float kernelSize = 0.2f;
     constexpr float gasConstantK = 1.0f;
     constexpr float viscosityConstant = 10.0f;
     constexpr float restDensity = 0.0f;
@@ -29,5 +29,17 @@ namespace Parameters {
 
     inline float get_max_volume_side() {
         return std::max(std::max(rightBound - leftBound, topBound - bottomBound), farBound - nearBound);
+    }
+
+    constexpr float get_volume_size_x() {
+        return rightBound - leftBound;
+    }
+
+    constexpr float get_volume_size_y() {
+        return topBound - bottomBound;
+    }
+
+    constexpr float get_volume_size_z() {
+        return farBound - nearBound;
     }
 }

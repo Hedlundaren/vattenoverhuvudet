@@ -3,12 +3,16 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
+#include <OpenCL/opencl.h>
 
 #include "OpenCL/opencl_context_info.hpp"
 
 #include "common/FileReader.hpp"
 
 #include "OpenCL/clVoxelCell.hpp"
+
+#include "Parameters.h"
 
 void Exit() {
     std::exit(1);
@@ -90,12 +94,25 @@ void OpenClParticleSimulator::setupSharedBuffers(const GLuint &vbo_positions, co
 }
 
 void OpenClParticleSimulator::allocateVoxelGridBuffer() {
+    using namespace Parameters;
     cl_int error = CL_SUCCESS;
 
-    const unsigned int grid_size_x = 10, grid_size_y = 10, grid_size_z = 10;
+    const unsigned int grid_size_x = static_cast<unsigned int>(ceilf(get_volume_size_x() / kernelSize));
+    const unsigned int grid_size_y = static_cast<unsigned int>(ceilf(get_volume_size_y() / kernelSize));;
+    const unsigned int grid_size_z = static_cast<unsigned int>(ceilf(get_volume_size_z() / kernelSize));;
+
     const unsigned int grid_cell_count = grid_size_x * grid_size_y * grid_size_z;
 
+    std::cout << "Grid size [x=" << grid_size_x << " y=" << grid_size_y << " z=" << grid_size_z <<
+    "], total cells = " << grid_cell_count << "\n";
+
     std::vector<clVoxelCell> voxel_grid_cells(grid_cell_count);
+
+    clVoxelCell &cell = voxel_grid_cells[0];
+    clParticle &p = cell.particles[3];
+
+    // Just to check that all voxel cell particles are initialized to zero
+    std::cout << print_clParticle(p);
 
     cl_voxel_grid = clCreateBuffer(context,
                                    CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
