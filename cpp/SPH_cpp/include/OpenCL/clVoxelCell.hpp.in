@@ -6,4 +6,5 @@
 
 struct clVoxelCell {
     clParticle particles[VOXEL_CELL_PARTICLE_COUNT];
+    cl_int particle_count;
 };

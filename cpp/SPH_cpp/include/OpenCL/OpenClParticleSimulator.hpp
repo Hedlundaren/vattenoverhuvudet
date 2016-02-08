@@ -16,6 +16,8 @@
 #endif
 
 #include <vector>
+#include <iostream>
+#include <string>
 
 class OpenClParticleSimulator : public ParticleSimulator {
 public:
@@ -39,6 +41,7 @@ private:
 
     cl_mem cl_voxel_grid;
 
+    // These numbers include the pad voxels
     cl_int3 cl_voxel_grid_cell_count;
 
     cl_mem cl_voxel_grid_cells_particle_counter;
@@ -58,8 +61,6 @@ private:
     cl_mem cl_dt_obj;
 
     cl_mem cl_utility_particle_counter;
-
-    std::vector<cl_int> voxel_grid_cells_particle_counters_zeroes;
 
     void initOpenCL();
 
