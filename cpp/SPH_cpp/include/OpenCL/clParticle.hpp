@@ -16,6 +16,12 @@
 /// C++ representation of the OpenCL struct Particle.
 /// Meant for initializing Particles and sending to GPU.
 struct clParticle {
+    clParticle() : density(0), color_field(0) {
+        position = {0};
+        velocity = {0};
+        force = {0};
+    }
+
     cl_float3 position;
     cl_float3 velocity;
 

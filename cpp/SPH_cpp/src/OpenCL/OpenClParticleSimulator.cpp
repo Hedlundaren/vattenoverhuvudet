@@ -2,12 +2,13 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "OpenCL/opencl_context_info.hpp"
 
 #include "common/FileReader.hpp"
 
-#include "common/tic_toc.hpp"
+#include "OpenCL/clVoxelCell.hpp"
 
 void Exit() {
     std::exit(1);
@@ -15,6 +16,56 @@ void Exit() {
 
 OpenClParticleSimulator::~OpenClParticleSimulator() {
 
+}
+
+void OpenClParticleSimulator::setupSharedBuffers(const GLuint &vbo_positions, const GLuint &vbo_velocities) {
+    cl_int error;
+
+    // R/W buffers
+    cl_positions = clCreateFromGLBuffer(context, CL_MEM_READ_WRITE, vbo_positions, &error);
+    CheckError(error);
+    error = clRetainMemObject(cl_positions);
+    CheckError(error);
+    cl_velocities = clCreateFromGLBuffer(context, CL_MEM_READ_WRITE, vbo_velocities, &error);
+    CheckError(error);
+    error = clRetainMemObject(cl_velocities);
+    CheckError(error);
+
+    // R buffers
+    cl_positions_readonly = clCreateFromGLBuffer(context, CL_MEM_READ_ONLY, vbo_positions, &error);
+    CheckError(error);
+    error = clRetainMemObject(cl_positions_readonly);
+    CheckError(error);
+    cl_velocities_readonly = clCreateFromGLBuffer(context, CL_MEM_READ_ONLY, vbo_velocities, &error);
+    CheckError(error);
+    error = clRetainMemObject(cl_velocities_readonly);
+    CheckError(error);
+
+    // W buffers
+    cl_positions_writeonly = clCreateFromGLBuffer(context, CL_MEM_WRITE_ONLY, vbo_positions, &error);
+    CheckError(error);
+    error = clRetainMemObject(cl_positions_writeonly);
+    CheckError(error);
+    cl_velocities_writeonly = clCreateFromGLBuffer(context, CL_MEM_WRITE_ONLY, vbo_velocities, &error);
+    CheckError(error);
+    error = clRetainMemObject(cl_velocities_writeonly);
+    CheckError(error);
+}
+
+void OpenClParticleSimulator::allocateVoxelGridBuffer() {
+    cl_int error = CL_SUCCESS;
+
+    const unsigned int grid_size_x = 10, grid_size_y = 10, grid_size_z = 10;
+    const unsigned int grid_cell_count = grid_size_x * grid_size_y * grid_size_z;
+
+    std::vector<clVoxelCell> voxel_grid_cells(grid_cell_count);
+
+    cl_voxel_grid = clCreateBuffer(context,
+                                   CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+                                   grid_cell_count * sizeof(clVoxelCell),
+                                   (void *) voxel_grid_cells.data(),
+                                   &error);
+    CheckError(error);
 }
 
 void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &particle_positions,
@@ -28,24 +79,16 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
 //    GLuint vbo_vel = vbo_velocities;
 
     // Here we can use OpenCL functionality
-    cl_int error;
+    cl_int error = CL_SUCCESS;
 
-    cl_positions = clCreateFromGLBuffer(context, CL_MEM_READ_WRITE, vbo_positions, &error);
-    CheckError(error);
-    error = clRetainMemObject(cl_positions);
-    CheckError(error);
-    cl_velocities = clCreateFromGLBuffer(context, CL_MEM_READ_WRITE, vbo_velocities, &error);
-    CheckError(error);
-    error = clRetainMemObject(cl_velocities);
-    CheckError(error);
+    setupSharedBuffers(vbo_positions, vbo_velocities);
 
-    // todo is this needed?
-    //cl_positions_buffer = gcl_gl_create_ptr_from_buffer(vbo_positions);
-    //cl_velocities_buffer = gcl_gl_create_ptr_from_buffer(vbo_velocities);
+    allocateVoxelGridBuffer();
 
     n_particles = particle_positions.size();
 
-    auto kernel_str = FileReader::ReadFromFile("../kernels/update_particle_positions.cl");
+    //auto kernel_str = FileReader::ReadFromFile("../kernels/update_particle_positions.cl");
+    auto kernel_str = FileReader::ReadFromFile("../kernels/populate_voxel_grid.cl");
     const char *kernel_cstr = kernel_str.c_str();
     size_t kernel_str_size = std::strlen(kernel_str.c_str());
     std::cout << kernel_str << "\n" << "kernel program length = " << kernel_str_size << "\n";
@@ -72,7 +115,8 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
 
     CheckError(error);
 
-    kernel = clCreateKernel(program, "taskParallelIntegrateVelocity", &error);
+    //kernel = clCreateKernel(program, "taskParallelIntegrateVelocity", &error);
+    kernel = clCreateKernel(program, "populate_voxel_grid", &error);
     CheckError(error);
 
     //cl_dt_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(float), NULL, &error);

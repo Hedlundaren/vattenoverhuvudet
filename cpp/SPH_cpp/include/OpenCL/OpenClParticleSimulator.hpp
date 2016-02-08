@@ -35,6 +35,12 @@ private:
 
     cl_mem cl_positions, cl_velocities;
 
+    cl_mem cl_positions_readonly, cl_velocities_readonly;
+
+    cl_mem cl_positions_writeonly, cl_velocities_writeonly;
+
+    cl_mem cl_voxel_grid;
+
     std::vector<cl_platform_id> platformIds;
 
     std::vector<cl_device_id> deviceIds;
@@ -50,4 +56,8 @@ private:
     cl_mem cl_dt_obj;
 
     void initOpenCL();
+
+    void setupSharedBuffers(const GLuint &vbo_positions, const GLuint &vbo_velocities);
+
+    void allocateVoxelGridBuffer();
 };
