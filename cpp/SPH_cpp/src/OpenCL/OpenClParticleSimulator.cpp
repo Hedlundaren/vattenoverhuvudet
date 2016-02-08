@@ -15,7 +15,7 @@ void Exit() {
 }
 
 OpenClParticleSimulator::~OpenClParticleSimulator() {
-
+    // TODO clean up allocated space on the GPU
 }
 
 void OpenClParticleSimulator::setupSharedBuffers(const GLuint &vbo_positions, const GLuint &vbo_velocities) {
@@ -75,20 +75,16 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
     initOpenCL();
     std::cout << "\nOpenCL ready to use: context created.\n\n";
 
-//    GLuint vbo_pos = vbo_positions;
-//    GLuint vbo_vel = vbo_velocities;
-
     // Here we can use OpenCL functionality
     cl_int error = CL_SUCCESS;
 
     setupSharedBuffers(vbo_positions, vbo_velocities);
-
     allocateVoxelGridBuffer();
 
     n_particles = particle_positions.size();
 
-    //auto kernel_str = FileReader::ReadFromFile("../kernels/update_particle_positions.cl");
-    auto kernel_str = FileReader::ReadFromFile("../kernels/populate_voxel_grid.cl");
+    auto kernel_str = FileReader::ReadFromFile("../kernels/update_particle_positions.cl");
+    //auto kernel_str = FileReader::ReadFromFile("../kernels/populate_voxel_grid.cl");
     const char *kernel_cstr = kernel_str.c_str();
     size_t kernel_str_size = std::strlen(kernel_str.c_str());
     std::cout << kernel_str << "\n" << "kernel program length = " << kernel_str_size << "\n";
@@ -115,8 +111,8 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
 
     CheckError(error);
 
-    //kernel = clCreateKernel(program, "taskParallelIntegrateVelocity", &error);
-    kernel = clCreateKernel(program, "populate_voxel_grid", &error);
+    kernel = clCreateKernel(program, "taskParallelIntegrateVelocity", &error);
+    //kernel = clCreateKernel(program, "populate_voxel_grid", &error);
     CheckError(error);
 
     //cl_dt_obj = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(float), NULL, &error);
@@ -124,47 +120,19 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
 }
 
 void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
-    //tic();
-
-    // Set kernel arguments
-    cl_int error;
-
-    //error = clEnqueueWriteBuffer(command_queue, cl_dt_obj, CL_TRUE, 0, sizeof(float), &dt_seconds, 0, NULL, NULL);
-    //CheckError(error);
-
+    // Make sure all OpenGL commands will run before enqueueing OpenCL kernels
     glFlush();
 
-    error = clEnqueueAcquireGLObjects(command_queue, 1, &cl_positions, 0, NULL, NULL);
-    CheckError(error);
-    error = clEnqueueAcquireGLObjects(command_queue, 1, &cl_velocities, 0, NULL, NULL);
-    CheckError(error);
+    std::vector<cl_event> events;
 
-    // error = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *) &cl_dt_obj);
-    // CheckError(error);
-    error = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *) &cl_positions);
-    CheckError(error);
-    error = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *) &cl_velocities);
-    CheckError(error);
-    error = clSetKernelArg(kernel, 2, sizeof(float), (void *) &dt_seconds);
-    CheckError(error);
+    runSimpleIntegratePositionsKernel(dt_seconds, events);
 
-    cl_event event;
+//    runPopulateVoxelGridKernel(events);
+//    runCalculateParticleDensitiesKernel(events);
+//    runCalculateParticleForcesAndIntegrateStatesKernel(events);
+//    runCopyParticlesToOpenGlBufferKernel(events);
 
-    error = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, (const size_t *) &n_particles, NULL, 0, 0, 0);
-    //error = clEnqueueTask(command_queue, kernel, 0, NULL, event);
-    CheckError(error);
-
-    error = clEnqueueReleaseGLObjects(command_queue, 1, &cl_positions, 0, NULL, NULL);
-    CheckError(error);
-    error = clEnqueueReleaseGLObjects(command_queue, 1, &cl_velocities, 0, NULL, &event);
-    CheckError(error);
-
-    //error = clFlush(command_queue);
-    //CheckError(error);
-
-    clWaitForEvents(1, &event);
-
-    //toc();
+    clWaitForEvents(events.size(), (const cl_event *) events.data());
 }
 
 void OpenClParticleSimulator::initOpenCL() {
@@ -286,4 +254,53 @@ void OpenClParticleSimulator::initOpenCL() {
     }
 
     std::cout << (cgl_context_sharing_supported ? "CL-GL sharing supported" : "CL-GL sharing NOT supported") << "\n";
+}
+
+/* Processing steps */
+
+void OpenClParticleSimulator::runPopulateVoxelGridKernel(float dt_seconds, std::vector<cl_event> &events) {
+
+}
+
+void OpenClParticleSimulator::runCalculateParticleDensitiesKernel(float dt_seconds, std::vector<cl_event> &events) {
+
+}
+
+void OpenClParticleSimulator::runCalculateParticleForcesAndIntegrateStatesKernel(float dt_seconds, std::vector<cl_event> &events) {
+
+}
+
+void OpenClParticleSimulator::runCopyParticlesToOpenGlBufferKernel(float dt_seconds, std::vector<cl_event> &events) {
+
+}
+
+/* Simple integrate positions kernel */
+void OpenClParticleSimulator::runSimpleIntegratePositionsKernel(float dt_seconds, std::vector<cl_event> &events) {
+    cl_int error = CL_SUCCESS;
+    cl_event event;
+
+    error = clEnqueueAcquireGLObjects(command_queue, 1, &cl_positions, 0, NULL, NULL);
+    CheckError(error);
+    error = clEnqueueAcquireGLObjects(command_queue, 1, &cl_velocities, 0, NULL, NULL);
+    CheckError(error);
+
+    // error = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *) &cl_dt_obj);
+    // CheckError(error);
+    error = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *) &cl_positions);
+    CheckError(error);
+    error = clSetKernelArg(kernel, 1, sizeof(cl_mem), (void *) &cl_velocities);
+    CheckError(error);
+    error = clSetKernelArg(kernel, 2, sizeof(float), (void *) &dt_seconds);
+    CheckError(error);
+
+    error = clEnqueueNDRangeKernel(command_queue, kernel, 1, NULL, (const size_t *) &n_particles, NULL, 0, 0, 0);
+    //error = clEnqueueTask(command_queue, kernel, 0, NULL, event);
+    CheckError(error);
+
+    error = clEnqueueReleaseGLObjects(command_queue, 1, &cl_positions, 0, NULL, NULL);
+    CheckError(error);
+    error = clEnqueueReleaseGLObjects(command_queue, 1, &cl_velocities, 0, NULL, &event);
+    CheckError(error);
+
+    events.push_back(event);
 }

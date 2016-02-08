@@ -60,4 +60,18 @@ private:
     void setupSharedBuffers(const GLuint &vbo_positions, const GLuint &vbo_velocities);
 
     void allocateVoxelGridBuffer();
+
+    /* Kernels */
+
+    /// A simple, stand-alone kernel that integrates the positions based on the velocities
+    /// Is not a part of the fluid simulation processing chain
+    void runSimpleIntegratePositionsKernel(float dt_seconds, std::vector<cl_event> &events);
+
+    void runPopulateVoxelGridKernel(float dt_seconds, std::vector<cl_event> &events);
+
+    void runCalculateParticleDensitiesKernel(float dt_seconds, std::vector<cl_event> &events);
+
+    void runCalculateParticleForcesAndIntegrateStatesKernel(float dt_seconds, std::vector<cl_event> &events);
+
+    void runCopyParticlesToOpenGlBufferKernel(float dt_seconds, std::vector<cl_event> &events);
 };
