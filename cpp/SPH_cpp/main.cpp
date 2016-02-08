@@ -42,7 +42,7 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glDepthFunc(GL_GREATER);
-
+    
     //Generate rotator
     MouseRotator rotator;
     rotator.init(window);
@@ -73,7 +73,7 @@ int main() {
 
 
     //Generate particles
-    const int n_particles = 200;
+    const int n_particles = 300;
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
 

@@ -164,12 +164,12 @@ void OpenClParticleSimulator::initOpenCL() {
 
     cl_int error = CL_SUCCESS;
 
-#ifdef linux
+#ifdef __linux__
 #define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
     cl_context_properties properties[] = {
-        CL_GL_CONTEXT_KHR, (cl_context_properties) glXGetCurrentContext(),
-        CL_GLX_DISPLAY_KHR, (cl_context_properties) glXGetCurrentDisplay(),
-        CL_CONTEXT_PLATFORM, (cl_context_properties) platform,
+        //CL_GL_CONTEXT_KHR, (cl_context_properties) glXGetCurrentContext(),
+        //CL_GLX_DISPLAY_KHR, (cl_context_properties) glXGetCurrentDisplay(),
+        //CL_CONTEXT_PLATFORM, (cl_context_properties) platform,
         0
     };
 #elif defined _WIN32

@@ -19,12 +19,12 @@ namespace Parameters {
     constexpr float sigma = 0.0072f;
     constexpr float nThreshold = 0.02f;
     const glm::vec3 gravity(0.0f, -9.82f, 0.0f);
-    constexpr float leftBound = -0.9f;
-    constexpr float rightBound = 0.9f;
-    constexpr float bottomBound = -0.9f;
-    constexpr float topBound = 0.9f;
-    constexpr float nearBound = -0.9f;
-    constexpr float farBound = 0.9f;
+    constexpr float leftBound = -1.9f;
+    constexpr float rightBound = 1.9f;
+    constexpr float bottomBound = -1.5f;
+    constexpr float topBound = 1.9f;
+    constexpr float nearBound = -1.9f;
+    constexpr float farBound = 1.9f;
     constexpr float wallDamper = 1.0f;
 
     inline float get_max_volume_side() {
