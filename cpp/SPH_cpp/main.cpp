@@ -42,10 +42,12 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glDepthFunc(GL_GREATER);
-    
+
     //Generate rotator
     MouseRotator rotator;
     rotator.init(window);
+    KeyTranslator trans;
+    trans.init(window);
 
     //Set the GLFW-context the current window
     glfwMakeContextCurrent(window);
@@ -73,7 +75,7 @@ int main() {
 
 
     //Generate particles
-    const int n_particles = 300;
+    const int n_particles = 200;
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
 
@@ -149,8 +151,11 @@ int main() {
         //printf("phi = %6.2f, theta = %6.2f\n", rotator.phi, rotator.theta);
         glm::mat4 VRotX = glm::rotate(M, rotator.phi, glm::vec3(0.0f, 1.0f, 0.0f)); //Rotation about y-axis
         glm::mat4 VRotY = glm::rotate(M, rotator.theta, glm::vec3(1.0f, 0.0f, 0.0f)); //Rotation about x-axis
+        //Get key input
+        trans.poll(window);
+        glm::mat4 VTrans = glm::translate(M, glm::vec3(trans.horizontal, 0.0f, trans.zoom));
 
-        glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
+        glm::vec4 eye_position = VRotX * VRotY * VTrans * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
 
         glm::mat4 V = glm::lookAt(glm::vec3(eye_position), scene_center,
                                   glm::vec3(0.0f, 1.0f, 0.0f));
