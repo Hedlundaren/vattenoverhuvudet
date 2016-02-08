@@ -1,0 +1,41 @@
+/* Struct containing a fluid particle
+Total memory size = 12 + 12 + 4 + 12 + 4 = 44 bytes */
+typedef struct __attribute__ ((packed)) {
+    float3 position;    // 12 bytes
+    float3 velocity;    // 12 bytes
+
+    float density;      // 4 bytes
+
+    float3 force;       // 12 bytes
+    float color_field;  // 4 bytes
+} Particle;
+
+typedef struct __attribute__ ((packed)) {
+    uint particle_counter;
+    Particle particles[4];
+} VoxelCell;
+
+__kernel void move_particles_to_ogl(__global VoxelCell *voxel_grid_cells,
+							   const int3 voxel_grid_cell_count,
+							   __global float3 *out_positions,
+							   __global float3 *out_velocities,
+							   __global uint *out_particle_counter) {
+	const int ix = get_global_id(0);
+	const int iy = get_global_id(1);
+	const int iz = get_global_id(2);
+	const int voxel_cell_index = ix + iy * voxel_grid_cell_count.x + iz * voxel_grid_cell_count.x * voxel_grid_cell_count.y;
+
+	const uint particle_count = voxel_grid_cells[voxel_cell_index].particle_counter;
+
+	// Increment the global particle counter with how many were stored in this voxel, returning the old particle count
+	const uint i_particle_write = atomic_add(out_particle_counter, particle_count);
+
+	// Write this voxel's particles' positions and velocities at the old particle count (i.e. first available index)
+	for (uint i_particle = 0; i_particle < particle_count; ++i_particle) {
+		out_positions[i_particle_write + i_particle] = voxel_grid_cells[voxel_cell_index].particles[i_particle].position + (float3)(1.0f, 1.0f, 1.0f);
+		out_velocities[i_particle_write + i_particle] = voxel_grid_cells[voxel_cell_index].particles[i_particle].velocity;
+	}
+
+	// Finally, reset this voxel's particle counter to zero to setup for next iteration
+	voxel_grid_cells[voxel_cell_index].particle_counter = 0;
+}

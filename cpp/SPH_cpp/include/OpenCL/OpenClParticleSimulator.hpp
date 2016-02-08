@@ -55,6 +55,8 @@ private:
 
     cl_mem cl_dt_obj;
 
+    cl_mem cl_utility_particle_counter;
+
     void initOpenCL();
 
     void setupSharedBuffers(const GLuint &vbo_positions, const GLuint &vbo_velocities);
@@ -83,7 +85,7 @@ private:
 
     cl_kernel calculate_particle_forces_integrate = NULL;
 
-    void runCopyParticlesToOpenGlBufferKernel(float dt_seconds, std::vector<cl_event> &events);
+    void runMoveParticlesToOpenGlBufferKernel(float dt_seconds, std::vector<cl_event> &events);
 
-    cl_kernel copy_particles_to_ogl = NULL;
+    cl_kernel move_particles_to_ogl = NULL;
 };

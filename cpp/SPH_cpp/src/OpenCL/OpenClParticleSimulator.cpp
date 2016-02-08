@@ -11,6 +11,8 @@
 #include "OpenCL/clVoxelCell.hpp"
 #include "Parameters.h"
 
+#include "common/tic_toc.hpp"
+
 void Exit() {
     std::exit(1);
 }
@@ -88,6 +90,10 @@ void OpenClParticleSimulator::setupSharedBuffers(const GLuint &vbo_positions, co
     CheckError(error);
     error = clRetainMemObject(cl_velocities_writeonly);
     CheckError(error);
+
+    // Particle counter
+    cl_utility_particle_counter = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_uint), nullptr, &error);
+    CheckError(error);
 }
 
 void OpenClParticleSimulator::allocateVoxelGridBuffer() {
@@ -140,6 +146,7 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
 
     createAndBuildKernel(simple_integration, "taskParallelIntegrateVelocity", "update_particle_positions.cl");
     createAndBuildKernel(populate_voxel_grid, "populate_voxel_grid", "populate_voxel_grid.cl");
+    createAndBuildKernel(move_particles_to_ogl, "move_particles_to_ogl", "move_particles_to_ogl.cl");
 }
 
 void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
@@ -150,12 +157,14 @@ void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
 
     runSimpleIntegratePositionsKernel(dt_seconds, events);
 
+    tic();
     runPopulateVoxelGridKernel(dt_seconds, events);
 //    runCalculateParticleDensitiesKernel(dt_seconds, events);
 //    runCalculateParticleForcesAndIntegrateStatesKernel(dt_seconds, events);
-//    runCopyParticlesToOpenGlBufferKernel(dt_seconds, events);
+    runMoveParticlesToOpenGlBufferKernel(dt_seconds, events);
 
     clWaitForEvents(events.size(), (const cl_event *) events.data());
+    toc();
 }
 
 void OpenClParticleSimulator::initOpenCL() {
@@ -311,7 +320,7 @@ void OpenClParticleSimulator::runPopulateVoxelGridKernel(float dt_seconds, std::
     global_work_sizes[1] = static_cast<size_t>(cl_voxel_grid_cell_count.s[1]);
     global_work_sizes[2] = static_cast<size_t>(cl_voxel_grid_cell_count.s[2]);
 
-    error = clEnqueueNDRangeKernel(command_queue, simple_integration, 3, NULL, (const size_t *) &global_work_sizes,
+    error = clEnqueueNDRangeKernel(command_queue, populate_voxel_grid, 3, NULL, (const size_t *) &global_work_sizes,
                                    NULL, 0, 0, 0);
     CheckError(error);
 
@@ -332,8 +341,47 @@ void OpenClParticleSimulator::runCalculateParticleForcesAndIntegrateStatesKernel
 
 }
 
-void OpenClParticleSimulator::runCopyParticlesToOpenGlBufferKernel(float dt_seconds, std::vector<cl_event> &events) {
+void OpenClParticleSimulator::runMoveParticlesToOpenGlBufferKernel(float dt_seconds, std::vector<cl_event> &events) {
+    cl_int error = CL_SUCCESS;
+    cl_event event;
 
+    error = clEnqueueAcquireGLObjects(command_queue, 1, &cl_positions_writeonly, 0, NULL, NULL);
+    CheckError(error);
+    error = clEnqueueAcquireGLObjects(command_queue, 1, &cl_velocities_writeonly, 0, NULL, NULL);
+    CheckError(error);
+
+    // Reset the particle counter to zero
+    const cl_uint zero = 0;
+    error = clEnqueueWriteBuffer(command_queue, cl_utility_particle_counter, CL_TRUE, 0, sizeof(cl_uint), (const void *) &zero, 0, nullptr, nullptr);
+    CheckError(error);
+
+    error = clSetKernelArg(move_particles_to_ogl, 0, sizeof(cl_mem), (void *) &cl_voxel_grid);
+    CheckError(error);
+    error = clSetKernelArg(move_particles_to_ogl, 1, sizeof(cl_int3), (void *) &cl_voxel_grid_cell_count);
+    CheckError(error);
+    error = clSetKernelArg(move_particles_to_ogl, 2, sizeof(cl_mem), (void *) &cl_positions_writeonly);
+    CheckError(error);
+    error = clSetKernelArg(move_particles_to_ogl, 3, sizeof(cl_mem), (void *) &cl_velocities_writeonly);
+    CheckError(error);
+    error = clSetKernelArg(move_particles_to_ogl, 4, sizeof(cl_mem), (void *) &cl_utility_particle_counter);
+    CheckError(error);
+
+    size_t global_work_sizes[3];
+    global_work_sizes[0] = static_cast<size_t>(cl_voxel_grid_cell_count.s[0]);
+    global_work_sizes[1] = static_cast<size_t>(cl_voxel_grid_cell_count.s[1]);
+    global_work_sizes[2] = static_cast<size_t>(cl_voxel_grid_cell_count.s[2]);
+
+    error = clEnqueueNDRangeKernel(command_queue, move_particles_to_ogl, 3, NULL, (const size_t *) &global_work_sizes,
+                                   NULL, 0, 0, 0);
+
+    CheckError(error);
+
+    error = clEnqueueReleaseGLObjects(command_queue, 1, &cl_positions_writeonly, 0, NULL, NULL);
+    CheckError(error);
+    error = clEnqueueReleaseGLObjects(command_queue, 1, &cl_velocities_writeonly, 0, NULL, &event);
+    CheckError(error);
+
+    events.push_back(event);
 }
 
 /* Simple integrate positions kernel */
@@ -346,8 +394,6 @@ void OpenClParticleSimulator::runSimpleIntegratePositionsKernel(float dt_seconds
     error = clEnqueueAcquireGLObjects(command_queue, 1, &cl_velocities, 0, NULL, NULL);
     CheckError(error);
 
-    // error = clSetKernelArg(kernel, 0, sizeof(cl_mem), (void *) &cl_dt_obj);
-    // CheckError(error);
     error = clSetKernelArg(simple_integration, 0, sizeof(cl_mem), (void *) &cl_positions);
     CheckError(error);
     error = clSetKernelArg(simple_integration, 1, sizeof(cl_mem), (void *) &cl_velocities);
