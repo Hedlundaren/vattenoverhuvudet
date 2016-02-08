@@ -33,6 +33,11 @@ set(PROJECT_KERNELS_DIR ${PROJECT_SOURCE_DIR}/kernels)
 set(PROJECT_CPP_DIR ${PROJECT_SOURCE_DIR}/src)
 set(PROJECT_EXT_DIR ${PROJECT_SOURCE_DIR}/external)
 
+# Configuration of OpenCL simulation parameters
+set(VOXEL_CELL_PARTICLE_COUNT 4)
+configure_file(${PROJECT_INCLUDE_DIR}/OpenCL/clVoxelCell.hpp.in ${PROJECT_INCLUDE_DIR}/OpenCL/clVoxelCell.hpp @ONLY)
+configure_file(${PROJECT_KERNELS_DIR}/populate_voxel_grid.cl.in ${PROJECT_KERNELS_DIR}/populate_voxel_grid.cl @ONLY)
+
 ##########################
 ### External libraries ###
 ##########################

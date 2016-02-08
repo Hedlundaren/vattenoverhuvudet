@@ -12,7 +12,7 @@ typedef struct __attribute__ ((packed)) {
 
 typedef struct __attribute__ ((packed)) {
     uint particle_counter;
-    Particle particles[4];
+    Particle particles[@VOXEL_CELL_PARTICLE_COUNT@];
 } VoxelCell;
 
  // the corner-most cell is voxel_grid_cells[x=0][y=0][z=0]
