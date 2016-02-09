@@ -23,6 +23,7 @@ typedef struct __attribute__ ((packed)) def_VoxelGridInfo {
 	uint max_cell_particle_count;
 } VoxelGridInfo;
 
+// Calculate the voxel cell indices (x/y/z) representing the cell that contains the supplied position
 uint3 calculate_voxel_cell_indices(const float3 position, const VoxelGridInfo grid_info) {
 	// todo investigate if ceil, floor or round should be used
 	return clamp(convert_uint3(ceil((position - grid_info.grid_origin) / grid_info.grid_cell_size)), 
@@ -31,6 +32,7 @@ uint3 calculate_voxel_cell_indices(const float3 position, const VoxelGridInfo gr
 	);
 }
 
+// Calculate the 1D-mapped voxel cell index for the given 3D voxel cell indices (x/y/z)
 uint calculate_voxel_cell_index(const uint3 voxel_cell_indices, const VoxelGridInfo grid_info) {
 	return voxel_cell_indices.x + grid_info.grid_dimensions.x * (voxel_cell_indices.y + grid_info.grid_dimensions.y * voxel_cell_indices.z);
 }
@@ -41,11 +43,13 @@ __kernel void calculate_voxel_grid(__global const float3 *positions, // The posi
 								   const VoxelGridInfo grid_info) { 
 	const uint particle_id = get_global_id(0);
 
-	const uint3 voxel_cell_indices = calculate_voxel_cell_indices(position[particle_id], grid_info);
+	const uint3 voxel_cell_indices = calculate_voxel_cell_indices(positions[particle_id], grid_info);
 	const uint voxel_cell_index = calculate_voxel_cell_index(voxel_cell_indices, grid_info);
 
+	const uint voxel_cell_index_clamped = clamp(voxel_cell_index, (uint)(0), (grid_info.total_grid_cells - 1));
+
 	// todo This should be able to be commented out
-	if (voxel_cell_index != clamp(voxel_cell_index, 0, (grid_info.total_grid_cells - 1))) {
+	if (voxel_cell_index != voxel_cell_index_clamped) {
 		return;
 	}
 
@@ -59,4 +63,9 @@ __kernel void calculate_voxel_grid(__global const float3 *positions, // The posi
 
 	// Store this particle's buffer array index in the voxel cell
 	indices[voxel_cell_index * grid_info.max_cell_particle_count + old_count] = particle_id;
+}
+
+__kernel void reset_voxel_grid(__global volatile uint *cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
+							   const VoxelGridInfo grid_info) {
+	cell_particle_count[get_global_id(0)] = 0;
 }

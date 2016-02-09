@@ -19,6 +19,8 @@
 #include <iostream>
 #include <string>
 
+#include "OpenCL/clVoxelGridInfo.hpp"
+
 class OpenClParticleSimulator : public ParticleSimulator {
 public:
     ~OpenClParticleSimulator();
@@ -35,18 +37,15 @@ private:
 
     int n_particles;
 
+    clVoxelGridInfo grid_info;
+
+    cl_mem cl_voxel_cell_particle_indices;
+
+    cl_mem cl_voxel_cell_particle_count;
+
     void *cl_positions_buffer, *cl_velocities_buffer;
 
     cl_mem cl_positions, cl_velocities;
-
-    cl_mem cl_voxel_grid;
-
-    // These numbers include the pad voxels
-    cl_int3 cl_voxel_grid_cell_count;
-
-    cl_mem cl_voxel_grid_cells_particle_counter;
-
-    unsigned int grid_cell_count;
 
     std::vector<cl_platform_id> platformIds;
 
@@ -59,8 +58,6 @@ private:
     cl_command_queue command_queue;
 
     cl_mem cl_dt_obj;
-
-    cl_mem cl_utility_particle_counter;
 
     void initOpenCL();
 
@@ -77,6 +74,10 @@ private:
     void runSimpleIntegratePositionsKernel(float dt_seconds);
 
     cl_kernel simple_integration = NULL;
+
+    void runCalculateVoxelGridKernel(float dt_seconds);
+
+    cl_kernel calculate_voxel_grid = NULL;
 
     void runPopulateVoxelGridKernel(float dt_seconds);
 

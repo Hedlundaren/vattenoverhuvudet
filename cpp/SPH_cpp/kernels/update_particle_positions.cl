@@ -15,8 +15,7 @@ __kernel void taskParallelIntegrateVelocity(__global float3* positions,
                                             const float dt) {
     const int id = get_global_id(0);
 
-    positions[id] = (float3)(0.0f, 0.0f, 0.0f);
-    //positions[id].x = positions[id].x + dt * velocities[id].x;
-    //positions[id].y = positions[id].y + dt * velocities[id].y;
-    //positions[id].z = positions[id].z + dt * velocities[id].z;
+    positions[id].x = positions[id].x + dt * velocities[id].x;
+    positions[id].y = positions[id].y + dt * velocities[id].y;
+    positions[id].z = positions[id].z + dt * velocities[id].z;
 }
