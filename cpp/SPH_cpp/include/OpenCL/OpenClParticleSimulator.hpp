@@ -79,9 +79,9 @@ private:
 
     cl_kernel calculate_voxel_grid = NULL;
 
-    void runPopulateVoxelGridKernel(float dt_seconds);
+    void runResetVoxelGridKernel();
 
-    cl_kernel populate_voxel_grid = NULL;
+    cl_kernel reset_voxel_grid = NULL;
 
     void runCalculateParticleDensitiesKernel(float dt_seconds);
 
@@ -90,8 +90,4 @@ private:
     void runCalculateParticleForcesAndIntegrateStatesKernel(float dt_seconds);
 
     cl_kernel calculate_particle_forces_integrate = NULL;
-
-    void runMoveParticlesToOpenGlBufferKernel(float dt_seconds);
-
-    cl_kernel move_particles_to_ogl = NULL;
 };

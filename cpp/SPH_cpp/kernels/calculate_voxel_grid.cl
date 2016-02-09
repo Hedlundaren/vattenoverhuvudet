@@ -24,11 +24,12 @@ typedef struct __attribute__ ((packed)) def_VoxelGridInfo {
 } VoxelGridInfo;
 
 // Calculate the voxel cell indices (x/y/z) representing the cell that contains the supplied position
-uint3 calculate_voxel_cell_indices(const float3 position, const VoxelGridInfo grid_info) {
+int3 calculate_voxel_cell_indices(const float3 position, const VoxelGridInfo grid_info) {
 	// todo investigate if ceil, floor or round should be used
-	return clamp(convert_uint3(ceil((position - grid_info.grid_origin) / grid_info.grid_cell_size)), 
-		(uint3)(0, 0, 0), // Minimum indices
-		(grid_info.grid_dimensions - (uint3)(1, 1, 1)) // Maximum indices
+	//return convert_int3(floor((position - grid_info.grid_origin) / grid_info.grid_cell_size));
+	return clamp(convert_int3(floor((position - grid_info.grid_origin) / grid_info.grid_cell_size)), 
+		(int3)(0, 0, 0), // Minimum indices
+		(int3)(grid_info.grid_dimensions - (int3)(1, 1, 1)) // Maximum indices
 	);
 }
 
@@ -43,23 +44,31 @@ __kernel void calculate_voxel_grid(__global const float3 *positions, // The posi
 								   const VoxelGridInfo grid_info) { 
 	const uint particle_id = get_global_id(0);
 
-	const uint3 voxel_cell_indices = calculate_voxel_cell_indices(positions[particle_id], grid_info);
-	const uint voxel_cell_index = calculate_voxel_cell_index(voxel_cell_indices, grid_info);
+	const int3 voxel_cell_indices = calculate_voxel_cell_indices(positions[particle_id], grid_info);
 
-	const uint voxel_cell_index_clamped = clamp(voxel_cell_index, (uint)(0), (grid_info.total_grid_cells - 1));
-
-	// todo This should be able to be commented out
-	if (voxel_cell_index != voxel_cell_index_clamped) {
+	// Make sure that the voxel indices are within the grid itself
+	/*
+	if (voxel_cell_indices.x != clamp(voxel_cell_indices.x, (int)(0), (int)(grid_info.grid_dimensions.x - (1))) || 
+		voxel_cell_indices.y != clamp(voxel_cell_indices.y, (int)(0), (int)(grid_info.grid_dimensions.y - (1))) || 
+		voxel_cell_indices.z != clamp(voxel_cell_indices.z, (int)(0), (int)(grid_info.grid_dimensions.z - (1)))) {
 		return;
-	}
+	}*/
+
+	// Safe to convert voxel cell indices to unsigned
+	const uint voxel_cell_index = calculate_voxel_cell_index(convert_uint3(voxel_cell_indices), grid_info);
+
+	// This line should not be neccessary since we've already clamped above
+	// const uint voxel_cell_index_clamped = clamp(voxel_cell_index, (uint)(0), (grid_info.total_grid_cells - 1));
 
 	// Increment the counter for this voxel cell, returning the old counter. This is used to index the voxel cell indices array
 	const uint old_count = atomic_inc(&(cell_particle_count[voxel_cell_index]));
 
-	// todo This should be able to be commented out
-	if (old_count >= grid_info.max_cell_particle_count) {
+	// Undo last operation if maximum particle count is reached
+	// todo fix this ugly anti-pattern
+	/*if (old_count >= grid_info.max_cell_particle_count) {
+		atomic_dec(&(cell_particle_count[voxel_cell_index]));
 		return;
-	}
+	}*/
 
 	// Store this particle's buffer array index in the voxel cell
 	indices[voxel_cell_index * grid_info.max_cell_particle_count + old_count] = particle_id;

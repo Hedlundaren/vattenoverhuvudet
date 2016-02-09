@@ -141,8 +141,7 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
 
     createAndBuildKernel(simple_integration, "taskParallelIntegrateVelocity", "update_particle_positions.cl");
     createAndBuildKernel(calculate_voxel_grid, "calculate_voxel_grid", "calculate_voxel_grid.cl");
-    //createAndBuildKernel(populate_voxel_grid, "populate_voxel_grid", "populate_voxel_grid.cl");
-    //createAndBuildKernel(move_particles_to_ogl, "move_particles_to_ogl", "move_particles_to_ogl.cl");
+    createAndBuildKernel(reset_voxel_grid, "reset_voxel_grid", "calculate_voxel_grid.cl");
 }
 
 void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
@@ -158,12 +157,9 @@ void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
                                       0, NULL, NULL);
     CheckError(error);
 
-    //runPopulateVoxelGridKernel(dt_seconds);
-    //runCalculateParticleDensitiesKernel(dt_seconds, events);
     runCalculateVoxelGridKernel(dt_seconds);
-    runSimpleIntegratePositionsKernel(dt_seconds);
-    //runCalculateParticleForcesAndIntegrateStatesKernel(dt_seconds, events);
-    //runMoveParticlesToOpenGlBufferKernel(dt_seconds);
+    runResetVoxelGridKernel();
+    //runSimpleIntegratePositionsKernel(dt_seconds);
 
     error = clEnqueueReleaseGLObjects(command_queue, (cl_uint) cgl_objects.size(), (const cl_mem *) cgl_objects.data(),
                                       0, NULL, &event);
@@ -297,51 +293,6 @@ void OpenClParticleSimulator::initOpenCL() {
 
 /* Processing steps */
 
-void OpenClParticleSimulator::runPopulateVoxelGridKernel(float dt_seconds) {
-    /*std::cout << ">> populate_voxel_grid\n";
-
-    cl_int error = CL_SUCCESS;
-
-    cl_float3 voxel_grid_origin_corner = Parameters::get_volume_origin_corner_cl();
-    cl_float voxel_grid_cell_dimensions = Parameters::kernelSize;
-
-    std::cout << "  voxel_grid_cell_dimensions = " << voxel_grid_cell_dimensions << "\n";
-
-    error = clSetKernelArg(populate_voxel_grid, 0, sizeof(cl_mem), (void *) &cl_voxel_grid);
-    CheckError(error);
-    error = clSetKernelArg(populate_voxel_grid, 1, sizeof(cl_float3), (void *) &voxel_grid_origin_corner);
-    CheckError(error);
-    error = clSetKernelArg(populate_voxel_grid, 2, sizeof(cl_float), (void *) &voxel_grid_cell_dimensions);
-    CheckError(error);
-    error = clSetKernelArg(populate_voxel_grid, 3, sizeof(cl_int3), (void *) &cl_voxel_grid_cell_count);
-    CheckError(error);
-    error = clSetKernelArg(populate_voxel_grid, 4, sizeof(cl_mem), (void *) &cl_positions);
-    CheckError(error);
-    error = clSetKernelArg(populate_voxel_grid, 5, sizeof(cl_mem), (void *) &cl_velocities);
-    CheckError(error);
-
-    std::cout << "  global_work_size = " << (const size_t) n_particles << "\n";
-
-    error = clEnqueueNDRangeKernel(command_queue, populate_voxel_grid, 1, NULL, (const size_t *) &n_particles, NULL, 0,
-                                   0, 0);
-    CheckError(error);
-
-    // Check if everything was correct
-    std::vector<clVoxelCell> voxel_grid_cells(grid_cell_count);
-
-    error = clEnqueueReadBuffer(command_queue, cl_voxel_grid, CL_TRUE, 0, grid_cell_count * sizeof(clVoxelCell),
-                                (void *) voxel_grid_cells.data(), 0,
-                                NULL, NULL);
-    clFlush(command_queue);
-    int count = 0;
-    std::cout << "  voxel grid cell particle count =[";
-    for (clVoxelCell cell : voxel_grid_cells) {
-        std::cout << cell.particle_count << " ";
-        count += cell.particle_count;
-    }
-    std::cout << "] total=" << count << "\n";*/
-}
-
 void OpenClParticleSimulator::runCalculateVoxelGridKernel(float dt_seconds) {
     std::cout << ">> calculate_voxel_grid\n";
 
@@ -372,10 +323,9 @@ void OpenClParticleSimulator::runCalculateVoxelGridKernel(float dt_seconds) {
 
     unsigned int total = 0;
     for (unsigned int i = 0; i < PARTICLE_COUNT; ++i) {
-        std::cout << voxel_cell_particle_count[i] << ", ";
         total += voxel_cell_particle_count[i];
     }
-    std::cout << ", total=" << total << "\n";
+    std::cout << "  voxel_cell_particle_count (count) = " << total << "\n    ";
 
     const unsigned int PARTICLE_INDICES_COUNT = grid_info.total_grid_cells * grid_info.max_cell_particle_count;
     cl_uint voxel_cell_particle_indices[PARTICLE_INDICES_COUNT];
@@ -383,16 +333,58 @@ void OpenClParticleSimulator::runCalculateVoxelGridKernel(float dt_seconds) {
                                 grid_info.total_grid_cells * grid_info.max_cell_particle_count * sizeof(cl_uint),
                                 (void *) &voxel_cell_particle_indices[0],
                                 0, NULL, NULL);
+    total = 0;
     for (unsigned int i = 0; i < PARTICLE_INDICES_COUNT; ++i) {
-        if (i % 4 == 0) {
-            std::cout << "][";
+        if (voxel_cell_particle_indices[i] != 0) {
+            total++;
         }
-        std::cout << voxel_cell_particle_indices[i] << ", ";
     }
-    std::cout << "\n";
-
+    std::cout << "  voxel_cell_particle_indices (count) = " << total << "\n    ";
     clFlush(command_queue);
-    std::cout << "Done calculating voxel grid\n";
+}
+
+void OpenClParticleSimulator::runResetVoxelGridKernel() {
+    std::cout << ">> reset_voxel_grid\n";
+
+    cl_int error = CL_SUCCESS;
+
+    error = clSetKernelArg(reset_voxel_grid, 0, sizeof(cl_mem), (void *) &cl_voxel_cell_particle_count);
+    CheckError(error);
+    error = clSetKernelArg(reset_voxel_grid, 1, sizeof(clVoxelGridInfo), (void *) &grid_info);
+    CheckError(error);
+
+    error = clEnqueueNDRangeKernel(command_queue, reset_voxel_grid, 1, NULL, (const size_t *) &grid_info.total_grid_cells, NULL,
+                                   NULL, NULL, NULL);
+    CheckError(error);
+
+    /* Read back data and check for correctness */
+
+    const unsigned int PARTICLE_COUNT = grid_info.total_grid_cells;
+    cl_uint voxel_cell_particle_count[PARTICLE_COUNT];
+    error = clEnqueueReadBuffer(command_queue, cl_voxel_cell_particle_count, CL_TRUE, 0,
+                                grid_info.total_grid_cells * sizeof(cl_uint), (void *) &voxel_cell_particle_count[0],
+                                0, NULL, NULL);
+
+    unsigned int total = 0;
+    for (unsigned int i = 0; i < PARTICLE_COUNT; ++i) {
+        total += voxel_cell_particle_count[i];
+    }
+    std::cout << "  [post-reset] voxel_cell_particle_count (count) = " << total << "\n    ";
+
+    const unsigned int PARTICLE_INDICES_COUNT = grid_info.total_grid_cells * grid_info.max_cell_particle_count;
+    cl_uint voxel_cell_particle_indices[PARTICLE_INDICES_COUNT];
+    error = clEnqueueReadBuffer(command_queue, cl_voxel_cell_particle_indices, CL_TRUE, 0,
+                                grid_info.total_grid_cells * grid_info.max_cell_particle_count * sizeof(cl_uint),
+                                (void *) &voxel_cell_particle_indices[0],
+                                0, NULL, NULL);
+    total = 0;
+    for (unsigned int i = 0; i < PARTICLE_INDICES_COUNT; ++i) {
+        if (voxel_cell_particle_indices[i] != 0) {
+            total++;
+        }
+    }
+    std::cout << "  [post-reset] voxel_cell_particle_indices (count) = " << total << "\n    ";
+    clFlush(command_queue);
 }
 
 void OpenClParticleSimulator::runCalculateParticleDensitiesKernel(float dt_seconds) {
@@ -401,46 +393,6 @@ void OpenClParticleSimulator::runCalculateParticleDensitiesKernel(float dt_secon
 
 void OpenClParticleSimulator::runCalculateParticleForcesAndIntegrateStatesKernel(float dt_seconds) {
 
-}
-
-void OpenClParticleSimulator::runMoveParticlesToOpenGlBufferKernel(float dt_seconds) {
-    /*//std::cout << ">> move_particles_to_ogl\n";
-    cl_int error = CL_SUCCESS;
-
-    // Reset the particle counter to zero
-    const cl_uint zero = 0;
-    error = clEnqueueWriteBuffer(command_queue, cl_utility_particle_counter, CL_TRUE, 0, sizeof(cl_uint),
-                                 (const void *) &zero, 0, NULL, NULL);
-    CheckError(error);
-
-    error = clSetKernelArg(move_particles_to_ogl, 0, sizeof(cl_mem), (void *) &cl_voxel_grid);
-    CheckError(error);
-    error = clSetKernelArg(move_particles_to_ogl, 1, sizeof(cl_int3), (void *) &cl_voxel_grid_cell_count);
-    CheckError(error);
-    error = clSetKernelArg(move_particles_to_ogl, 2, sizeof(cl_mem), (void *) &cl_positions);
-    CheckError(error);
-    error = clSetKernelArg(move_particles_to_ogl, 3, sizeof(cl_mem), (void *) &cl_velocities);
-    CheckError(error);
-    error = clSetKernelArg(move_particles_to_ogl, 4, sizeof(cl_mem), (void *) &cl_utility_particle_counter);
-    CheckError(error);
-
-    size_t global_work_sizes[3];
-    global_work_sizes[0] = static_cast<size_t>(cl_voxel_grid_cell_count.s[0]);
-    global_work_sizes[1] = static_cast<size_t>(cl_voxel_grid_cell_count.s[1]);
-    global_work_sizes[2] = static_cast<size_t>(cl_voxel_grid_cell_count.s[2]);
-
-    //std::cout << "  global_work_sizes = [" << global_work_sizes[0] << " " << global_work_sizes[1] << " " <<
-    //global_work_sizes[2] << "]\n";
-
-    error = clEnqueueNDRangeKernel(command_queue, move_particles_to_ogl, 3, NULL,
-                                   (const size_t *) &global_work_sizes[0], NULL, 0, 0, 0);
-
-    CheckError(error);
-
-    cl_uint particle_counter = 0;
-    clEnqueueReadBuffer(command_queue, cl_utility_particle_counter, CL_TRUE, 0, sizeof(cl_uint),
-                        (void *) &particle_counter, 0, NULL, NULL);
-    //std::cout << "  particle count = " << particle_counter << "\n";*/
 }
 
 /* Simple integrate positions kernel */
