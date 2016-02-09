@@ -312,6 +312,7 @@ void OpenClParticleSimulator::runCalculateVoxelGridKernel(float dt_seconds) {
     error = clEnqueueNDRangeKernel(command_queue, calculate_voxel_grid, 1, NULL, (const size_t *) &n_particles, NULL,
                                    NULL, NULL, NULL);
     CheckError(error);
+    clFlush(command_queue);
 
     /* Read back data and check for correctness */
 
@@ -348,14 +349,17 @@ void OpenClParticleSimulator::runResetVoxelGridKernel() {
 
     cl_int error = CL_SUCCESS;
 
-    error = clSetKernelArg(reset_voxel_grid, 0, sizeof(cl_mem), (void *) &cl_voxel_cell_particle_count);
+    error = clSetKernelArg(reset_voxel_grid, 0, sizeof(cl_mem), (void *) &cl_voxel_cell_particle_indices);
     CheckError(error);
-    error = clSetKernelArg(reset_voxel_grid, 1, sizeof(clVoxelGridInfo), (void *) &grid_info);
+    error = clSetKernelArg(reset_voxel_grid, 1, sizeof(cl_mem), (void *) &cl_voxel_cell_particle_count);
+    CheckError(error);
+    error = clSetKernelArg(reset_voxel_grid, 2, sizeof(clVoxelGridInfo), (void *) &grid_info);
     CheckError(error);
 
     error = clEnqueueNDRangeKernel(command_queue, reset_voxel_grid, 1, NULL, (const size_t *) &grid_info.total_grid_cells, NULL,
                                    NULL, NULL, NULL);
     CheckError(error);
+    clFlush(command_queue);
 
     /* Read back data and check for correctness */
 
@@ -383,7 +387,7 @@ void OpenClParticleSimulator::runResetVoxelGridKernel() {
             total++;
         }
     }
-    std::cout << "  [post-reset] voxel_cell_particle_indices (count) = " << total+1 << "\n    ";
+    std::cout << "  [post-reset] voxel_cell_particle_indices (count) = " << total << "\n    ";
     clFlush(command_queue);
 }
 

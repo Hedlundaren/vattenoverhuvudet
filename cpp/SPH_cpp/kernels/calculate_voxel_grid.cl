@@ -76,7 +76,13 @@ __kernel void calculate_voxel_grid(__global const float3 *positions, // The posi
 	indices[voxel_cell_index * grid_info.max_cell_particle_count + old_count] = particle_id;
 }
 
-__kernel void reset_voxel_grid(__global volatile uint *cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
+__kernel void reset_voxel_grid(__global volatile uint *indices, // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
+							   __global volatile uint *cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
 							   const VoxelGridInfo grid_info) {
-	cell_particle_count[get_global_id(0)] = 0;
+	const uint voxel_cell_index = get_global_id(0);
+	cell_particle_count[voxel_cell_index] = 0;
+
+	for (uint i = 0; i < grid_info.max_cell_particle_count; ++i) {
+		indices[voxel_cell_index * grid_info.max_cell_particle_count + i] = 0;
+	}
 }
