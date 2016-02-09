@@ -142,6 +142,7 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
     createAndBuildKernel(simple_integration, "taskParallelIntegrateVelocity", "update_particle_positions.cl");
     createAndBuildKernel(calculate_voxel_grid, "calculate_voxel_grid", "calculate_voxel_grid.cl");
     createAndBuildKernel(reset_voxel_grid, "reset_voxel_grid", "calculate_voxel_grid.cl");
+    createAndBuildKernel(simple_voxel_grid_move, "simple_voxel_grid_move", "simple_voxel_grid_move.cl");
 }
 
 void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
@@ -158,6 +159,7 @@ void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
     CheckError(error);
 
     runCalculateVoxelGridKernel(dt_seconds);
+    runSimpleVoxelGridMoveKernel(dt_seconds);
     runResetVoxelGridKernel();
     //runSimpleIntegratePositionsKernel(dt_seconds);
 
@@ -388,6 +390,31 @@ void OpenClParticleSimulator::runResetVoxelGridKernel() {
         }
     }
     std::cout << "  [post-reset] voxel_cell_particle_indices (count) = " << total << "\n    ";
+    clFlush(command_queue);
+}
+
+void OpenClParticleSimulator::runSimpleVoxelGridMoveKernel(float dt_seconds) {
+    std::cout << ">> simple_voxel_grid_move\n";
+
+    cl_int error = CL_SUCCESS;
+
+    error = clSetKernelArg(simple_voxel_grid_move, 0, sizeof(cl_mem), (void *) &cl_positions);
+    CheckError(error);
+    error = clSetKernelArg(simple_voxel_grid_move, 1, sizeof(cl_mem), (void *) &cl_velocities);
+    CheckError(error);
+    error = clSetKernelArg(simple_voxel_grid_move, 2, sizeof(cl_mem), (void *) &cl_voxel_cell_particle_indices);
+    CheckError(error);
+    error = clSetKernelArg(simple_voxel_grid_move, 3, sizeof(cl_mem), (void *) &cl_voxel_cell_particle_count);
+    CheckError(error);
+    error = clSetKernelArg(simple_voxel_grid_move, 4, sizeof(clVoxelGridInfo), (void *) &grid_info);
+    CheckError(error);
+    const cl_float cl_dt = dt_seconds;
+    error = clSetKernelArg(simple_voxel_grid_move, 5, sizeof(cl_float), (void *) &cl_dt);
+    CheckError(error);
+
+    error = clEnqueueNDRangeKernel(command_queue, simple_voxel_grid_move, 1, NULL, (const size_t *) &grid_info.total_grid_cells, NULL,
+                                   NULL, NULL, NULL);
+    CheckError(error);
     clFlush(command_queue);
 }
 

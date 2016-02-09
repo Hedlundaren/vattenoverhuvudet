@@ -67,10 +67,10 @@ __kernel void calculate_voxel_grid(__global const float3 *positions, // The posi
 
 	// Undo last operation if maximum particle count is reached
 	// todo fix this ugly anti-pattern
-	/*if (old_count >= grid_info.max_cell_particle_count) {
+	if (old_count >= grid_info.max_cell_particle_count) {
 		atomic_dec(&(cell_particle_count[voxel_cell_index]));
 		return;
-	}*/
+	}
 
 	// Store this particle's buffer array index in the voxel cell
 	indices[voxel_cell_index * grid_info.max_cell_particle_count + old_count] = particle_id;

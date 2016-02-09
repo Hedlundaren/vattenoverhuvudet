@@ -83,6 +83,10 @@ private:
 
     cl_kernel reset_voxel_grid = NULL;
 
+    void runSimpleVoxelGridMoveKernel(float dt_seconds);
+
+    cl_kernel simple_voxel_grid_move = NULL;
+
     void runCalculateParticleDensitiesKernel(float dt_seconds);
 
     cl_kernel calculate_particle_densities = NULL;
