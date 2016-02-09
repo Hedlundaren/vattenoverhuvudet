@@ -339,7 +339,7 @@ void OpenClParticleSimulator::runCalculateVoxelGridKernel(float dt_seconds) {
             total++;
         }
     }
-    std::cout << "  voxel_cell_particle_indices (count) = " << total << "\n    ";
+    std::cout << "  voxel_cell_particle_indices (count) = " << total+1 << "\n    ";
     clFlush(command_queue);
 }
 
@@ -383,7 +383,7 @@ void OpenClParticleSimulator::runResetVoxelGridKernel() {
             total++;
         }
     }
-    std::cout << "  [post-reset] voxel_cell_particle_indices (count) = " << total << "\n    ";
+    std::cout << "  [post-reset] voxel_cell_particle_indices (count) = " << total+1 << "\n    ";
     clFlush(command_queue);
 }
 

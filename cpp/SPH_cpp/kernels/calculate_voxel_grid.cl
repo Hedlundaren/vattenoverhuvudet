@@ -1,13 +1,15 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 
-typedef struct __attribute__ ((packed)) def_ParticleData {
+//typedef struct __attribute__ ((packed)) def_ParticleData {
+typedef struct /*__attribute__ ((packed))*/ def_ParticleData {
     float density;      // 4 bytes
 
     float3 force;       // 12 bytes
     float color_field;  // 4 bytes
 } ParticleData;
 
-typedef struct __attribute__ ((packed)) def_VoxelGridInfo {
+//typedef struct __attribute__ ((packed)) def_VoxelGridInfo {
+typedef struct /*__attribute__ ((packed))*/ def_VoxelGridInfo {
 	// How many grid cells there are in each dimension (i.e. [x=8 y=8 z=10])
 	uint3 grid_dimensions;
 
