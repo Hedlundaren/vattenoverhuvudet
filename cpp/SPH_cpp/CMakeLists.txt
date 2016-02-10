@@ -40,6 +40,7 @@ set(PROJECT_EXT_DIR ${PROJECT_SOURCE_DIR}/external)
 # Configuration of OpenCL simulation parameters
 set(VOXEL_CELL_PARTICLE_COUNT 64)
 add_definitions(-DVOXEL_CELL_PARTICLE_COUNT=${VOXEL_CELL_PARTICLE_COUNT})
+configure_file(${PROJECT_KERNELS_DIR}/configurable/simulate_fluid_particles.cl ${PROJECT_KERNELS_DIR}/simulate_fluid_particles.cl @ONLY)
 
 if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
     message(WARNING "Debug mode")

@@ -1,7 +1,5 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 
-#define MAX_CELL_PARTICLE_COUNT 16
-
 typedef struct def_VoxelGridInfo {
 	// How many grid cells there are in each dimension (i.e. [x=8 y=8 z=10])
 	uint3 grid_dimensions;
@@ -49,22 +47,22 @@ float3 get_particle_position(const uint voxel_cell_index,
 uint calculate_voxel_cell_index(const uint3 voxel_cell_indices, const VoxelGridInfo grid_info);
 
 __kernel void calculate_particle_densities(__global const float* restrict positions, // The position of each particle
-									 __global float* restrict out_densities, // The density of each particle. Is [max_cell_particle_count * total_grid_cells] long, since
-									 								// it does NOT need to match up with the particle's global positions/velocities buffers 
-								   	 __global const uint* restrict indices, // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
-								   	 __global const uint* restrict cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
-								   	 const VoxelGridInfo grid_info,
-								   	 const FluidInfo fluid_info) {
+										   __global float* restrict out_densities,   // The density of each particle. Is [max_cell_particle_count * total_grid_cells] long, since
+										 								// it does NOT need to match up with the particle's global positions/velocities buffers 
+									   	   __global const uint* restrict indices, // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
+									   	   __global const uint* restrict cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
+									   	   const VoxelGridInfo grid_info,
+									   	   const FluidInfo fluid_info) {
 	
 	const uint3 voxel_cell_indices = (uint3)(get_global_id(0), get_global_id(1), get_global_id(2));
 	const uint voxel_cell_index = calculate_voxel_cell_index(voxel_cell_indices, grid_info);
 	const uint particle_count = cell_particle_count[voxel_cell_index];
 
 	// Store the densities locally (in private kernel memory) during calculation
-	float processed_particle_densities[MAX_CELL_PARTICLE_COUNT];
+	float processed_particle_densities[@VOXEL_CELL_PARTICLE_COUNT@];
 
 	// Pre-store the positions of the particles being processed locally (in private memory)
-	float3 processed_particle_positions[MAX_CELL_PARTICLE_COUNT];
+	float3 processed_particle_positions[@VOXEL_CELL_PARTICLE_COUNT@];
 	for (uint idp = 0; idp < particle_count; ++idp) {
 		processed_particle_positions[idp] = get_particle_position(voxel_cell_index, 
 																  idp, 
