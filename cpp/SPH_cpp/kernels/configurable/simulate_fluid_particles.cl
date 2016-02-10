@@ -1,5 +1,7 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 
+#define PI 3.1415926535f
+
 typedef struct def_VoxelGridInfo {
 	// How many grid cells there are in each dimension (i.e. [x=8 y=8 z=10])
 	uint3 grid_dimensions;
@@ -130,7 +132,7 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 	for (uint idp = 0; idp < particle_count; ++idp) {
 		// The global density buffer array is simply linear with the particles in no particular order
 		// To retrieve the correct index for a particle in a particular voxel cell we have to call our special function :)
-		processed_particle_densities[get_particle_buffer_index(voxel_cell_index, idp, grid_info.max_cell_particle_count, indices)]
+		out_densities[voxel_cell_index * grid_info.max_cell_particle_count + idp]
 			= processed_particle_densities[idp];
 	}
 }
@@ -144,7 +146,13 @@ float euclidean_distance(const float3 r) {
 }
 
 float W_poly6(const float3 r, const float h) {
-	return (315.0f/(64.0f*convert_float(M_PI)*pow(h,9))) * pow((h*h - euclidean_distance2(r)), 3);
+	const float tmp = h*h - euclidean_distance2(r);
+
+	if (tmp <= 0.0f) {
+		return 0.0f;
+	}
+
+	return (315.0f/(64.0f*convert_float(PI)*pow(h,9))) * pow((tmp), 3);
 }
 
 uint calculate_voxel_cell_index(const uint3 voxel_cell_indices, const VoxelGridInfo grid_info) {

@@ -8,7 +8,6 @@
 #include "common/FileReader.hpp"
 
 #include "Parameters.h"
-#include "OpenCL/clParticleData.hpp"
 
 #include "common/tic_toc.hpp"
 
@@ -78,10 +77,17 @@ void OpenClParticleSimulator::allocateVoxelGridBuffer() {
     using namespace Parameters;
     cl_int error = CL_SUCCESS;
 
+    fluid_info.mass = Parameters::mass;
+
     /* Setup clVoxelGridInfo */
     const unsigned int grid_size_x = static_cast<unsigned int>(ceilf(get_volume_size_x() / kernelSize));
     const unsigned int grid_size_y = static_cast<unsigned int>(ceilf(get_volume_size_y() / kernelSize));;
     const unsigned int grid_size_z = static_cast<unsigned int>(ceilf(get_volume_size_z() / kernelSize));;
+
+    grid_cells_count = new size_t[3];
+    grid_cells_count[0] = grid_size_x;
+    grid_cells_count[1] = grid_size_y;
+    grid_cells_count[2] = grid_size_z;
 
     grid_info.grid_dimensions.s[0] = grid_size_x;
     grid_info.grid_dimensions.s[1] = grid_size_y;
@@ -122,6 +128,21 @@ void OpenClParticleSimulator::allocateVoxelGridBuffer() {
 
     error = clFlush(command_queue);
     CheckError(error);
+
+    /* Setup density calculation buffer */
+    std::vector<cl_float> voxel_cell_particle_densities_zeroes(
+            grid_info.max_cell_particle_count * grid_info.total_grid_cells);
+
+    cl_densities = clCreateBuffer(context, CL_MEM_READ_WRITE,
+                                  voxel_cell_particle_densities_zeroes.size() * sizeof(cl_float),
+                                  NULL, &error);
+    CheckError(error);
+    error = clEnqueueWriteBuffer(command_queue, cl_densities, CL_TRUE, 0,
+                                 voxel_cell_particle_densities_zeroes.size() * sizeof(cl_float),
+                                 (const void *) voxel_cell_particle_densities_zeroes.data(),
+                                 NULL, NULL, NULL);
+    CheckError(error);
+
 }
 
 void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &particle_positions,
@@ -145,6 +166,7 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
     createAndBuildKernel(calculate_voxel_grid, "calculate_voxel_grid", "calculate_voxel_grid.cl");
     createAndBuildKernel(reset_voxel_grid, "reset_voxel_grid", "calculate_voxel_grid.cl");
     createAndBuildKernel(simple_voxel_grid_move, "simple_voxel_grid_move", "simple_voxel_grid_move.cl");
+    createAndBuildKernel(calculate_particle_densities, "calculate_particle_densities", "simulate_fluid_particles.cl");
 }
 
 void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
@@ -164,8 +186,8 @@ void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
 
     runCalculateVoxelGridKernel(dt_seconds);
     runSimpleVoxelGridMoveKernel(dt_seconds);
+    runCalculateParticleDensitiesKernel(dt_seconds);
     runResetVoxelGridKernel();
-    //runSimpleIntegratePositionsKernel(dt_seconds);
 
     error = clEnqueueReleaseGLObjects(command_queue, (cl_uint) cgl_objects.size(), (const cl_mem *) cgl_objects.data(),
                                       0, NULL, &event);
@@ -322,7 +344,6 @@ void OpenClParticleSimulator::runCalculateVoxelGridKernel(float dt_seconds) {
     error = clEnqueueNDRangeKernel(command_queue, calculate_voxel_grid, 1, NULL, (const size_t *) &n_particles, NULL,
                                    NULL, NULL, NULL);
     CheckError(error);
-    clFlush(command_queue);
 
     /*
      * Read back data and check for correctness
@@ -432,11 +453,52 @@ void OpenClParticleSimulator::runSimpleVoxelGridMoveKernel(float dt_seconds) {
                                    (const size_t *) &grid_info.total_grid_cells, NULL,
                                    NULL, NULL, NULL);
     CheckError(error);
-    clFlush(command_queue);
 }
 
 void OpenClParticleSimulator::runCalculateParticleDensitiesKernel(float dt_seconds) {
+#ifdef MY_DEBUG
+    std::cout << ">> calculate_particle_densities\n";
+#endif
 
+    cl_int error = CL_SUCCESS;
+
+    error = clSetKernelArg(calculate_particle_densities, 0, sizeof(cl_mem), (void *) &cl_positions);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_densities, 1, sizeof(cl_mem), (void *) &cl_densities);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_densities, 2, sizeof(cl_mem), (void *) &cl_voxel_cell_particle_indices);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_densities, 3, sizeof(cl_mem), (void *) &cl_voxel_cell_particle_count);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_densities, 4, sizeof(clVoxelGridInfo), (void *) &grid_info);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_densities, 5, sizeof(clFluidInfo), (void *) &fluid_info);
+    CheckError(error);
+
+    error = clEnqueueNDRangeKernel(command_queue, calculate_particle_densities, 3, NULL,
+                                   (const size_t *) grid_cells_count, NULL,
+                                   NULL, NULL, NULL);
+    CheckError(error);
+
+#ifdef MY_DEBUG
+    const unsigned int PARTICLE_DENSITIES_COUNT = grid_info.max_cell_particle_count * grid_info.total_grid_cells;
+    cl_float particle_densities[PARTICLE_DENSITIES_COUNT];
+    error = clEnqueueReadBuffer(command_queue, cl_densities, CL_TRUE, 0,
+                                PARTICLE_DENSITIES_COUNT * sizeof(cl_float),
+                                (void *) &particle_densities[0],
+                                0, NULL, NULL);
+    CheckError(error);
+
+    for (unsigned int i = 0; i < PARTICLE_DENSITIES_COUNT; ++i) {
+        auto density = particle_densities[i];
+
+        //if (density > 0.0f) {
+            std::cout << density << ", ";
+        //}
+    }
+
+    std::cout << "\n";
+#endif
 }
 
 void OpenClParticleSimulator::runCalculateParticleForcesAndIntegrateStatesKernel(float dt_seconds) {

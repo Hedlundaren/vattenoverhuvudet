@@ -20,6 +20,7 @@
 #include <string>
 
 #include "OpenCL/clVoxelGridInfo.hpp"
+#include "OpenCL/clFluidInfo.hpp"
 
 class OpenClParticleSimulator : public ParticleSimulator {
 public:
@@ -40,6 +41,10 @@ private:
     int n_particles;
 
     clVoxelGridInfo grid_info;
+    clFluidInfo fluid_info;
+
+    // points to array of 3 size_t
+    size_t *grid_cells_count;
 
     cl_mem cl_voxel_cell_particle_indices;
 
@@ -48,6 +53,8 @@ private:
     void *cl_positions_buffer, *cl_velocities_buffer;
 
     cl_mem cl_positions, cl_velocities;
+
+    cl_mem cl_densities;
 
     std::vector<cl_platform_id> platformIds;
 
