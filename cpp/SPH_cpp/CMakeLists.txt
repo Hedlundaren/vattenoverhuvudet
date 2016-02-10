@@ -13,6 +13,7 @@ else (CMAKE_SIZEOF_VOID_P EQUAL 8)
 endif (CMAKE_SIZEOF_VOID_P EQUAL 8)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -DGL_GLEXT_PROTOTYPES")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_RELEASE} -O2")
 
 if (APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGLFW_INCLUDE_GLCOREARB")
@@ -20,6 +21,9 @@ endif (APPLE)
 
 ## Comment out this line to use C++ simulation
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENCL_SIMULATION")
+
+## Define if in debug mode or not (comment out line below to disable logging -> faster)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMY_DEBUG")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -36,9 +40,12 @@ set(PROJECT_EXT_DIR ${PROJECT_SOURCE_DIR}/external)
 # Configuration of OpenCL simulation parameters
 set(VOXEL_CELL_PARTICLE_COUNT 32)
 add_definitions(-DVOXEL_CELL_PARTICLE_COUNT=${VOXEL_CELL_PARTICLE_COUNT})
-#configure_file(${PROJECT_INCLUDE_DIR}/OpenCL/clVoxelCell.hpp.in ${PROJECT_INCLUDE_DIR}/OpenCL/clVoxelCell.hpp @ONLY)
-#configure_file(${PROJECT_KERNELS_DIR}/populate_voxel_grid.cl.in ${PROJECT_KERNELS_DIR}/populate_voxel_grid.cl @ONLY)
-#configure_file(${PROJECT_KERNELS_DIR}/move_particles_to_ogl.cl.in ${PROJECT_KERNELS_DIR}/move_particles_to_ogl.cl @ONLY)
+
+if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+    message(WARNING "Debug mode")
+elseif (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+    message(WARNING "Release mode")
+endif (CMAKE_BUILD_TYPE EQUAL "DEBUG")
 
 ##########################
 ### External libraries ###

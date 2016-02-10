@@ -19,6 +19,11 @@
 #include "OpenCL/OpenClParticleSimulator.hpp"
 #include "CppParticleSimulator.hpp"
 
+void setWindowFPS(GLFWwindow *window, float fps);
+
+std::chrono::duration<double> second_accumulator;
+unsigned int frames_last_second;
+
 int main() {
     GLFWwindow *window;
 
@@ -49,6 +54,8 @@ int main() {
 
     //Set the GLFW-context the current window
     glfwMakeContextCurrent(window);
+
+    // VSync: enable = 1, disable = 0
     glfwSwapInterval(1);
 
 #ifdef _WIN32
@@ -124,11 +131,13 @@ int main() {
     // Calculate midpoint of scene
     const glm::vec3 scene_center(-(Parameters::leftBound + Parameters::rightBound) / 2,
                                  (Parameters::bottomBound + Parameters::topBound) / 2,
-                                 - (Parameters::nearBound + Parameters::farBound) / 2);
+                                 -(Parameters::nearBound + Parameters::farBound) / 2);
     std::cout << glm::to_string(scene_center) << "\n";
     const float max_volume_side = Parameters::get_max_volume_side();
 
     std::chrono::high_resolution_clock::time_point tp_last = std::chrono::high_resolution_clock::now();
+    second_accumulator = std::chrono::duration<double>(0);
+    frames_last_second = 0;
 
     while (!glfwWindowShouldClose(window)) {
         std::chrono::high_resolution_clock::time_point tp_now = std::chrono::high_resolution_clock::now();
@@ -138,7 +147,9 @@ int main() {
         std::chrono::milliseconds dt_ms = std::chrono::duration_cast<std::chrono::milliseconds>(delta_time);
 
         const float dt_s = 1e-3 * dt_ms.count();
+#ifdef MY_DEBUG
         std::cout << "Seconds: " << dt_s << "\n";
+#endif
 
         // Update window size
         glfwGetFramebufferSize(window, &width, &height);
@@ -170,14 +181,31 @@ int main() {
         glDrawArrays(GL_POINTS, 0, n_particles);
 
         glfwSwapBuffers(window);
+        ++frames_last_second;
         glfwPollEvents();
 
         if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
             glfwSetWindowShouldClose(window, 1);
+        }
+
+        /* FPS DISPLAY HANDLING */
+        second_accumulator += delta_time;
+        if (second_accumulator.count() >= 1.0) {
+            float newFPS = static_cast<float>( frames_last_second / second_accumulator.count());
+            setWindowFPS(window, newFPS);
+            frames_last_second = 0;
+            second_accumulator = std::chrono::duration<double>(0);
         }
     }
 
     glfwDestroyWindow(window);
     glfwTerminate();
     exit(EXIT_SUCCESS);
+}
+
+void setWindowFPS(GLFWwindow *window, float fps) {
+    std::stringstream ss;
+    ss << "FPS: " << fps;
+
+    glfwSetWindowTitle(window, ss.str().c_str());
 }
