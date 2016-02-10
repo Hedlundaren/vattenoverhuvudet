@@ -51,6 +51,7 @@ int main() {
 
     //Set the GLFW-context the current window
     glfwMakeContextCurrent(window);
+    std::cout << glGetString(GL_VERSION) << "\n";
     glfwSwapInterval(1);
 
 #ifdef _WIN32
