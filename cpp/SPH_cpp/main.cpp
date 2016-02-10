@@ -56,7 +56,7 @@ int main() {
     glfwMakeContextCurrent(window);
 
     // VSync: enable = 1, disable = 0
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
 #ifdef _WIN32
     glewExperimental = GL_TRUE;
@@ -80,7 +80,10 @@ int main() {
 
 
     //Generate particles
-    const int n_particles = 5096;
+    int n = -1;
+    std::cout << "How many particles? ";
+    std::cin >> n;
+    const int n_particles = n;
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     //std::vector<glm::vec3> positions = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);

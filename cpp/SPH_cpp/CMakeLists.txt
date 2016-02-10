@@ -23,7 +23,7 @@ endif (APPLE)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENCL_SIMULATION")
 
 ## Define if in debug mode or not (comment out line below to disable logging -> faster)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMY_DEBUG")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMY_DEBUG")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
@@ -38,7 +38,7 @@ set(PROJECT_CPP_DIR ${PROJECT_SOURCE_DIR}/src)
 set(PROJECT_EXT_DIR ${PROJECT_SOURCE_DIR}/external)
 
 # Configuration of OpenCL simulation parameters
-set(VOXEL_CELL_PARTICLE_COUNT 32)
+set(VOXEL_CELL_PARTICLE_COUNT 64)
 add_definitions(-DVOXEL_CELL_PARTICLE_COUNT=${VOXEL_CELL_PARTICLE_COUNT})
 
 if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
