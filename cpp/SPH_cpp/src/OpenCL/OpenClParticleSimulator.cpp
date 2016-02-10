@@ -128,6 +128,8 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
                                               const std::vector<glm::vec3> &particle_velocities,
                                               const GLuint &vbo_positions,
                                               const GLuint &vbo_velocities) {
+    positions = particle_positions;
+
     initOpenCL();
     std::cout << "\nOpenCL ready to use: context created.\n\n";
 
@@ -302,6 +304,16 @@ void OpenClParticleSimulator::runCalculateVoxelGridKernel(float dt_seconds) {
 
     std::cout << "  " << print_clVoxelGridInfo(grid_info) << "\n";
 
+
+    ///////
+/*
+    std::vector<cl_int3> particle_voxel_indices(n_particles);
+    cl_mem particle_indices = clCreateBuffer(context, CL_MEM_WRITE_ONLY, n_particles * sizeof(cl_int3), NULL, &error);
+    error = clEnqueueWriteBuffer(command_queue, particle_indices, CL_TRUE, 0, n_particles * sizeof(cl_int3),
+                                 particle_voxel_indices.data(), 0, NULL, NULL);
+*/
+    //////
+
     error = clSetKernelArg(calculate_voxel_grid, 0, sizeof(cl_mem), (void *) &cl_positions);
     CheckError(error);
     error = clSetKernelArg(calculate_voxel_grid, 1, sizeof(cl_mem), (void *) &cl_voxel_cell_particle_indices);
@@ -310,6 +322,8 @@ void OpenClParticleSimulator::runCalculateVoxelGridKernel(float dt_seconds) {
     CheckError(error);
     error = clSetKernelArg(calculate_voxel_grid, 3, sizeof(clVoxelGridInfo), (void *) &grid_info);
     CheckError(error);
+    //error = clSetKernelArg(calculate_voxel_grid, 4, sizeof(cl_mem), (void *) &particle_indices);
+    //CheckError(error);
 
     error = clEnqueueNDRangeKernel(command_queue, calculate_voxel_grid, 1, NULL, (const size_t *) &n_particles, NULL,
                                    NULL, NULL, NULL);
@@ -342,7 +356,28 @@ void OpenClParticleSimulator::runCalculateVoxelGridKernel(float dt_seconds) {
             total++;
         }
     }
-    std::cout << "  voxel_cell_particle_indices (count) = " << total+1 << "\n    ";
+    std::cout << "  voxel_cell_particle_indices (count) = " << total + 1 << "\n    ";
+
+    /*
+    std::cout << "\n\n";
+    error = clEnqueueReadBuffer(command_queue, particle_indices, CL_TRUE, 0, n_particles * sizeof(cl_int3),
+                                &particle_voxel_indices.data()[0], 0, NULL, NULL);
+    cl_int3 true_indices;
+    for (unsigned int i = 0; i < n_particles; ++i) {
+        std::cout << "\n";
+
+        cl_int3 &r = particle_voxel_indices[i];
+        glm::vec3 &pos = positions[i];
+        true_indices.s[0] = static_cast<int>(ceilf((pos.x - grid_info.grid_origin.s[0]) / grid_info.grid_cell_size));
+        true_indices.s[1] = static_cast<int>(ceilf((pos.y - grid_info.grid_origin.s[1]) / grid_info.grid_cell_size));
+        true_indices.s[2] = static_cast<int>(ceilf((pos.z - grid_info.grid_origin.s[2]) / grid_info.grid_cell_size));
+
+        std::cout << "[" << r.s[0] << " " << r.s[1] << " " << r.s[2] << "]/[" <<
+                true_indices.s[0] << " " << true_indices.s[1] << " " << true_indices.s[2] << "], ";
+    }
+    std::cout << "\n\n";
+     */
+
     clFlush(command_queue);
 }
 
@@ -358,7 +393,8 @@ void OpenClParticleSimulator::runResetVoxelGridKernel() {
     error = clSetKernelArg(reset_voxel_grid, 2, sizeof(clVoxelGridInfo), (void *) &grid_info);
     CheckError(error);
 
-    error = clEnqueueNDRangeKernel(command_queue, reset_voxel_grid, 1, NULL, (const size_t *) &grid_info.total_grid_cells, NULL,
+    error = clEnqueueNDRangeKernel(command_queue, reset_voxel_grid, 1, NULL,
+                                   (const size_t *) &grid_info.total_grid_cells, NULL,
                                    NULL, NULL, NULL);
     CheckError(error);
     clFlush(command_queue);
@@ -412,7 +448,8 @@ void OpenClParticleSimulator::runSimpleVoxelGridMoveKernel(float dt_seconds) {
     error = clSetKernelArg(simple_voxel_grid_move, 5, sizeof(cl_float), (void *) &cl_dt);
     CheckError(error);
 
-    error = clEnqueueNDRangeKernel(command_queue, simple_voxel_grid_move, 1, NULL, (const size_t *) &grid_info.total_grid_cells, NULL,
+    error = clEnqueueNDRangeKernel(command_queue, simple_voxel_grid_move, 1, NULL,
+                                   (const size_t *) &grid_info.total_grid_cells, NULL,
                                    NULL, NULL, NULL);
     CheckError(error);
     clFlush(command_queue);

@@ -33,6 +33,8 @@ public:
     void updateSimulation(float dt_seconds);
 
 private:
+    std::vector<glm::vec3> positions;
+
     std::vector<cl_mem> cgl_objects;
 
     int n_particles;

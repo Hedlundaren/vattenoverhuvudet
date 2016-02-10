@@ -28,7 +28,7 @@ typedef struct /*__attribute__ ((packed))*/ def_VoxelGridInfo {
 // Calculate the voxel cell indices (x/y/z) representing the cell that contains the supplied position
 int3 calculate_voxel_cell_indices(const float3 position, const VoxelGridInfo grid_info) {
 	// todo investigate if ceil, floor or round should be used
-	//return convert_int3(floor((position - grid_info.grid_origin) / grid_info.grid_cell_size));
+	//return convert_int3(ceil((position - grid_info.grid_origin) / grid_info.grid_cell_size));
 	return clamp(convert_int3(floor((position - grid_info.grid_origin) / grid_info.grid_cell_size)), 
 		(int3)(0, 0, 0), // Minimum indices
 		(int3)(grid_info.grid_dimensions - (int3)(1, 1, 1)) // Maximum indices
@@ -40,14 +40,19 @@ uint calculate_voxel_cell_index(const uint3 voxel_cell_indices, const VoxelGridI
 	return voxel_cell_indices.x + grid_info.grid_dimensions.x * (voxel_cell_indices.y + grid_info.grid_dimensions.y * voxel_cell_indices.z);
 }
 
-__kernel void calculate_voxel_grid(__global const float3 *positions, // The position of each particle
+__kernel void calculate_voxel_grid(__global const float *positions, // The position of each particle
 								   __global volatile uint *indices, // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
 								   __global volatile uint *cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
-								   const VoxelGridInfo grid_info) { 
+								   const VoxelGridInfo grid_info
+){ 
 	const uint particle_id = get_global_id(0);
+	const uint particle_positions_id = 3 * particle_id;
 
-	const int3 voxel_cell_indices = calculate_voxel_cell_indices(positions[particle_id], grid_info);
+	const float3 position = (float3)(positions[particle_positions_id], 
+									 positions[particle_positions_id + 1], 
+									 positions[particle_positions_id + 2]);
 
+	const int3 voxel_cell_indices = calculate_voxel_cell_indices(position, grid_info);
 	// Make sure that the voxel indices are within the grid itself
 	/*
 	if (voxel_cell_indices.x != clamp(voxel_cell_indices.x, (int)(0), (int)(grid_info.grid_dimensions.x - (1))) || 
