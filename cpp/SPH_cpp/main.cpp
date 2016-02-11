@@ -76,9 +76,9 @@ int main() {
 
 
     //Generate particles
-    const int n_particles = 200;
-    std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
-    std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
+    const int n_particles = Parameters::n_particles;
+    std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, -0.2, 0, 1, -1, 1);
+    std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
 
     //Generate VBOs
     GLuint pos_vbo = 0;
