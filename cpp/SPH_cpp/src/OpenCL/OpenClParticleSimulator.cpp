@@ -78,6 +78,16 @@ void OpenClParticleSimulator::allocateVoxelGridBuffer() {
     cl_int error = CL_SUCCESS;
 
     fluid_info.mass = Parameters::mass;
+    fluid_info.k_gas = Parameters::gasConstantK;
+    fluid_info.k_viscosity = Parameters::viscosityConstant;
+    fluid_info.rest_density = Parameters::restDensity;
+    fluid_info.sigma = Parameters::sigma;
+    fluid_info.k_threshold = Parameters::nThreshold;
+    fluid_info.k_wall_damper = Parameters::wallDamper;
+
+    fluid_info.gravity.s[0] = Parameters::gravity.x;
+    fluid_info.gravity.s[1] = Parameters::gravity.y;
+    fluid_info.gravity.s[2] = Parameters::gravity.z;
 
     /* Setup clVoxelGridInfo */
     const unsigned int grid_size_x = static_cast<unsigned int>(ceilf(get_volume_size_x() / kernelSize));
