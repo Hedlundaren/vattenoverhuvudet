@@ -216,16 +216,14 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 	// Final calculation and storage of each processed particle
 	for (uint idp = 0; idp < particle_count; ++idp) {
 		/* See if tension force should be applied for each particle */
-		/*
-		if (norm(n) < parameters.nThreshold)
-        tensionForce = [0 0];
-	    else
-	        k = - laplacianCs / norm(n);
-	        tensionForce = parameters.sigma * k * n;
-	    end
-	    */
+		const float colorfield_grad_length = euclidean_distance2[processed_particle_colorfield_grad[idp]];
+		if (colorfield_grad_length >= pow(fluid_info.k_threshold, 2)) {
+			processed_particle_forces[idp] = processed_particle_forces[idp] - 
+				fluid_info.sigma * processed_particle_colorfield_laplacian[idp] * processed_particle_colorfield_grad[idp] / colorfield_grad_length;
+		}
 
 	    /* Apply external forces */
+	    processed_particle_forces[idp] = processed_particle_forces[idp] + fluid_info.gravity;
 
 		// The global force buffer array is simply linear with the particles in no particular order
 		// To retrieve the correct index for a particle in a particular voxel cell we have to call our special function :)
