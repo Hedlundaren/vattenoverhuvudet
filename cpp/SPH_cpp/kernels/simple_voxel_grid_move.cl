@@ -25,8 +25,21 @@ typedef struct def_VoxelGridInfo {
 	uint max_cell_particle_count;
 } VoxelGridInfo;
 
-__kernel void simple_voxel_grid_move(__global float3 *positions, // The position of each particle
-									 __global float3 *velocities, // The velocity of each particle
+// Map a particle index inside a voxel cell to its global buffer index
+uint get_particle_buffer_index(const uint voxel_cell_index, 
+							   const uint voxel_particle_index, 
+					 		   const uint max_cell_particle_count,
+					 		   __global const uint* restrict indices);
+
+// Get the position of a particle based on its cell index and particle index inside the given cell
+float3 get_particle_velocity(const uint voxel_cell_index, 
+							 const uint voxel_particle_index, 
+					 		 const uint max_cell_particle_count,
+					 		 __global const uint* restrict indices, 
+					 		 __global const float* restrict velocities);
+
+__kernel void simple_voxel_grid_move(__global float *positions, // The position of each particle
+									 __global float *velocities, // The velocity of each particle
 								   	 __global const uint *indices, // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
 								   	 __global const uint *cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
 								   	 const VoxelGridInfo grid_info,
@@ -35,30 +48,66 @@ __kernel void simple_voxel_grid_move(__global float3 *positions, // The position
 	const uint particle_count = cell_particle_count[voxel_cell_index];
 
 	for (uint i = 0; i < particle_count; ++i) {
-		const uint particle_id = indices[voxel_cell_index * grid_info.max_cell_particle_count + i];
+		const uint particle_buffer_index = 3 * get_particle_buffer_index(voxel_cell_index, 
+																	     i, 
+																	     grid_info.max_cell_particle_count, 
+																	     indices);
 
-		float3 new_position = positions[particle_id] + dt * velocities[particle_id];
-		float3 new_velocity = velocities[particle_id];
+		float3 velocity = (float3)(velocities[particle_buffer_index],
+								   velocities[particle_buffer_index + 1],
+								   velocities[particle_buffer_index + 2]);
+		float3 position = (float3)(positions[particle_buffer_index],
+						    	   positions[particle_buffer_index + 1],
+								   positions[particle_buffer_index + 2]);
+
+		position = position + dt * velocity;
 
 		// x-boundaries
-		if (new_position.x != clamp(new_position.x, -1.0f, 1.0f)) {
-			new_position.x = clamp(new_position.x, -1.0f, 1.0f);
-			new_velocity.x = - new_velocity.x;
+		if (position.x != clamp(position.x, -1.0f, 1.0f)) {
+			position.x = clamp(position.x, -1.0f, 1.0f);
+			velocity.x = - velocity.x;
 		}
 
 		// y-boundaries
-		if (new_position.y != clamp(new_position.y, -1.0f, 1.0f)) {
-			new_position.y = clamp(new_position.y, -1.0f, 1.0f);
-			new_velocity.y = - new_velocity.y;
+		if (position.y != clamp(position.y, -1.0f, 1.0f)) {
+			position.y = clamp(position.y, -1.0f, 1.0f);
+			velocity.y = - velocity.y;
 		}
 
 		// z-boundaries
-		if (new_position.z != clamp(new_position.z, -1.0f, 1.0f)) {
-			new_position.z = clamp(new_position.z, -1.0f, 1.0f);
-			new_velocity.z = - new_velocity.z;
+		if (position.z != clamp(position.z, -1.0f, 1.0f)) {
+			position.z = clamp(position.z, -1.0f, 1.0f);
+			velocity.z = - velocity.z;
 		}
 
-		positions[particle_id] = new_position;
-		velocities[particle_id] = new_velocity;
+		positions[particle_buffer_index] = position.x;
+		positions[particle_buffer_index + 1] = position.y;
+		positions[particle_buffer_index + 2] = position.z;
+		
+		velocities[particle_buffer_index] = velocity.x;
+		velocities[particle_buffer_index + 1] = velocity.y;
+		velocities[particle_buffer_index + 2] = velocity.z;
 	}
+}
+
+uint get_particle_buffer_index(const uint voxel_cell_index, 
+							   const uint voxel_particle_index, 
+					 		   const uint max_cell_particle_count,
+					 		   __global const uint* restrict indices) {
+	return indices[voxel_cell_index * max_cell_particle_count + voxel_particle_index];
+}
+
+float3 get_particle_velocity(const uint voxel_cell_index, 
+							 const uint voxel_particle_index, 
+					 		 const uint max_cell_particle_count,
+					 		 __global const uint* restrict indices, 
+					 		 __global const float* restrict velocities) {
+	const uint particle_position_index = 3 * get_particle_buffer_index(voxel_cell_index, 
+																  voxel_particle_index, 
+																  max_cell_particle_count, 
+																  indices);
+
+	return (float3)(velocities[particle_position_index], 
+					velocities[particle_position_index + 1], 
+					velocities[particle_position_index + 2]);
 }
