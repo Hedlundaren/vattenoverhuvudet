@@ -2,6 +2,7 @@ function newParticles = calculateForces( particles, parameters )
 %CALCULATEFORCES - Calculate all forces acting on the particles
 %   Calculate density, pressure force, viscosity force, tension force and
 %   external forces.
+boundryForce = [0 0];
 
 for i=1:length(particles)
     iPressure = (particles(i).density - parameters.restDensity) * parameters.gasConstantK;
@@ -49,9 +50,9 @@ for i=1:length(particles)
     
     % Add any external forces on i
     externalForce = parameters.gravity;
-    
+         
     particles(i).force = pressureForce + viscosityForce + ...
-        tensionForce + externalForce;
+        tensionForce + externalForce + boundryForce;
 end
 
 newParticles = particles;

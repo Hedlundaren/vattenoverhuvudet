@@ -8,7 +8,7 @@ FPS = 30;
 simulationTime = 20; %seconds
 frames = simulationTime * FPS;
 
-n_particles = 100;
+n_particles = 50;
 
 parameters = struct(...
     'dt', 1 / FPS, ...
@@ -24,7 +24,7 @@ parameters = struct(...
     'rightBound', 5, ...
     'bottomBound', 0, ...
     'topBound', 5, ...
-    'wallDamper', 0.6);
+    'wallDamper', 1.0);
 
 %% One Particle
 particle = struct(...
@@ -66,24 +66,25 @@ while frame <= frames
 %         particles(i+1).velocity = [7-rand*0.5 -rand];
 %         particles(i+2).velocity = [7-rand*0.5 -rand];
 %     end
-    tic
+  %  tic
     particles = calculateForcesGrid(particles, parameters);
-    toc
+   % toc
     particles = performTimestep(particles, parameters.dt);
-    particles = checkBoundaries(particles, parameters);
+    
+    % particles = checkBoundaries(particles, parameters);
     clf;
     hold on
     
     drawParticles(particles);
-
     axis([(parameters.leftBound-1) (parameters.rightBound+1) (parameters.bottomBound-1) (parameters.topBound+1)]);
     
 
     i = i + 3;
 
-   % pause(0.0001);
+   pause(0.0001);
 
     % Render figure to PNG file
-    print(['render/fluid_simulation_00' sprintf('%03d',frame)], '-dpng');
+   %print(['render/fluid_simulation_00' sprintf('%03d',frame)], '-dpng');
+   % print('render/BarPlot','-dpng');
     frame = frame + 1;
 end

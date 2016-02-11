@@ -81,9 +81,13 @@ for i=1:n_center
     % Add any external forces on i
     externalForce = parameters.gravity;
     
+    % Make boundaries give particles forces on particles
+    boundaryForce = [0 0];
+    boundaryForce = calculateBoundaryForce(centerCellParticles(i), parameters);
+    
     % Sum all forces and call it a day
     centerCellParticles(i).force = pressureForce + viscosityForce + ...
-        tensionForce + externalForce;
+        tensionForce + externalForce + boundaryForce;
 end
 
 newCenterCellParticles = centerCellParticles;
