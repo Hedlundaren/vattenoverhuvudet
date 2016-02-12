@@ -108,15 +108,22 @@ int main() {
 
 
     // Declare which shader to use and bind it
-    ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.frag",
-                                  "../shaders/particles.geom");
+    //ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.tessCont.glsl", "../shaders/particles.tessEval.glsl", "../shaders/particles.geom", "../shaders/particles.frag");
+    ShaderProgram particlesShader("../shaders/particles.vert", "", "",
+                                  "../shaders/particles.geom", "../shaders/particles.frag");
     particlesShader();
+
+    //Parameters for tessellation shaders
+    //glPatchParameteri(GL_PATCH_VERTICES, 1);  // tell OpenGL that every patch has 1 vertice
 
 
     //Declare uniform locations
-    GLint MVP_Loc = -1;
-    MVP_Loc = glGetUniformLocation(particlesShader, "MVP");
-    glm::mat4 MVP;
+    GLint MV_Loc = -1;
+    MV_Loc = glGetUniformLocation(particlesShader, "MV");
+    glm::mat4 MV;
+    GLint P_Loc = -1;
+    P_Loc = glGetUniformLocation(particlesShader, "P");
+    glm::mat4 P;
     glm::mat4 M = glm::mat4(1.0f);
 
     //Specify which pixels to draw to
@@ -156,13 +163,14 @@ int main() {
         trans.poll(window);
         glm::mat4 VTrans = glm::translate(M, glm::vec3(trans.horizontal, 0.0f, trans.zoom));
 
-        glm::vec4 eye_position = VRotX * VRotY * VTrans * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
+        glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
 
-        glm::mat4 V = glm::lookAt(glm::vec3(eye_position), scene_center,
+        glm::mat4 V = VTrans * glm::lookAt(glm::vec3(eye_position), scene_center,
                                   glm::vec3(0.0f, 1.0f, 0.0f));
-        glm::mat4 P = glm::perspectiveFov(50.0f, static_cast<float>(width), static_cast<float>(height), 0.1f, 100.0f);
-        MVP = P * V * M;
-        glUniformMatrix4fv(MVP_Loc, 1, GL_FALSE, &MVP[0][0]);
+        P = glm::perspectiveFov(50.0f, static_cast<float>(width), static_cast<float>(height), 0.1f, 100.0f);
+        MV = V * M;
+        glUniformMatrix4fv(MV_Loc, 1, GL_FALSE, &MV[0][0]);
+        glUniformMatrix4fv(P_Loc, 1, GL_FALSE, &P[0][0]);
 
         // Clear the buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -171,7 +179,7 @@ int main() {
 
         //Send VAO to the GPU
         glBindVertexArray(vao);
-        glDrawArrays(GL_POINTS, 0, n_particles);
+        glDrawArrays(GL_POINTS, 0, n_particles); //GL_PATCHES?
 
         glfwSwapBuffers(window);
         glfwPollEvents();

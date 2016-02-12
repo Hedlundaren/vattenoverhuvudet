@@ -5,22 +5,27 @@
 
 #include "common/FileReader.hpp"
 
-ShaderProgram::ShaderProgram(std::string vertex_shader_filename, std::string fragment_shader_filename,
-                                     std::string geometry_shader_filename) {
+ShaderProgram::ShaderProgram(std::string vertex_shader_filename, std::string tessellation_control_shader_filename,
+                             std::string tessellation_eval_shader_filename, std::string geometry_shader_filename,
+                             std::string fragment_shader_filename) {
+
     auto v_source = FileReader::ReadFromFile(vertex_shader_filename);
-    auto f_source = FileReader::ReadFromFile(fragment_shader_filename);
-
     AttachShader(GL_VERTEX_SHADER, v_source);
-    AttachShader(GL_FRAGMENT_SHADER, f_source);
 
+    if (tessellation_control_shader_filename != "") {
+        auto t_c_source = FileReader::ReadFromFile(tessellation_control_shader_filename);
+        AttachShader(GL_TESS_CONTROL_SHADER, t_c_source);
+    }
+    if (tessellation_eval_shader_filename != "") {
+        auto t_e_source = FileReader::ReadFromFile(tessellation_eval_shader_filename);
+        AttachShader(GL_TESS_EVALUATION_SHADER, t_e_source);
+    }
     if (geometry_shader_filename != "") {
         auto g_source = FileReader::ReadFromFile(geometry_shader_filename);
         AttachShader(GL_GEOMETRY_SHADER, g_source);
-
-        std::cout << "Created vertex, geometry and fragment ShaderProgram.\n";
-    } else {
-        std::cout << "Created vertex and fragment ShaderProgram.\n";
     }
+    auto f_source = FileReader::ReadFromFile(fragment_shader_filename);
+    AttachShader(GL_FRAGMENT_SHADER, f_source);
 
     ConfigureShaderProgram();
 }
@@ -74,6 +79,12 @@ const std::string ShaderProgram::getShaderType(GLuint type) {
             break;
         case GL_GEOMETRY_SHADER:
             name = "Geometry Shader";
+            break;
+        case GL_TESS_CONTROL_SHADER:
+            name = "Tessellation Control Shader";
+            break;
+        case GL_TESS_EVALUATION_SHADER:
+            name = "Tessellation Evaluation Shader";
             break;
         default:
             name = "Unknown Shader type";
