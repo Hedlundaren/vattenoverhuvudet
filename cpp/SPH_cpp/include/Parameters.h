@@ -19,8 +19,10 @@
 #endif
 
 namespace Parameters {
-    constexpr float mass = 0.5f;
-    constexpr float kernelSize = 0.15f;
+    constexpr float totalMass = 100.0f;
+    constexpr unsigned int n_particles = 250;
+    constexpr float mass = totalMass / n_particles;
+    constexpr float kernelSize = 0.25f;
     constexpr float gasConstantK = 1.0f;
     constexpr float viscosityConstant = 10.0f;
     constexpr float restDensity = 0.0f;
@@ -33,7 +35,7 @@ namespace Parameters {
     constexpr float topBound = 0.9f;
     constexpr float nearBound = -0.9f;
     constexpr float farBound = 0.9f;
-    constexpr float wallDamper = 1.0f;
+    constexpr float wallDamper = 0.75f;
 
     inline float get_max_volume_side() {
         return std::max(std::max(rightBound - leftBound, topBound - bottomBound), farBound - nearBound);

@@ -1,6 +1,9 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 
+#define zero3 (float3)(0.0f, 0.0f, 0.0f);
+
 __constant float PI = 3.1415926535f;
+__constant float EPSILON = 1e-5;
 
 typedef struct def_VoxelGridInfo {
 	// How many grid cells there are in each dimension (i.e. [x=8 y=8 z=10])
@@ -77,7 +80,7 @@ uint calculate_voxel_cell_index(const uint3 voxel_cell_indices, const VoxelGridI
 
 __kernel void calculate_forces(__global const float* restrict positions, // The position of each particle
 							   __global const float* restrict velocities, // The position of each particle
-							   __global float* restrict forces, 		 // The force on each particle
+							   __global float3* restrict forces, 		 // The force on each particle
 							   __global const float* restrict densities, // The density of each particle. Is [max_cell_particle_count * total_grid_cells] long, since
 																	   // it does NOT need to match up with the particle's global positions/velocities buffers 
 						   	   __global const uint* restrict indices,   // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
@@ -116,14 +119,14 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 																   indices,
 																   velocities);
 
-		// Pre-calculate the pressures
+		// Pre-calculate the pressure
 		processed_particle_pressure[idp] = (densities[voxel_cell_index * grid_info.max_cell_particle_count + idp] - fluid_info.rest_density) * fluid_info.k_gas;
 
 		// Initialize the force sum and all colorfield sums to zeroes
-		processed_particle_forces[idp] = (float3)(0.0f, 0.0f, 0.0f));
+		processed_particle_forces[idp] = (float3)(0.0f, 0.0f, 0.0f);
 
 		processed_particle_colorfield[idp] = 0.0f;
-		processed_particle_colorfield_grad[idp] = (float3)(0.0f, 0.0f, 0.0f));
+		processed_particle_colorfield_grad[idp] = (float3)(0.0f, 0.0f, 0.0f);
 		processed_particle_colorfield_laplacian[idp] = 0.0f;
 	}
 
@@ -196,7 +199,7 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 
 						/* Viscosity force */
 						processed_particle_forces[processed_particle_id] = processed_particle_forces[processed_particle_id] + 
-							fluid_info.k_viscosity * fluid_info.mass * ( (velocity - processed_particle_velocities[processed_particle_id]) / density) ) * laplacianW_viscosity(relative_position, grid_info.grid_cell_size);
+							fluid_info.k_viscosity * fluid_info.mass * ( 1 / density ) * laplacianW_viscosity(relative_position, grid_info.grid_cell_size) * (velocity - processed_particle_velocities[processed_particle_id]);
 
 						/* Color field contribution */
 						processed_particle_colorfield[processed_particle_id] = processed_particle_colorfield[processed_particle_id] + 
@@ -216,7 +219,7 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 	// Final calculation and storage of each processed particle
 	for (uint idp = 0; idp < particle_count; ++idp) {
 		/* See if tension force should be applied for each particle */
-		const float colorfield_grad_length = euclidean_distance2[processed_particle_colorfield_grad[idp]];
+		const float colorfield_grad_length = euclidean_distance2(processed_particle_colorfield_grad[idp]);
 		if (colorfield_grad_length >= pow(fluid_info.k_threshold, 2)) {
 			processed_particle_forces[idp] = processed_particle_forces[idp] - 
 				fluid_info.sigma * processed_particle_colorfield_laplacian[idp] * processed_particle_colorfield_grad[idp] / colorfield_grad_length;
@@ -227,7 +230,27 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 
 		// The global force buffer array is simply linear with the particles in no particular order
 		// To retrieve the correct index for a particle in a particular voxel cell we have to call our special function :)
-		forces[voxel_cell_index * grid_info.max_cell_particle_count + idp] = processed_particle_forces[idp];
+		const uint particle_force_index = get_particle_buffer_index(voxel_cell_index,
+																		idp,
+																		grid_info.max_cell_particle_count,
+																		indices);
+		if (isnan(processed_particle_forces[idp].x)) {
+			forces[particle_force_index].x = 0.0f;
+		} else {
+			forces[particle_force_index].y = processed_particle_forces[idp].x;
+		}
+		
+		if (isnan(processed_particle_forces[idp].y)) {
+			forces[particle_force_index].y = 0.0f;
+		} else {
+			forces[particle_force_index].y = processed_particle_forces[idp].y;
+		}
+
+		if (isnan(processed_particle_forces[idp].z)) {
+			forces[particle_force_index] = 0.0f;
+		} else {
+			forces[particle_force_index].z = processed_particle_forces[idp].z;
+		}
 	}
 }
 
@@ -328,9 +351,8 @@ float euclidean_distance(const float3 r) {
 }
 
 float W_poly6(const float3 r, const float h) {
-	const float tmp = h*h - euclidean_distance2(r);
-
-	if (tmp <= 0.0f) {
+	const float tmp = h * h - euclidean_distance2(r);
+	if (tmp < EPSILON) {
 		return 0.0f;
 	}
 
@@ -338,7 +360,15 @@ float W_poly6(const float3 r, const float h) {
 }
 
 float3 gradW_poly6(const float3 r, const float h) {
-	const float kernel_constant = - (315 /(64 * PI * pow(h, 9))) * 6 * pow((pow(h, 2) - euclidean_distance2(r)), 2);
+	const float radius2 = euclidean_distance2(r);
+	if (radius2 >= h * h) {
+		return zero3;
+	}
+	if (radius2 <= EPSILON) {
+		return zero3;
+	}
+
+	const float kernel_constant = - (315 /(64 * PI * pow(h, 9))) * 6 * pow((h * h - euclidean_distance2(r)), 2);
 	return (float3)(kernel_constant * r.x,
 					kernel_constant * r.y,
 					kernel_constant * r.z);
@@ -346,12 +376,24 @@ float3 gradW_poly6(const float3 r, const float h) {
 
 float laplacianW_poly6(const float3 r, const float h) {
 	const float radius2 = euclidean_distance2(r);
+	if (radius2 >= h*h) {
+		return 0.0f;
+	}
+
 	// todo maybe pre-calculate h^2 - radius2 since it is used 2 times? then again, maybe not...
 	return (315 / (64 * PI * pow(h, 9))) * (24 * radius2 * (pow(h, 2) - radius2) - 6 * pow((pow(h, 2) - radius2), 2));
 }
 
 float3 gradW_spiky(const float3 r, const float h) {
-	const float radius = euclidean_distance(r);
+	const float radius2 = euclidean_distance2(r);
+	if (radius2 >= h * h) {
+		return zero3;
+	}
+	if (radius2 <= EPSILON) {
+		return zero3;
+	}
+
+	const float radius = sqrt(radius2);
 	const float kernel_constant = - (15 / (PI * pow(h, 6))) * 3 * pow(h - radius, 2) / radius;
 
 	return (float3)(kernel_constant * r.x, 
@@ -360,6 +402,11 @@ float3 gradW_spiky(const float3 r, const float h) {
 }
 
 float laplacianW_viscosity(const float3 r, const float h) {
+	const float tmp = h - euclidean_distance(r);
+	if (tmp <= 0.0f) {
+		return 0.0f;
+	}
+
 	return (45 / (PI * pow(h, 6))) * (h - euclidean_distance(r));
 }
 

@@ -153,6 +153,18 @@ void OpenClParticleSimulator::allocateVoxelGridBuffer() {
                                  NULL, NULL, NULL);
     CheckError(error);
 
+    /* Setup force calculation buffer */
+    std::vector<cl_float3> particle_forces_zeroes(n_particles);
+
+    cl_forces = clCreateBuffer(context, CL_MEM_READ_WRITE,
+                               particle_forces_zeroes.size() * sizeof(cl_float3),
+                               NULL, &error);
+    CheckError(error);
+    error = clEnqueueWriteBuffer(command_queue, cl_forces, CL_TRUE, 0,
+                                      particle_forces_zeroes.size() * sizeof(cl_float3),
+                                      (const void *) particle_forces_zeroes.data(),
+                                      NULL, NULL, NULL);
+    CheckError(error);
 }
 
 void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &particle_positions,
@@ -177,6 +189,8 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
     createAndBuildKernel(reset_voxel_grid, "reset_voxel_grid", "calculate_voxel_grid.cl");
     createAndBuildKernel(simple_voxel_grid_move, "simple_voxel_grid_move", "simple_voxel_grid_move.cl");
     createAndBuildKernel(calculate_particle_densities, "calculate_particle_densities", "simulate_fluid_particles.cl");
+    createAndBuildKernel(calculate_particle_forces, "calculate_forces", "simulate_fluid_particles.cl");
+    createAndBuildKernel(integrate_particle_states, "integrate_particle_states", "integrate_particle_states.cl");
 }
 
 void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
@@ -195,9 +209,11 @@ void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
     CheckError(error);
 
     runCalculateVoxelGridKernel(dt_seconds);
-    runSimpleVoxelGridMoveKernel(dt_seconds);
+    //runSimpleVoxelGridMoveKernel(dt_seconds);
     runCalculateParticleDensitiesKernel(dt_seconds);
+    runCalculateParticleForcesKernel();
     runResetVoxelGridKernel();
+    runIntegrateParticleStatesKernel(dt_seconds);
 
     error = clEnqueueReleaseGLObjects(command_queue, (cl_uint) cgl_objects.size(), (const cl_mem *) cgl_objects.data(),
                                       0, NULL, &event);
@@ -503,7 +519,7 @@ void OpenClParticleSimulator::runCalculateParticleDensitiesKernel(float dt_secon
         auto density = particle_densities[i];
 
         //if (density > 0.0f) {
-            std::cout << density << ", ";
+        //std::cout << density << ", ";
         //}
     }
 
@@ -511,8 +527,54 @@ void OpenClParticleSimulator::runCalculateParticleDensitiesKernel(float dt_secon
 #endif
 }
 
-void OpenClParticleSimulator::runCalculateParticleForcesAndIntegrateStatesKernel(float dt_seconds) {
+void OpenClParticleSimulator::runCalculateParticleForcesKernel() {
+#ifdef MY_DEBUG
+    std::cout << ">> calculate_particle_forces\n";
+#endif
 
+    cl_int error = CL_SUCCESS;
+
+    error = clSetKernelArg(calculate_particle_forces, 0, sizeof(cl_mem), (void *) &cl_positions);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_forces, 1, sizeof(cl_mem), (void *) &cl_velocities);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_forces, 2, sizeof(cl_mem), (void *) &cl_forces);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_forces, 3, sizeof(cl_mem), (void *) &cl_densities);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_forces, 4, sizeof(cl_mem), (void *) &cl_voxel_cell_particle_indices);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_forces, 5, sizeof(cl_mem), (void *) &cl_voxel_cell_particle_count);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_forces, 6, sizeof(clVoxelGridInfo), (void *) &grid_info);
+    CheckError(error);
+    error = clSetKernelArg(calculate_particle_forces, 7, sizeof(clFluidInfo), (void *) &fluid_info);
+    CheckError(error);
+
+    error = clEnqueueNDRangeKernel(command_queue, calculate_particle_forces, 3, NULL,
+                                   (const size_t *) grid_cells_count, NULL,
+                                   NULL, NULL, NULL);
+    CheckError(error);
+
+#ifdef MY_DEBUG
+    const unsigned int PARTICLE_FORCES_COUNT = n_particles;
+    cl_float3 particle_forces[PARTICLE_FORCES_COUNT];
+    error = clEnqueueReadBuffer(command_queue, cl_forces, CL_TRUE, 0,
+                                PARTICLE_FORCES_COUNT * sizeof(cl_float3),
+                                (void *) &particle_forces[0],
+                                0, NULL, NULL);
+    CheckError(error);
+
+    for (unsigned int i = 0; i < PARTICLE_FORCES_COUNT; ++i) {
+        auto force = particle_forces[i];
+
+        //if (density > 0.0f) {
+        std::cout << "[" << force.s[0] << " " << force.s[1] << " " << force.s[2] << "], ";
+        //}
+    }
+
+    std::cout << "\n";
+#endif
 }
 
 /* Simple integrate positions kernel */
@@ -534,6 +596,33 @@ void OpenClParticleSimulator::runSimpleIntegratePositionsKernel(float dt_seconds
 #endif
 
     error = clEnqueueNDRangeKernel(command_queue, simple_integration, 1, NULL, (const size_t *) &n_particles,
+                                   NULL, 0,
+                                   NULL, NULL);
+    CheckError(error);
+}
+
+void OpenClParticleSimulator::runIntegrateParticleStatesKernel(float dt_seconds) {
+#ifdef MY_DEBUG
+    std::cout << ">> integrate_particle_states\n";
+#endif
+    cl_int error = CL_SUCCESS;
+
+    error = clSetKernelArg(integrate_particle_states, 0, sizeof(cl_mem), (void *) &cl_positions);
+    CheckError(error);
+    error = clSetKernelArg(integrate_particle_states, 1, sizeof(cl_mem), (void *) &cl_velocities);
+    CheckError(error);
+    error = clSetKernelArg(integrate_particle_states, 2, sizeof(cl_mem), (void *) &cl_forces);
+    CheckError(error);
+    error = clSetKernelArg(integrate_particle_states, 3, sizeof(clFluidInfo), (void *) &fluid_info);
+    CheckError(error);
+    error = clSetKernelArg(integrate_particle_states, 4, sizeof(float), (void *) &dt_seconds);
+    CheckError(error);
+
+#ifdef MY_DEBUG
+    std::cout << "  global_work_size = " << (const size_t) n_particles << "\n";
+#endif
+
+    error = clEnqueueNDRangeKernel(command_queue, integrate_particle_states, 1, NULL, (const size_t *) &n_particles,
                                    NULL, 0,
                                    NULL, NULL);
     CheckError(error);

@@ -56,6 +56,8 @@ private:
 
     cl_mem cl_densities;
 
+    cl_mem cl_forces;
+
     std::vector<cl_platform_id> platformIds;
 
     std::vector<cl_device_id> deviceIds;
@@ -100,7 +102,11 @@ private:
 
     cl_kernel calculate_particle_densities = NULL;
 
-    void runCalculateParticleForcesAndIntegrateStatesKernel(float dt_seconds);
+    void runCalculateParticleForcesKernel();
 
-    cl_kernel calculate_particle_forces_integrate = NULL;
+    cl_kernel calculate_particle_forces = NULL;
+
+    void runIntegrateParticleStatesKernel(float dt_seconds);
+
+    cl_kernel integrate_particle_states;
 };
