@@ -1,4 +1,5 @@
-#version 330
+#version 400 compatibility
+#extension GL_ARB_tessellation_shader : enable
 
 /*
 //Spheres

@@ -1,45 +1,25 @@
-#version 330 core
+#version 400 compatibility
 
-/*
-//Spheres
-out vec4 finalColor;
-in vec3 gFacetNormal;
-in vec3 gTriDistance;
-in vec3 gPatchDistance;
-in float gPrimitive;
-uniform vec3 LightPosition;
-uniform vec3 DiffuseMaterial;
-uniform vec3 AmbientMaterial;
-
-float amplify(float d, float scale, float offset)
-{
-    d = scale * d + offset;
-    d = clamp(d, 0, 1);
-    d = 1 - exp2(-2*d*d);
-    return d;
-}
-
-void main()
-{
-    vec3 N = normalize(gFacetNormal);
-    vec3 L = LightPosition;
-    float df = abs(dot(N, L));
-    vec3 color = AmbientMaterial + df * DiffuseMaterial;
-
-    float d1 = min(min(gTriDistance.x, gTriDistance.y), gTriDistance.z);
-    float d2 = min(min(gPatchDistance.x, gPatchDistance.y), gPatchDistance.z);
-    color = amplify(d1, 40, -0.5) * amplify(d2, 60, -0.5) * color;
-
-    finalColor = vec4(color, 1.0);
-}
-*/
-
-//Triangles
-in vec3 normal;
-in vec3 in_color;
-
+in vec3 teNormal;
 out vec4 color;
 
+uniform vec3 lDir;
+uniform mat4 MV;
+
 void main() {
-    color = vec4(in_color, 1.0f);
+
+vec3 V = vec3( 0.0, 0.0, 1.0 );
+vec3 L = normalize(lDir);
+vec3 N = normalize(teNormal);
+float n = 10;
+vec3 ambient = vec3( 0, 0, 0.5);
+vec3 diffuse = vec3( 0, 0, 0.7);
+vec3 specular = vec3( 0, 0, 1);
+
+vec3 R = reflect(L,N);
+float dotNL = max(dot(N, L), 0.0);
+float dotRV = max(dot(R, V), 0.0);
+if ( dotNL == 0.0 ) dotRV = 0.0; // Do not show highlight on the dark side
+vec3 shadedcolor = ambient + diffuse*dotNL + specular*pow(dotRV, n);
+color =  vec4( shadedcolor , 1.0 ) ;
 }

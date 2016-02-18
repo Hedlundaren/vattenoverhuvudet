@@ -26,8 +26,8 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -108,23 +108,24 @@ int main() {
 
 
     // Declare which shader to use and bind it
-    //ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.tessCont.glsl", "../shaders/particles.tessEval.glsl", "../shaders/particles.geom", "../shaders/particles.frag");
-    ShaderProgram particlesShader("../shaders/particles.vert", "", "",
-                                  "../shaders/particles.geom", "../shaders/particles.frag");
+    ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.tessCont.glsl", "../shaders/particles.tessEval.glsl", "", "../shaders/particles.frag");
+    //ShaderProgram particlesShader("../shaders/particles.vert", "", "","../shaders/particles.geom", "../shaders/particles.frag");
     particlesShader();
 
     //Parameters for tessellation shaders
-    //glPatchParameteri(GL_PATCH_VERTICES, 1);  // tell OpenGL that every patch has 1 vertice
+    glPatchParameteri(GL_PATCH_VERTICES, 1);  // tell OpenGL that every patch has 1 vertex
 
 
     //Declare uniform locations
-    GLint MV_Loc = -1;
+    GLint MV_Loc, P_Loc, lDir_Loc, radius_Loc= -1;
     MV_Loc = glGetUniformLocation(particlesShader, "MV");
-    glm::mat4 MV;
-    GLint P_Loc = -1;
     P_Loc = glGetUniformLocation(particlesShader, "P");
-    glm::mat4 P;
+    lDir_Loc = glGetUniformLocation(particlesShader, "lDir");
+    radius_Loc = glGetUniformLocation(particlesShader, "radius");
+    glm::mat4 MV, P;
+    glm::vec3 lDir;
     glm::mat4 M = glm::mat4(1.0f);
+    float radius = 0.1f;
 
     //Specify which pixels to draw to
     int width, height;
@@ -154,13 +155,12 @@ int main() {
 
         simulator->updateSimulation(dt_s);
 
-        // Get rotation input
+        // Get mouse and key input
         rotator.poll(window);
+        trans.poll(window);
         //printf("phi = %6.2f, theta = %6.2f\n", rotator.phi, rotator.theta);
         glm::mat4 VRotX = glm::rotate(M, rotator.phi, glm::vec3(0.0f, 1.0f, 0.0f)); //Rotation about y-axis
         glm::mat4 VRotY = glm::rotate(M, rotator.theta, glm::vec3(1.0f, 0.0f, 0.0f)); //Rotation about x-axis
-        //Get key input
-        trans.poll(window);
         glm::mat4 VTrans = glm::translate(M, glm::vec3(trans.horizontal, 0.0f, trans.zoom));
 
         glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
@@ -169,8 +169,16 @@ int main() {
                                   glm::vec3(0.0f, 1.0f, 0.0f));
         P = glm::perspectiveFov(50.0f, static_cast<float>(width), static_cast<float>(height), 0.1f, 100.0f);
         MV = V * M;
+
+        //Calculate light direction
+        lDir = glm::vec3(1.0f);
+
+        //Send uniform variables
         glUniformMatrix4fv(MV_Loc, 1, GL_FALSE, &MV[0][0]);
         glUniformMatrix4fv(P_Loc, 1, GL_FALSE, &P[0][0]);
+        glUniform3fv(lDir_Loc, 1, &lDir[0]);
+        glUniform1fv(radius_Loc, 1, &radius);
+
 
         // Clear the buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -179,7 +187,7 @@ int main() {
 
         //Send VAO to the GPU
         glBindVertexArray(vao);
-        glDrawArrays(GL_POINTS, 0, n_particles); //GL_PATCHES?
+        glDrawArrays(GL_PATCHES, 0, n_particles); //GL_POINTS
 
         glfwSwapBuffers(window);
         glfwPollEvents();

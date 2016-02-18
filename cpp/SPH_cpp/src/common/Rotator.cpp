@@ -24,11 +24,11 @@ void KeyTranslator::poll(GLFWwindow *window) {
 	}
 
 	if(glfwGetKey(window, GLFW_KEY_UP)) {
-		zoom -= elapsedTime*2.0; // Zoom in with speed 3*dt
+		zoom += elapsedTime*2.0; // Zoom in with speed 3*dt
 	}
 
 	if(glfwGetKey(window, GLFW_KEY_DOWN)) {
-		zoom += elapsedTime*2.0; // Zoom out with speed 3*dt
+		zoom -= elapsedTime*2.0; // Zoom out with speed 3*dt
 	}
 }
 

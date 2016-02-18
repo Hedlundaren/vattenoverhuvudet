@@ -1,17 +1,19 @@
-#version 330 core
+#version 400 compatibility
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 velocity;
 
-//out vec3 vPosition;
+out vec3 vPosition;
+out float vRadius;
 
-uniform mat4 MV;
-uniform mat4 P;
+uniform float radius;
 
 void main() {
-    //gl_Position = P * MV * vec4(position, 1.0);
-    gl_Position = vec4(position, 1.0f);//Triangles
-    //vPosition = position.xyz; //Spheres
-    gl_PointSize = 1;
+
+    vPosition = position.xyz; //Spheres
+    vRadius = radius;
+
+    //gl_Position = vec4(0, 0, 0, 1); //From tutorial of whole sphere-subdivision...
+
 }
 

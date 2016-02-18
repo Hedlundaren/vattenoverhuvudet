@@ -1,17 +1,17 @@
 #include "rendering/ShaderProgram.hpp"
+#include "common/FileReader.hpp"
 
-#include <string>
 #include <memory>
 
-#include "common/FileReader.hpp"
 
 ShaderProgram::ShaderProgram(std::string vertex_shader_filename, std::string tessellation_control_shader_filename,
                              std::string tessellation_eval_shader_filename, std::string geometry_shader_filename,
                              std::string fragment_shader_filename) {
 
-    auto v_source = FileReader::ReadFromFile(vertex_shader_filename);
-    AttachShader(GL_VERTEX_SHADER, v_source);
-
+    if (vertex_shader_filename != "") {
+        auto v_source = FileReader::ReadFromFile(vertex_shader_filename);
+        AttachShader(GL_VERTEX_SHADER, v_source);
+    }
     if (tessellation_control_shader_filename != "") {
         auto t_c_source = FileReader::ReadFromFile(tessellation_control_shader_filename);
         AttachShader(GL_TESS_CONTROL_SHADER, t_c_source);
@@ -24,14 +24,26 @@ ShaderProgram::ShaderProgram(std::string vertex_shader_filename, std::string tes
         auto g_source = FileReader::ReadFromFile(geometry_shader_filename);
         AttachShader(GL_GEOMETRY_SHADER, g_source);
     }
-    auto f_source = FileReader::ReadFromFile(fragment_shader_filename);
-    AttachShader(GL_FRAGMENT_SHADER, f_source);
+    if (fragment_shader_filename != "") {
+        auto f_source = FileReader::ReadFromFile(fragment_shader_filename);
+        AttachShader(GL_FRAGMENT_SHADER, f_source);
+    }
 
+    //Link shaders
     ConfigureShaderProgram();
+
+    //Detach shaders after successful linking
+    for (GLuint shader_program : shader_programs_) {
+        glDetachShader(prog, shader_program);
+    }
 }
 
 ShaderProgram::~ShaderProgram() {
+    for (GLuint shader_program : shader_programs_) {
+        glDeleteShader(shader_program);
+    }
     glDeleteProgram(prog);
+
 }
 
 GLuint ShaderProgram::AttachShader(GLuint shaderType, std::string source) {
@@ -52,7 +64,7 @@ void ShaderProgram::ConfigureShaderProgram() {
 
     glLinkProgram(prog);
 
-    GLint isLinked = GL_FALSE;
+    GLint isLinked;
     glGetProgramiv(prog, GL_LINK_STATUS, (int *) &isLinked);
 
     if (isLinked == GL_FALSE) {
@@ -74,17 +86,17 @@ const std::string ShaderProgram::getShaderType(GLuint type) {
         case GL_VERTEX_SHADER:
             name = "Vertex Shader";
             break;
-        case GL_FRAGMENT_SHADER:
-            name = "Fragment Shader";
-            break;
-        case GL_GEOMETRY_SHADER:
-            name = "Geometry Shader";
-            break;
         case GL_TESS_CONTROL_SHADER:
             name = "Tessellation Control Shader";
             break;
         case GL_TESS_EVALUATION_SHADER:
             name = "Tessellation Evaluation Shader";
+            break;
+        case GL_GEOMETRY_SHADER:
+            name = "Geometry Shader";
+            break;
+        case GL_FRAGMENT_SHADER:
+            name = "Fragment Shader";
             break;
         default:
             name = "Unknown Shader type";
@@ -97,17 +109,17 @@ GLuint ShaderProgram::compile(GLuint type, GLchar const *source) {
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, NULL);
     glCompileShader(shader);
-    GLint compiled;
+    GLint compiled = 0;
     glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled);
     if (compiled == GL_FALSE) {
-        GLint length;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-        std::string log(length, ' ');
-        glGetShaderInfoLog(shader, length, &length, &log[0]);
-        std::cerr << "Failed to compile shadertype: " + getShaderType(type) << std::endl
+        GLint logSize = 0;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logSize);
+        std::string log(logSize, ' ');
+        glGetShaderInfoLog(shader, logSize, &logSize, &log[0]);
+        std::cerr << "Failed to compile shadertype: " << getShaderType(type) << std::endl
         << log << std::endl;
+        glDeleteShader(shader); // Don't leak the shader.
         exit(EXIT_FAILURE);
-        return false;
     }
     return shader;
 }
