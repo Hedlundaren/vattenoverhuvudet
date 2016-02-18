@@ -13,6 +13,7 @@ public:
     void updateSimulation(float dt_seconds);
 
     void checkBoundaries();
+    glm::vec3 calculateBoundaryForce(int i);
 
 private:
     std::vector<glm::vec3> positions, velocities;

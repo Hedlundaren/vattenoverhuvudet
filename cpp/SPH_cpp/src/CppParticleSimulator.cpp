@@ -76,8 +76,13 @@ void CppParticleSimulator::updateSimulation(float dt_seconds) {
             tensionForce = Parameters::sigma * (- laplacianCs / glm::length(n)) * n;
         }
 
+        //glm::vec3 n = {0, 0, 0};
+        glm::vec3 boundaryForce = {0, 0, 0};
+        //boundaryForce = [0 0];
+        boundaryForce = calculateBoundaryForce(i);
+
         // Add external forces on i
-        forces[i] = pressureForce + viscosityForce + tensionForce + Parameters::gravity;
+        forces[i] = pressureForce + viscosityForce + tensionForce + Parameters::gravity + boundaryForce;
 
         // Euler time step
         velocities[i] += (forces[i] / densities[i]) * dt_seconds;
@@ -85,10 +90,67 @@ void CppParticleSimulator::updateSimulation(float dt_seconds) {
 
     }
 
-    checkBoundaries();
+   // checkBoundaries();
 
     glBindBuffer (GL_ARRAY_BUFFER, vbo_pos);
     glBufferData (GL_ARRAY_BUFFER, positions.size() * 3 * sizeof (float), positions.data(), GL_STATIC_DRAW);
+}
+
+
+glm::vec3 CppParticleSimulator::calculateBoundaryForce(int i){
+
+    glm::vec3 boundaryForce = {0, 0, 0};
+    glm::vec3 r = {0, 0, 0};
+    float radius = 0;
+    float hardness = 1000.0f;
+
+
+    // Future solution
+    //glm::vec3 n = {0, 1, 0};
+    //float d = positions[i].y - Parameters::bottomBound;
+    //glm::vec3 r = n*d;
+
+    // BOTTOM BOUND
+    r = {0, positions[i].y - Parameters::bottomBound, 0};
+    radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
+    if(radius < Parameters::kernelSize){
+        boundaryForce = -Parameters::mass * hardness * gradWspiky(r, Parameters::kernelSize);
+    }
+
+    // RIGHT BOUND
+    r = {positions[i].x - Parameters::rightBound, 0, 0};
+    radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
+    if(radius < Parameters::kernelSize){
+        boundaryForce = boundaryForce -Parameters::mass * hardness * gradWspiky(r, Parameters::kernelSize);
+    }
+
+    // LEFT BOUND
+    r = {positions[i].x - Parameters::leftBound, 0, 0};
+    radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
+    if(radius < Parameters::kernelSize){
+        boundaryForce = boundaryForce -Parameters::mass * hardness * gradWspiky(r, Parameters::kernelSize);
+    }
+
+    // FAR BOUND
+    r = {0, 0, positions[i].z - Parameters::farBound};
+    radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
+    if(radius < Parameters::kernelSize){
+        boundaryForce = boundaryForce -Parameters::mass * hardness * gradWspiky(r, Parameters::kernelSize);
+    }
+
+    // NEAR BOUND
+    r = {0, 0, positions[i].z - Parameters::nearBound};
+    radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
+    if(radius < Parameters::kernelSize){
+        boundaryForce = boundaryForce -Parameters::mass * hardness * gradWspiky(r, Parameters::kernelSize);
+    }
+
+
+
+
+
+
+    return boundaryForce;
 }
 
 void CppParticleSimulator::checkBoundaries() {
