@@ -13,7 +13,9 @@ public:
     void updateSimulation(float dt_seconds);
 
     void checkBoundaries();
+    void checkBoundariesGlass();
     glm::vec3 calculateBoundaryForce(int i);
+    glm::vec3 calculateBoundaryForceGlass(int i);
 
 private:
     std::vector<glm::vec3> positions, velocities;

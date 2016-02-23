@@ -78,8 +78,7 @@ void CppParticleSimulator::updateSimulation(float dt_seconds) {
 
         //glm::vec3 n = {0, 0, 0};
         glm::vec3 boundaryForce = {0, 0, 0};
-        //boundaryForce = [0 0];
-        boundaryForce = calculateBoundaryForce(i);
+        //boundaryForce = calculateBoundaryForceGlass(i);
 
         // Add external forces on i
         forces[i] = pressureForce + viscosityForce + tensionForce + Parameters::gravity + boundaryForce;
@@ -90,7 +89,7 @@ void CppParticleSimulator::updateSimulation(float dt_seconds) {
 
     }
 
-   // checkBoundaries();
+     checkBoundariesGlass();
 
     glBindBuffer (GL_ARRAY_BUFFER, vbo_pos);
     glBufferData (GL_ARRAY_BUFFER, positions.size() * 3 * sizeof (float), positions.data(), GL_STATIC_DRAW);
@@ -145,19 +144,92 @@ glm::vec3 CppParticleSimulator::calculateBoundaryForce(int i){
         boundaryForce = boundaryForce -Parameters::mass * hardness * gradWspiky(r, Parameters::kernelSize);
     }
 
+    return boundaryForce;
+}
 
 
+glm::vec3 CppParticleSimulator::calculateBoundaryForceGlass(int i){
 
+    glm::vec3 boundaryForce = {0, 0, 0};
+    glm::vec3 r = {0, 0, 0};
+    float radius = 0;
+    float hardness = 1000.0f;
 
+    // Future solution
+    //glm::vec3 n = {0, 1, 0};
+    //float d = positions[i].y - Parameters::bottomBound;
+    //glm::vec3 r = n*d;
+
+    // BOTTOM BOUND
+    r = {0, positions[i].y - Parameters::bottomBound, 0};
+    radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
+    if(radius < Parameters::kernelSize){
+        boundaryForce = -Parameters::mass * hardness * gradWspiky(r, Parameters::kernelSize);
+    }
+
+    //WALLS BOUND
+    r = {positions[i].x , 0 , positions[i].z};
+
+    radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
+    if(radius < Parameters::kernelSize){
+        boundaryForce = - Parameters::mass * hardness * gradWspiky(r, Parameters::kernelSize);
+    }
 
     return boundaryForce;
 }
 
 void CppParticleSimulator::checkBoundaries() {
     for (int i = 0; i < positions.size(); ++i) {
+
+
+        if (positions[i].y < Parameters::bottomBound || positions[i].y > Parameters::topBound) {
+            positions[i].y = fmax(fmin(positions[i].y, Parameters::topBound), Parameters::bottomBound);
+            velocities[i].y = Parameters::wallDamper * (- velocities[i].y);
+        }
+
         if (positions[i].x < Parameters::leftBound || positions[i].x > Parameters::rightBound) {
             positions[i].x = fmax(fmin(positions[i].x, Parameters::rightBound), Parameters::leftBound);
             velocities[i].x = Parameters::wallDamper * (- velocities[i].x);
+        }
+
+        if (positions[i].z < Parameters::nearBound || positions[i].z > Parameters::farBound) {
+            positions[i].z = fmax(fmin(positions[i].z, Parameters::farBound), Parameters::nearBound);
+            velocities[i].z = Parameters::wallDamper * (- velocities[i].z);
+        }
+    }
+}
+
+void CppParticleSimulator::checkBoundariesGlass() {
+    for (int i = 0; i < positions.size(); ++i) {
+
+        float dp = 0.01f;
+        float radius = sqrt(pow(positions[i].x,2.0f) + pow(positions[i].z,2.0f));
+
+        if (radius > Parameters::rightBound && positions[i].x > 0 && positions[i].z > 0) {
+            positions[i].x -= dp;
+            positions[i].z -= dp;
+            velocities[i].x = Parameters::wallDamper * (- velocities[i].x);
+            velocities[i].z = Parameters::wallDamper * (- velocities[i].x);
+        }
+
+        if (radius > Parameters::rightBound && positions[i].x < 0 && positions[i].z > 0) {
+            positions[i].x += dp;
+            positions[i].z -= dp;
+            velocities[i].x = Parameters::wallDamper * (- velocities[i].x);
+            velocities[i].z = Parameters::wallDamper * (- velocities[i].x);
+        }
+        if (radius > Parameters::rightBound && positions[i].x > 0 && positions[i].z < 0) {
+            positions[i].x -= dp;
+            positions[i].z += dp;
+            velocities[i].x = Parameters::wallDamper * (- velocities[i].x);
+            velocities[i].z = Parameters::wallDamper * (- velocities[i].x);
+        }
+
+        if (radius > Parameters::rightBound && positions[i].x < 0 && positions[i].z < 0) {
+            positions[i].x += dp;
+            positions[i].z += dp;
+            velocities[i].x = Parameters::wallDamper * (- velocities[i].x);
+            velocities[i].z = Parameters::wallDamper * (- velocities[i].x);
         }
 
         if (positions[i].y < Parameters::bottomBound || positions[i].y > Parameters::topBound) {
@@ -165,9 +237,5 @@ void CppParticleSimulator::checkBoundaries() {
             velocities[i].y = Parameters::wallDamper * (- velocities[i].y);
         }
 
-        if (positions[i].z < Parameters::nearBound || positions[i].z > Parameters::farBound) {
-            positions[i].z = fmax(fmin(positions[i].z, Parameters::farBound), Parameters::nearBound);
-            velocities[i].z = Parameters::wallDamper * (- velocities[i].z);
-        }
     }
 }
