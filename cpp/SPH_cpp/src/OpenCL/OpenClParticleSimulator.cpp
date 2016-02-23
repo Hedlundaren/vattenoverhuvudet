@@ -79,6 +79,11 @@ void OpenClParticleSimulator::allocateVoxelGridBuffer(const Parameters &params) 
     clVoxelGridInfo grid_info;
     params.set_voxel_grid_info(grid_info);
 
+    grid_cells_count = new size_t[3];
+    grid_cells_count[0] = grid_info.grid_dimensions.s[0];
+    grid_cells_count[1] = grid_info.grid_dimensions.s[1];
+    grid_cells_count[2] = grid_info.grid_dimensions.s[2];
+
     /* Setup voxel cell particle indices */
     std::vector<cl_uint> voxel_cell_particle_indices_zeroes(
             grid_info.max_cell_particle_count * grid_info.total_grid_cells);
@@ -147,6 +152,7 @@ void OpenClParticleSimulator::setupSimulation(const Parameters &params,
 
     n_particles = particle_positions.size();
 
+
     // Here we can use OpenCL functionality
     // cl_int error = CL_SUCCESS;
 
@@ -163,6 +169,10 @@ void OpenClParticleSimulator::setupSimulation(const Parameters &params,
 }
 
 void OpenClParticleSimulator::updateSimulation(const Parameters &parameters, float dt_seconds) {
+    parameters.set_voxel_grid_info(grid_info);
+    parameters.set_fluid_info(fluid_info, parameters.n_particles);
+    n_particles = parameters.n_particles;
+
     // Make sure all OpenGL commands will run before enqueueing OpenCL kernels
     glFlush();
 

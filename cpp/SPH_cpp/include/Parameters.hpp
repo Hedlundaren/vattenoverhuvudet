@@ -41,6 +41,10 @@ struct Parameters {
     float far_bound;
     float k_wall_damper;
 
+    inline float get_particle_mass() const {
+        return total_mass / n_particles;
+    }
+
     inline float get_max_volume_side() const {
         return std::max(std::max(right_bound - left_bound, top_bound - bottom_bound), far_bound - near_bound);
     }
@@ -75,9 +79,9 @@ struct Parameters {
     inline void set_voxel_grid_info(clVoxelGridInfo &grid_info) const {
         grid_info.grid_cell_size = kernel_size;
 
-        grid_info.grid_dimensions.s[0] = static_cast<unsigned int>(ceilf(get_volume_size_x() / kernelSize));
-        grid_info.grid_dimensions.s[1] = static_cast<unsigned int>(ceilf(get_volume_size_y() / kernelSize));;
-        grid_info.grid_dimensions.s[2] = static_cast<unsigned int>(ceilf(get_volume_size_z() / kernelSize));;
+        grid_info.grid_dimensions.s[0] = static_cast<unsigned int>(ceilf(get_volume_size_x() / kernel_size));
+        grid_info.grid_dimensions.s[1] = static_cast<unsigned int>(ceilf(get_volume_size_y() / kernel_size));;
+        grid_info.grid_dimensions.s[2] = static_cast<unsigned int>(ceilf(get_volume_size_z() / kernel_size));;
 
         grid_info.grid_origin.s[0] = left_bound;
         grid_info.grid_origin.s[1] = bottom_bound;
@@ -91,7 +95,7 @@ struct Parameters {
     }
 
     inline static Parameters set_default_parameters(Parameters &p) {
-        p.total_mass = 1000000.0f;
+        p.total_mass = 10000.0f;
         p.kernel_size = 0.2f;
         p.k_gas = 0.01f;
         p.k_viscosity = 20.0f;
