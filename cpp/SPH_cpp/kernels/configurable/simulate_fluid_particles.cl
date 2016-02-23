@@ -5,6 +5,9 @@
 __constant float PI = 3.1415926535f;
 __constant float EPSILON = 1e-5;
 
+__constant float DENSITY_MIN = 500.0f;
+__constant float DENSITY_MAX = 100000.0f;
+
 typedef struct def_VoxelGridInfo {
 	// How many grid cells there are in each dimension (i.e. [x=8 y=8 z=10])
 	uint3 grid_dimensions;
@@ -338,7 +341,7 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 		// The global density buffer array is simply linear with the particles in no particular order
 		// To retrieve the correct index for a particle in a particular voxel cell we have to call our special function :)
 		out_densities[voxel_cell_index * grid_info.max_cell_particle_count + idp]
-			= processed_particle_densities[idp];
+			= clamp(processed_particle_densities[idp], DENSITY_MIN, DENSITY_MAX);
 	}
 }
 

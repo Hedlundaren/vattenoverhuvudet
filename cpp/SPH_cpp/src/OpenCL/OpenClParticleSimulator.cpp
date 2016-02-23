@@ -209,7 +209,6 @@ void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
     CheckError(error);
 
     runCalculateVoxelGridKernel(dt_seconds);
-    //runSimpleVoxelGridMoveKernel(dt_seconds);
     runCalculateParticleDensitiesKernel(dt_seconds);
     runCalculateParticleForcesKernel();
     runResetVoxelGridKernel();
@@ -613,9 +612,11 @@ void OpenClParticleSimulator::runIntegrateParticleStatesKernel(float dt_seconds)
     CheckError(error);
     error = clSetKernelArg(integrate_particle_states, 2, sizeof(cl_mem), (void *) &cl_forces);
     CheckError(error);
-    error = clSetKernelArg(integrate_particle_states, 3, sizeof(clFluidInfo), (void *) &fluid_info);
+    error = clSetKernelArg(integrate_particle_states, 3, sizeof(clVoxelGridInfo), (void *) &grid_info);
     CheckError(error);
-    error = clSetKernelArg(integrate_particle_states, 4, sizeof(float), (void *) &dt_seconds);
+    error = clSetKernelArg(integrate_particle_states, 4, sizeof(clFluidInfo), (void *) &fluid_info);
+    CheckError(error);
+    error = clSetKernelArg(integrate_particle_states, 5, sizeof(float), (void *) &dt_seconds);
     CheckError(error);
 
 #ifdef MY_DEBUG

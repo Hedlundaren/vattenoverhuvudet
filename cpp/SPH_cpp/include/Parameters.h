@@ -19,7 +19,7 @@
 #endif
 
 namespace Parameters {
-    constexpr float totalMass = 100000.0f;
+    constexpr float totalMass = 1000000.0f;
     constexpr unsigned int n_particles = 1000;
     constexpr float mass = totalMass / n_particles;
     constexpr float kernelSize = 0.2f;
@@ -29,12 +29,12 @@ namespace Parameters {
     constexpr float sigma = 0.0072f;
     constexpr float nThreshold = 0.1f;
     const glm::vec3 gravity(0.0f, -9.82f, 0.0f);
-    constexpr float leftBound = -1.0f;
-    constexpr float rightBound = 1.0f;
-    constexpr float bottomBound = -1.0f;
-    constexpr float topBound = 1.0f;
-    constexpr float nearBound = -1.0f;
-    constexpr float farBound = 1.0f;
+    constexpr float leftBound = -2.0f;
+    constexpr float rightBound = 2.0f;
+    constexpr float bottomBound = -2.0f;
+    constexpr float topBound = 5.0f;
+    constexpr float nearBound = -2.0f;
+    constexpr float farBound = 2.0f;
     constexpr float wallDamper = 0.75f;
 
     inline float get_max_volume_side() {
