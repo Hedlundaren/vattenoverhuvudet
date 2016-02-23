@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 #include "sph_kernels.h"
-#include "Parameters.h"
+#include "Parameters.hpp"
 
 void CppParticleSimulator::setupSimulation(const std::vector <glm::vec3> &particle_positions,
                                            const std::vector <glm::vec3> &particle_velocities,
@@ -20,7 +20,7 @@ void CppParticleSimulator::setupSimulation(const std::vector <glm::vec3> &partic
     densities.resize(positions.size());
 }
 
-void CppParticleSimulator::updateSimulation(float dt_seconds) {
+void CppParticleSimulator::updateSimulation(const Parameters &parameters, float dt_seconds) {
 
     // Set forces to 0 and calculate densities
     for (int i = 0; i < positions.size(); ++i) {

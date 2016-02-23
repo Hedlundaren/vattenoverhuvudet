@@ -9,7 +9,7 @@ public:
                          const GLuint &vbo_positions,
                          const GLuint &vbo_velocities);
 
-    void updateSimulation(float dt_seconds);
+    void updateSimulation(const Parameters &parameters, float dt_seconds);
 
     void checkBoundaries();
 
