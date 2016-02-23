@@ -85,7 +85,7 @@ int main() {
     std::cin >> n;
     const int n_particles = n;
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
-    std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
+    std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
     //std::vector<glm::vec3> positions = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     //std::vector<glm::vec3> velocities = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
 
