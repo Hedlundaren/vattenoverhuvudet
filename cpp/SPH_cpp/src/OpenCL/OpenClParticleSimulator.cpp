@@ -7,7 +7,7 @@
 
 #include "common/FileReader.hpp"
 
-#include "Parameters.h"
+#include "Parameters.hpp"
 
 #include "common/tic_toc.hpp"
 
@@ -73,43 +73,16 @@ void OpenClParticleSimulator::setupSharedBuffers(const GLuint &vbo_positions, co
     cgl_objects.push_back(cl_velocities);
 }
 
-void OpenClParticleSimulator::allocateVoxelGridBuffer() {
-    using namespace Parameters;
+void OpenClParticleSimulator::allocateVoxelGridBuffer(const Parameters &params) {
     cl_int error = CL_SUCCESS;
 
-    fluid_info.mass = Parameters::mass;
-    fluid_info.k_gas = Parameters::gasConstantK;
-    fluid_info.k_viscosity = Parameters::viscosityConstant;
-    fluid_info.rest_density = Parameters::restDensity;
-    fluid_info.sigma = Parameters::sigma;
-    fluid_info.k_threshold = Parameters::nThreshold;
-    fluid_info.k_wall_damper = Parameters::wallDamper;
-
-    fluid_info.gravity.s[0] = Parameters::gravity.x;
-    fluid_info.gravity.s[1] = Parameters::gravity.y;
-    fluid_info.gravity.s[2] = Parameters::gravity.z;
-
-    /* Setup clVoxelGridInfo */
-    const unsigned int grid_size_x = static_cast<unsigned int>(ceilf(get_volume_size_x() / kernelSize));
-    const unsigned int grid_size_y = static_cast<unsigned int>(ceilf(get_volume_size_y() / kernelSize));;
-    const unsigned int grid_size_z = static_cast<unsigned int>(ceilf(get_volume_size_z() / kernelSize));;
+    clVoxelGridInfo grid_info;
+    params.set_voxel_grid_info(grid_info);
 
     grid_cells_count = new size_t[3];
-    grid_cells_count[0] = grid_size_x;
-    grid_cells_count[1] = grid_size_y;
-    grid_cells_count[2] = grid_size_z;
-
-    grid_info.grid_dimensions.s[0] = grid_size_x;
-    grid_info.grid_dimensions.s[1] = grid_size_y;
-    grid_info.grid_dimensions.s[2] = grid_size_z;
-
-    grid_info.total_grid_cells = grid_size_x * grid_size_y * grid_size_z;
-
-    grid_info.grid_cell_size = Parameters::kernelSize;
-
-    grid_info.grid_origin = Parameters::get_volume_origin_corner_cl();
-
-    grid_info.max_cell_particle_count = VOXEL_CELL_PARTICLE_COUNT;
+    grid_cells_count[0] = grid_info.grid_dimensions.s[0];
+    grid_cells_count[1] = grid_info.grid_dimensions.s[1];
+    grid_cells_count[2] = grid_info.grid_dimensions.s[2];
 
     /* Setup voxel cell particle indices */
     std::vector<cl_uint> voxel_cell_particle_indices_zeroes(
@@ -161,13 +134,14 @@ void OpenClParticleSimulator::allocateVoxelGridBuffer() {
                                NULL, &error);
     CheckError(error);
     error = clEnqueueWriteBuffer(command_queue, cl_forces, CL_TRUE, 0,
-                                      particle_forces_zeroes.size() * sizeof(cl_float3),
-                                      (const void *) particle_forces_zeroes.data(),
-                                      NULL, NULL, NULL);
+                                 particle_forces_zeroes.size() * sizeof(cl_float3),
+                                 (const void *) particle_forces_zeroes.data(),
+                                 NULL, NULL, NULL);
     CheckError(error);
 }
 
-void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &particle_positions,
+void OpenClParticleSimulator::setupSimulation(const Parameters &params,
+                                              const std::vector<glm::vec3> &particle_positions,
                                               const std::vector<glm::vec3> &particle_velocities,
                                               const GLuint &vbo_positions,
                                               const GLuint &vbo_velocities) {
@@ -178,11 +152,12 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
 
     n_particles = particle_positions.size();
 
+
     // Here we can use OpenCL functionality
     // cl_int error = CL_SUCCESS;
 
     setupSharedBuffers(vbo_positions, vbo_velocities);
-    allocateVoxelGridBuffer();
+    allocateVoxelGridBuffer(params);
 
     createAndBuildKernel(simple_integration, "taskParallelIntegrateVelocity", "update_particle_positions.cl");
     createAndBuildKernel(calculate_voxel_grid, "calculate_voxel_grid", "calculate_voxel_grid.cl");
@@ -193,7 +168,11 @@ void OpenClParticleSimulator::setupSimulation(const std::vector<glm::vec3> &part
     createAndBuildKernel(integrate_particle_states, "integrate_particle_states", "integrate_particle_states.cl");
 }
 
-void OpenClParticleSimulator::updateSimulation(float dt_seconds) {
+void OpenClParticleSimulator::updateSimulation(const Parameters &parameters, float dt_seconds) {
+    parameters.set_voxel_grid_info(grid_info);
+    parameters.set_fluid_info(fluid_info, parameters.n_particles);
+    n_particles = parameters.n_particles;
+
     // Make sure all OpenGL commands will run before enqueueing OpenCL kernels
     glFlush();
 

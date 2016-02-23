@@ -77,16 +77,19 @@ int main() {
     simulator = new CppParticleSimulator();
 #endif
 
-
     //Generate particles
     int n = -1;
     std::cout << "How many particles? ";
     std::cin >> n;
     const int n_particles = n;
+
+    Parameters params(n_particles);
+    Parameters::set_default_parameters(params);
+
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles,
-                                                              Parameters::leftBound*1.2f, Parameters::rightBound*0.8f,
-                                                              Parameters::bottomBound, Parameters::topBound,
-                                                              Parameters::nearBound*1.2f, Parameters::farBound*0.8f);
+                                                              params.left_bound, params.right_bound,
+                                                              params.bottom_bound, params.top_bound,
+                                                              params.near_bound, params.far_bound);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
     //std::vector<glm::vec3> positions = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     //std::vector<glm::vec3> velocities = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
@@ -102,7 +105,7 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, vel_vbo);
     glBufferData(GL_ARRAY_BUFFER, n_particles * 3 * sizeof(float), velocities.data(), GL_DYNAMIC_DRAW);
 
-    simulator->setupSimulation(positions, velocities, pos_vbo, vel_vbo);
+    simulator->setupSimulation(params, positions, velocities, pos_vbo, vel_vbo);
 
     // Generate VAO with all VBOs
     GLuint vao = 0;
@@ -134,11 +137,11 @@ int main() {
     int width, height;
 
     // Calculate midpoint of scene
-    const glm::vec3 scene_center(-(Parameters::leftBound + Parameters::rightBound) / 2,
-                                 -(Parameters::bottomBound + Parameters::topBound) /4,
-                                 -(Parameters::nearBound + Parameters::farBound) / 2);
+    const glm::vec3 scene_center(-(params.left_bound + params.right_bound) / 2,
+                                 -(params.bottom_bound + params.top_bound) / 4,
+                                 -(params.near_bound + params.far_bound) / 2);
     std::cout << glm::to_string(scene_center) << "\n";
-    const float max_volume_side = Parameters::get_max_volume_side();
+    const float max_volume_side = params.get_max_volume_side();
 
     std::chrono::high_resolution_clock::time_point tp_last = std::chrono::high_resolution_clock::now();
     second_accumulator = std::chrono::duration<double>(0);
@@ -160,7 +163,7 @@ int main() {
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
 
-        simulator->updateSimulation(dt_s);
+        simulator->updateSimulation(params, dt_s);
 
         // Get rotation input
         rotator.poll(window);

@@ -26,12 +26,13 @@ class OpenClParticleSimulator : public ParticleSimulator {
 public:
     ~OpenClParticleSimulator();
 
-    void setupSimulation(const std::vector<glm::vec3> &particle_positions,
+    void setupSimulation(const Parameters &parameters,
+                         const std::vector<glm::vec3> &particle_positions,
                          const std::vector<glm::vec3> &particle_velocities,
                          const GLuint &vbo_positions,
                          const GLuint &vbo_velocities);
 
-    void updateSimulation(float dt_seconds);
+    void updateSimulation(const Parameters &parameters, float dt_seconds);
 
 private:
     std::vector<glm::vec3> positions;
@@ -76,7 +77,7 @@ private:
 
     void createAndBuildKernel(cl_kernel &kernel_out, std::string kernel_name, std::string kernel_file_name);
 
-    void allocateVoxelGridBuffer();
+    void allocateVoxelGridBuffer(const Parameters &params);
 
     /* Kernels */
 
