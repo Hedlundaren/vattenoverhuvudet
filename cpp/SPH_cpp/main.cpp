@@ -184,6 +184,8 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_BACK);
 
+        glClearColor(0.0,0.1,0.2,1);
+
 
         //Send VAO to the GPU
         glBindVertexArray(vao);

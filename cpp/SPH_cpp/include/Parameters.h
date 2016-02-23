@@ -11,7 +11,7 @@
 #include "glm/ext.hpp"
 
 namespace Parameters {
-    constexpr int n_particles = 250;
+    constexpr int n_particles = 250;    // Higher particle count may need higher wallFriction
     constexpr float totalMass = 100.0f;
     constexpr float mass = totalMass/n_particles;
     constexpr float kernelSize = 0.5f;
@@ -28,6 +28,7 @@ namespace Parameters {
     constexpr float nearBound = -1.5f;
     constexpr float farBound = 1.5f;
     constexpr float wallDamper = 0.7f;
+    constexpr float wallFriction = 0.99f;
 
     inline float get_max_volume_side() {
         return std::max(std::max(rightBound - leftBound, topBound - bottomBound), farBound - nearBound);
