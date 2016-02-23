@@ -44,47 +44,50 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 	// Todo replace with actual boundary-force calculations
 
 	// x-boundaries
-	if (position.x != clamp(position.x, -0.8f, 0.8f)) {
-	    if (position.x < -0.8f){
-	        position.x = -0.8f;
-	    } else {
-        	position.x = 0.8f;
-        }
-
+    if (position.x < -0.8f){
+        position.x = -0.8f;
 
         velocity.x = 0.0f;
+	    velocity.y = -0.3f;
+	    velocity.z = 0.0f;
+    } else if (position.x > 0.8f) {
+    	position.x = 0.8f;
+
+    	velocity.x = 0.0f;
         velocity.y = -0.3f;
         velocity.z = 0.0f;
-		//velocity.x = - velocity.x * fluid_info.k_wall_damper;
-	}
+    }
 
 	// y-boundaries
-	if (position.y != clamp(position.y, -0.8f, 0.8f)) {
-	    if (position.y < -0.8f){
-	        position.y = -0.8f;
-	    } else {
-        	position.y = 0.8f;
-        }
+    if (position.y < -0.8f){
+        position.y = -0.8f;
 
         velocity.x = 0.0f;
         velocity.y = -velocity.y;
         velocity.z = 0.0f;
+    } else if (position.y > 0.8f) {
+    	position.y = 0.8f;
+
+        velocity.x = 0.0f;
+        velocity.y = -velocity.y;
+        velocity.z = 0.0f;
+    }
 		//velocity.y = - velocity.y * fluid_info.k_wall_damper;
-	}
 
 	// z-boundaries
-	if (position.z != clamp(position.z, -0.8f, 0.8f)) {
-	    if (position.z < -0.8f){
-	        position.z = -0.8f;
-	    } else {
-        	position.z = 0.8f;
-        }
+    if (position.z < -0.8f){
+        position.z = -0.8f;
 
         velocity.x = 0.0f;
         velocity.y = -0.3f;
         velocity.z = 0.0f;
-		//velocity.z = - velocity.z * fluid_info.k_wall_damper;
-	}
+    } else if (position.z > 0.8f) {
+    	position.z = 0.8f;
+
+    	velocity.x = 0.0f;
+		velocity.y = -0.3f;
+		velocity.z = 0.0f;
+    }
 
 	// Write new position and velocity
 	positions[particle_position_id] = position.x;
