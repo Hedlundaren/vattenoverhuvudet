@@ -84,9 +84,9 @@ int main() {
     std::cin >> n;
     const int n_particles = n;
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles,
-                                                              Parameters::leftBound, Parameters::rightBound,
+                                                              Parameters::leftBound*1.2f, Parameters::rightBound*0.8f,
                                                               Parameters::bottomBound, Parameters::topBound,
-                                                              Parameters::nearBound, Parameters::farBound);
+                                                              Parameters::nearBound*1.2f, Parameters::farBound*0.8f);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
     //std::vector<glm::vec3> positions = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     //std::vector<glm::vec3> velocities = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
@@ -135,7 +135,7 @@ int main() {
 
     // Calculate midpoint of scene
     const glm::vec3 scene_center(-(Parameters::leftBound + Parameters::rightBound) / 2,
-                                 -(Parameters::bottomBound + Parameters::topBound) / 2,
+                                 -(Parameters::bottomBound + Parameters::topBound) /4,
                                  -(Parameters::nearBound + Parameters::farBound) / 2);
     std::cout << glm::to_string(scene_center) << "\n";
     const float max_volume_side = Parameters::get_max_volume_side();

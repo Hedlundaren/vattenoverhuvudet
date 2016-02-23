@@ -229,7 +229,7 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 		}
 
 	    /* Apply external forces */
-	    processed_particle_forces[idp] = processed_particle_forces[idp] + fluid_info.gravity;
+	    processed_particle_forces[idp] = processed_particle_forces[idp];
 
 		// The global force buffer array is simply linear with the particles in no particular order
 		// To retrieve the correct index for a particle in a particular voxel cell we have to call our special function :)

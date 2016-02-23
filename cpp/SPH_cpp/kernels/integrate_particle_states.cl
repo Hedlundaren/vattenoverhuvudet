@@ -1,7 +1,7 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 
 __constant float PI = 3.1415926535f;
-__constant float VELOCITY_CLAMP = 0.5f;
+__constant float3 VELOCITY_CLAMP = (float3)(10.0f, 10.0f, 10.0f);
 
 typedef struct def_FluidInfo {
 	// The mass of each fluid particle
@@ -50,12 +50,49 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 									 velocities[particle_position_id + 1],
 									 velocities[particle_position_id + 2]);
 
+    // x-boundaries
+    if (position.x < grid_info.grid_origin.x){
+        position.x = grid_info.grid_origin.x;
+        velocity.x =  - velocity.x * fluid_info.k_wall_damper;
+        velocity.y = -0.3f;
+    } else if (position.x > grid_info.grid_origin.x + grid_info.grid_dimensions.x * grid_info.grid_cell_size) {
+        position.x = grid_info.grid_origin.x + grid_info.grid_dimensions.x * grid_info.grid_cell_size;
+
+        velocity.x = - velocity.x * fluid_info.k_wall_damper;
+        velocity.y = -0.3f;
+    }
+
+    // y-boundaries
+    if (position.y < grid_info.grid_origin.y){
+        position.y = grid_info.grid_origin.y;
+
+        velocity.y = -velocity.y;
+    } else if (position.y > grid_info.grid_origin.y + grid_info.grid_dimensions.y * grid_info.grid_cell_size) {
+        position.y = grid_info.grid_origin.y + grid_info.grid_dimensions.y * grid_info.grid_cell_size;
+
+        velocity.y = -velocity.y* fluid_info.k_wall_damper;
+    }
+        //velocity.y = - velocity.y * fluid_info.k_wall_damper;
+
+    // z-boundaries
+    if (position.z < grid_info.grid_origin.z){
+        position.z = grid_info.grid_origin.z;
+
+        velocity.y = -0.3f;
+        velocity.z = - velocity.z * fluid_info.k_wall_damper;
+    } else if (position.z > grid_info.grid_origin.z + grid_info.grid_dimensions.z * grid_info.grid_cell_size) {
+        position.z = grid_info.grid_origin.z + grid_info.grid_dimensions.z * grid_info.grid_cell_size;
+
+        velocity.y = -0.3f;
+        velocity.z = - velocity.z * fluid_info.k_wall_damper;
+    }
+
 	// Acceleration according to Newton's law: a = F / m
-	const float3 acceleration = force / fluid_info.mass;
+	const float3 acceleration = force / fluid_info.mass + fluid_info.gravity;
 
 	// Integrate to new state using simple Euler integration
 	// Todo investigate other methods such as velocity verlet or leap-frog
-	velocity = min(velocity + acceleration * dt, VELOCITY_CLAMP);
+	velocity = clamp(velocity + acceleration * dt, -VELOCITY_CLAMP, VELOCITY_CLAMP);
 	position = position + velocity * dt;
 
 	// Simple bounds-checking
@@ -63,43 +100,7 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 
 
 
-	// x-boundaries
-    if (position.x < grid_info.grid_origin.x){
-        position.x = grid_info.grid_origin.x;
 
-        velocity.x = - velocity.x * fluid_info.k_wall_damper;
-	    velocity.y = -0.3f;
-    } else if (position.x > grid_info.grid_origin.x + grid_info.grid_dimensions.x * grid_info.grid_cell_size) {
-    	position.x = grid_info.grid_origin.x + grid_info.grid_dimensions.x * grid_info.grid_cell_size;
-
-    	velocity.x = - velocity.x * fluid_info.k_wall_damper;
-        velocity.y = -0.3f;
-    }
-
-	// y-boundaries
-    if (position.y < grid_info.grid_origin.y){
-        position.y = -0.8f;
-
-        velocity.y = -velocity.y;
-    } else if (position.y > grid_info.grid_origin.y + grid_info.grid_dimensions.y * grid_info.grid_cell_size) {
-    	position.y = grid_info.grid_origin.y + grid_info.grid_dimensions.y * grid_info.grid_cell_size;
-
-        velocity.y = -velocity.y;
-    }
-		//velocity.y = - velocity.y * fluid_info.k_wall_damper;
-
-	// z-boundaries
-    if (position.z < grid_info.grid_origin.z){
-        position.z = -0.8f;
-
-        velocity.y = -0.3f;
-        velocity.z = - velocity.z * fluid_info.k_wall_damper;
-    } else if (position.z > grid_info.grid_origin.z + grid_info.grid_dimensions.z * grid_info.grid_cell_size) {
-    	position.z = grid_info.grid_origin.z + grid_info.grid_dimensions.z * grid_info.grid_cell_size;
-
-		velocity.y = -0.3f;
-		velocity.z = - velocity.z * fluid_info.k_wall_damper;
-    }
 
 	// Write new position and velocity
 	positions[particle_position_id] = position.x;
