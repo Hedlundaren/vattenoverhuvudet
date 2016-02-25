@@ -114,6 +114,6 @@ struct Parameters {
         p.far_bound = 7.5f;
 
         p.k_wall_damper = 0.75f;
-        p.k_wall_friction = 0.99f;
+        p.k_wall_friction = 0.8f;
     }
 };

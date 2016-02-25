@@ -226,29 +226,6 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 			processed_particle_forces[idp] = processed_particle_forces[idp] - 
 				fluid_info.sigma * processed_particle_colorfield_laplacian[idp] * processed_particle_colorfield_grad[idp] / colorfield_grad_length;
 		}
-
-/*
-		// Apply forces from the walls
-		float3 boundary_force = zero3;
-		float3 r = zero3;
-		float diff = 0.0f;
-		float hardness = 100000000.0f;
-
-		// Bottom bound
-		r = (0.0f, processed_particle_positions[idp].y - grid_info.grid_origin.y, 0.0f);
-		boundary_force = boundary_force + fluid_info.mass * hardness * gradW_spiky(r, grid_info.grid_cell_size * 10.0f);
-
-		float distance = sqrt(pow(processed_particle_positions[idp].x, 2) + pow(processed_particle_positions[idp].z, 2));
-		// Using grid_origin.x as radius of cylinder
-		diff = grid_info.grid_origin.x - distance;
-		r = - (processed_particle_positions[idp] / distance) * diff;
-		boundary_force = boundary_force - fluid_info.mass * hardness * gradW_spiky(r, grid_info.grid_cell_size);
-
-		//boundary_force = (float3)(10000.0f, 10000.0f, 10000.0f);
-
-	    // Apply external forces
-	    processed_particle_forces[idp] = processed_particle_forces[idp] + boundary_force;
-	    */
 	    
 	    processed_particle_forces[idp] = processed_particle_forces[idp];
 

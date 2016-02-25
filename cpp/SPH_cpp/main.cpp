@@ -92,9 +92,9 @@ int main() {
     Parameters::set_default_parameters(params);
 
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles,
-                                                              x-size/2, x+size/2,
-                                                              y-size/2, y+size/2,
-                                                              z-size/2, z+size/2);
+                                                              params.left_bound / 2, params.right_bound / 2,
+                                                              params.top_bound / 4, params.top_bound,
+                                                              params.near_bound / 2, params.far_bound / 2);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
     //std::vector<glm::vec3> positions = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     //std::vector<glm::vec3> velocities = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
