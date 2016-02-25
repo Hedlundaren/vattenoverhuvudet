@@ -5,7 +5,7 @@
 __constant float PI = 3.1415926535f;
 __constant float EPSILON = 1e-5;
 
-__constant float DENSITY_MIN = 500.0f;
+__constant float DENSITY_MIN = 5000.0f;
 __constant float DENSITY_MAX = 100000.0f;
 
 typedef struct def_VoxelGridInfo {
@@ -34,6 +34,7 @@ typedef struct def_FluidInfo {
 	float sigma;
 	float k_threshold;
 	float k_wall_damper;
+	float k_wall_friction;
 
 	float3 gravity;
 } FluidInfo;
@@ -142,77 +143,75 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 	// Loop through all voxel cells around the currently processed voxel cell
 	// todo optimize these for-loops and voxel cell index generation
 	for (int d_idx = -1; d_idx <= 1; ++d_idx) {
+		
 		// Check if the x-index lies outside the voxel grid
 		const int idx = convert_int(voxel_cell_indices.x) + d_idx;
-		if (idx != clamp(idx, 0, max_cell_indices.x)) {
-			continue;
-		}
+		if (idx == clamp(idx, 0, max_cell_indices.x)) {
+			for (int d_idy = -1; d_idy <= 1; ++d_idy) {
 
-		for (int d_idy = -1; d_idy <= 1; ++d_idy) {
-			// Check if the x-index lies outside the voxel grid
-			const int idy = convert_int(voxel_cell_indices.y) + d_idy;
-			if (idy != clamp(idy, 0, max_cell_indices.y)) {
-				continue;
-			}
-
-			for (int d_idz = -1; d_idz <= 1; ++d_idz) {
 				// Check if the x-index lies outside the voxel grid
-				const int idz = convert_int(voxel_cell_indices.z) + d_idz;
-				if (idz != clamp(idz, 0, max_cell_indices.z)) {
-					continue;
-				}
+				const int idy = convert_int(voxel_cell_indices.y) + d_idy;
+				if (idy == clamp(idy, 0, max_cell_indices.y)) {
+					for (int d_idz = -1; d_idz <= 1; ++d_idz) {
 
-				const uint current_voxel_cell_index = calculate_voxel_cell_index((uint3)(idx, idy, idz), grid_info);
-				const uint current_voxel_particle_count = cell_particle_count[current_voxel_cell_index];
+						// Check if the x-index lies outside the voxel grid
+						const int idz = convert_int(voxel_cell_indices.z) + d_idz;
+						if (idz == clamp(idz, 0, max_cell_indices.z)) {
+							const uint current_voxel_cell_index = calculate_voxel_cell_index((uint3)(idx, idy, idz), grid_info);
+							const uint current_voxel_particle_count = cell_particle_count[current_voxel_cell_index];
 
-				// Iterate through this cell's particles
-				for (uint idp = 0; idp < current_voxel_particle_count; ++idp) {
-					// LOOK HERE:
-					// The below line is the reason the nested loops are the way they are:
-					//
-					// Since the position of a particle is NOT located within the grid cell, each time we want to use the position
-					// of a particle we have to calculate its global buffer index and retrieve it that way. This is a slow operation.
-					// So instead of having the outer-most loop be over each particle in the current voxel we loop through the voxels
-					// This way we only need to fetch the position of each particle in the neighbouring cells ONCE. :D
-					const float3 position = get_particle_position(current_voxel_cell_index, 
-																  idp,
-																  grid_info.max_cell_particle_count,
-																  indices,
-																  positions);
-					const float3 velocity = get_particle_velocity(current_voxel_cell_index, 
-																  idp,
-																  grid_info.max_cell_particle_count,
-																  indices,
-																  velocities);
+							// Iterate through this cell's particles
+							for (uint idp = 0; idp < current_voxel_particle_count; ++idp) {
+								// LOOK HERE:
+								// The below line is the reason the nested loops are the way they are:
+								//
+								// Since the position of a particle is NOT located within the grid cell, each time we want to use the position
+								// of a particle we have to calculate its global buffer index and retrieve it that way. This is a slow operation.
+								// So instead of having the outer-most loop be over each particle in the current voxel we loop through the voxels
+								// This way we only need to fetch the position of each particle in the neighbouring cells ONCE. :D
+								const float3 position = get_particle_position(current_voxel_cell_index, 
+																			  idp,
+																			  grid_info.max_cell_particle_count,
+																			  indices,
+																			  positions);
+								const float3 velocity = get_particle_velocity(current_voxel_cell_index, 
+																			  idp,
+																			  grid_info.max_cell_particle_count,
+																			  indices,
+																			  velocities);
 
-					const float density = densities[voxel_cell_index * grid_info.max_cell_particle_count + idp];
-					const float pressure = (density - fluid_info.rest_density) * fluid_info.k_gas;
+								const float density = clamp(densities[voxel_cell_index * grid_info.max_cell_particle_count + idp], DENSITY_MIN, DENSITY_MAX);
+								//const float density = 6000.0f;
+								const float pressure = (density - fluid_info.rest_density) * fluid_info.k_gas;
 
-					// Pre-calc colorfield constant used in all three colorfield calculations
-					const float c_colorfield = fluid_info.mass / density;
+								// Pre-calc colorfield constant used in all three colorfield calculations
+								const float c_colorfield = fluid_info.mass / density;
 
-					for (uint processed_particle_id = 0; processed_particle_id < particle_count; ++processed_particle_id) {
-						/** Calculate the current particle's force contributions to the processed particle based on the 'idp' **/
-						// todo investigate if any values can be pre-calculated outside this loop
-						relative_position = processed_particle_positions[processed_particle_id] - position;
+								for (uint processed_particle_id = 0; processed_particle_id < particle_count; ++processed_particle_id) {
+									/** Calculate the current particle's force contributions to the processed particle based on the 'idp' **/
+									// todo investigate if any values can be pre-calculated outside this loop
+									relative_position = processed_particle_positions[processed_particle_id] - position;
 
-						/* Pressure force */
-						processed_particle_forces[processed_particle_id] = processed_particle_forces[processed_particle_id] -
-							fluid_info.mass * ( (pressure + processed_particle_pressure[processed_particle_id]) / (2 * density) ) * gradW_spiky(relative_position, grid_info.grid_cell_size);
+									/* Pressure force */
+									processed_particle_forces[processed_particle_id] = processed_particle_forces[processed_particle_id] -
+										fluid_info.mass * ( (pressure + processed_particle_pressure[processed_particle_id]) / (2 * density) ) * gradW_spiky(relative_position, grid_info.grid_cell_size);
 
-						/* Viscosity force */
-						processed_particle_forces[processed_particle_id] = processed_particle_forces[processed_particle_id] + 
-							fluid_info.k_viscosity * fluid_info.mass * ( 1 / density ) * laplacianW_viscosity(relative_position, grid_info.grid_cell_size) * (velocity - processed_particle_velocities[processed_particle_id]);
+									/* Viscosity force */
+									processed_particle_forces[processed_particle_id] = processed_particle_forces[processed_particle_id] + 
+									fluid_info.k_viscosity * fluid_info.mass * ( 1 / density ) * laplacianW_viscosity(relative_position, grid_info.grid_cell_size) * (velocity - processed_particle_velocities[processed_particle_id]);
 
-						/* Color field contribution */
-						processed_particle_colorfield[processed_particle_id] = processed_particle_colorfield[processed_particle_id] + 
-							c_colorfield * W_poly6(relative_position, grid_info.grid_cell_size);
+									/* Color field contribution */
+									processed_particle_colorfield[processed_particle_id] = processed_particle_colorfield[processed_particle_id] + 
+										c_colorfield * W_poly6(relative_position, grid_info.grid_cell_size);
 
-						processed_particle_colorfield_grad[processed_particle_id] = processed_particle_colorfield_grad[processed_particle_id] + 
-							c_colorfield * gradW_poly6(relative_position, grid_info.grid_cell_size);
-						
-						processed_particle_colorfield_laplacian[processed_particle_id] = processed_particle_colorfield_laplacian[processed_particle_id] + 
-							c_colorfield * laplacianW_poly6(relative_position, grid_info.grid_cell_size);						
+									processed_particle_colorfield_grad[processed_particle_id] = processed_particle_colorfield_grad[processed_particle_id] + 
+										c_colorfield * gradW_poly6(relative_position, grid_info.grid_cell_size);
+									
+									processed_particle_colorfield_laplacian[processed_particle_id] = processed_particle_colorfield_laplacian[processed_particle_id] + 
+										c_colorfield * laplacianW_poly6(relative_position, grid_info.grid_cell_size);						
+								}
+							}
+						}
 					}
 				}
 			}
@@ -228,7 +227,29 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 				fluid_info.sigma * processed_particle_colorfield_laplacian[idp] * processed_particle_colorfield_grad[idp] / colorfield_grad_length;
 		}
 
-	    /* Apply external forces */
+/*
+		// Apply forces from the walls
+		float3 boundary_force = zero3;
+		float3 r = zero3;
+		float diff = 0.0f;
+		float hardness = 100000000.0f;
+
+		// Bottom bound
+		r = (0.0f, processed_particle_positions[idp].y - grid_info.grid_origin.y, 0.0f);
+		boundary_force = boundary_force + fluid_info.mass * hardness * gradW_spiky(r, grid_info.grid_cell_size * 10.0f);
+
+		float distance = sqrt(pow(processed_particle_positions[idp].x, 2) + pow(processed_particle_positions[idp].z, 2));
+		// Using grid_origin.x as radius of cylinder
+		diff = grid_info.grid_origin.x - distance;
+		r = - (processed_particle_positions[idp] / distance) * diff;
+		boundary_force = boundary_force - fluid_info.mass * hardness * gradW_spiky(r, grid_info.grid_cell_size);
+
+		//boundary_force = (float3)(10000.0f, 10000.0f, 10000.0f);
+
+	    // Apply external forces
+	    processed_particle_forces[idp] = processed_particle_forces[idp] + boundary_force;
+	    */
+	    
 	    processed_particle_forces[idp] = processed_particle_forces[idp];
 
 		// The global force buffer array is simply linear with the particles in no particular order
@@ -237,23 +258,10 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 																		idp,
 																		grid_info.max_cell_particle_count,
 																		indices);
-		if (isnan(processed_particle_forces[idp].x)) {
-			forces[particle_force_index].x = 0.0f;
-		} else {
-			forces[particle_force_index].x = processed_particle_forces[idp].x;
-		}
 		
-		if (isnan(processed_particle_forces[idp].y)) {
-			forces[particle_force_index].y = 0.0f;
-		} else {
-			forces[particle_force_index].y = processed_particle_forces[idp].y;
-		}
-
-		if (isnan(processed_particle_forces[idp].z)) {
-			forces[particle_force_index] = 0.0f;
-		} else {
-			forces[particle_force_index].z = processed_particle_forces[idp].z;
-		}
+		forces[particle_force_index].x = processed_particle_forces[idp].x;
+		forces[particle_force_index].y = processed_particle_forces[idp].y;
+		forces[particle_force_index].z = processed_particle_forces[idp].z;
 	}
 }
 
@@ -288,48 +296,45 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 	// Loop through all voxel cells around the currently processed voxel cell
 	// todo optimize these for-loops and voxel cell index generation
 	for (int d_idx = -1; d_idx <= 1; ++d_idx) {
+
 		// Check if the x-index lies outside the voxel grid
 		const int idx = convert_int(voxel_cell_indices.x) + d_idx;
-		if (idx != clamp(idx, 0, max_cell_indices.x)) {
-			continue;
-		}
+		if (idx == clamp(idx, 0, max_cell_indices.x)) {
+			for (int d_idy = -1; d_idy <= 1; ++d_idy) {
 
-		for (int d_idy = -1; d_idy <= 1; ++d_idy) {
-			// Check if the x-index lies outside the voxel grid
-			const int idy = convert_int(voxel_cell_indices.y) + d_idy;
-			if (idy != clamp(idy, 0, max_cell_indices.y)) {
-				continue;
-			}
-
-			for (int d_idz = -1; d_idz <= 1; ++d_idz) {
 				// Check if the x-index lies outside the voxel grid
-				const int idz = convert_int(voxel_cell_indices.z) + d_idz;
-				if (idz != clamp(idz, 0, max_cell_indices.z)) {
-					continue;
-				}
+				const int idy = convert_int(voxel_cell_indices.y) + d_idy;
+				if (idy == clamp(idy, 0, max_cell_indices.y)) {
+					for (int d_idz = -1; d_idz <= 1; ++d_idz) {
 
-				const uint current_voxel_cell_index = calculate_voxel_cell_index((uint3)(idx, idy, idz), grid_info);
-				const uint current_voxel_particle_count = cell_particle_count[current_voxel_cell_index];
+						// Check if the x-index lies outside the voxel grid
+						const int idz = convert_int(voxel_cell_indices.z) + d_idz;
+						if (idz == clamp(idz, 0, max_cell_indices.z)) {
+							const uint current_voxel_cell_index = calculate_voxel_cell_index((uint3)(idx, idy, idz), grid_info);
+							const uint current_voxel_particle_count = cell_particle_count[current_voxel_cell_index];
 
-				// Iterate through this cell's particles
-				for (uint idp = 0; idp < current_voxel_particle_count; ++idp) {
-					// LOOK HERE:
-					// The below line is the reason the nested loops are the way they are:
-					//
-					// Since the position of a particle is NOT located within the grid cell, each time we want to use the position
-					// of a particle we have to calculate its global buffer index and retrieve it that way. This is a slow operation.
-					// So instead of having the outer-most loop be over each particle in the current voxel we loop through the voxels
-					// This way we only need to fetch the position of each particle in the neighbouring cells ONCE. :D
-					const float3 position = get_particle_position(current_voxel_cell_index, 
-																  idp,
-																  grid_info.max_cell_particle_count,
-																  indices,
-																  positions);
+							// Iterate through this cell's particles
+							for (uint idp = 0; idp < current_voxel_particle_count; ++idp) {
+								// LOOK HERE:
+								// The below line is the reason the nested loops are the way they are:
+								//
+								// Since the position of a particle is NOT located within the grid cell, each time we want to use the position
+								// of a particle we have to calculate its global buffer index and retrieve it that way. This is a slow operation.
+								// So instead of having the outer-most loop be over each particle in the current voxel we loop through the voxels
+								// This way we only need to fetch the position of each particle in the neighbouring cells ONCE. :D
+								const float3 position = get_particle_position(current_voxel_cell_index, 
+																			  idp,
+																			  grid_info.max_cell_particle_count,
+																			  indices,
+																			  positions);
 
-					for (uint processed_particle_id = 0; processed_particle_id < particle_count; ++processed_particle_id) {
-						// Calculate and apply the processed particle's density based on the 'idp'
-						processed_particle_densities[processed_particle_id] = processed_particle_densities[processed_particle_id] 
-							+ fluid_info.mass * W_poly6(processed_particle_positions[processed_particle_id] - position, grid_info.grid_cell_size);
+								for (uint processed_particle_id = 0; processed_particle_id < particle_count; ++processed_particle_id) {
+									// Calculate and apply the processed particle's density based on the 'idp'
+									processed_particle_densities[processed_particle_id] = processed_particle_densities[processed_particle_id] 
+										+ fluid_info.mass * W_poly6(processed_particle_positions[processed_particle_id] - position, grid_info.grid_cell_size);
+								}
+							}
+						}	
 					}
 				}
 			}
@@ -340,8 +345,11 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 	for (uint idp = 0; idp < particle_count; ++idp) {
 		// The global density buffer array is simply linear with the particles in no particular order
 		// To retrieve the correct index for a particle in a particular voxel cell we have to call our special function :)
-		out_densities[voxel_cell_index * grid_info.max_cell_particle_count + idp]
-			= clamp(processed_particle_densities[idp], DENSITY_MIN, DENSITY_MAX);
+
+		out_densities[voxel_cell_index * grid_info.max_cell_particle_count + idp] = processed_particle_densities[idp];
+
+		//out_densities[voxel_cell_index * grid_info.max_cell_particle_count + idp]
+		//	= clamp(processed_particle_densities[idp], DENSITY_MIN, DENSITY_MAX);
 	}
 }
 

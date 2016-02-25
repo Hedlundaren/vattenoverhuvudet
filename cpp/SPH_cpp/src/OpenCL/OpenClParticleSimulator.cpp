@@ -98,6 +98,8 @@ void OpenClParticleSimulator::allocateVoxelGridBuffer(const Parameters &params) 
                                  (const void *) voxel_cell_particle_indices_zeroes.data(),
                                  NULL, NULL, NULL);
     CheckError(error);
+    error = clRetainMemObject(cl_voxel_cell_particle_indices);
+    CheckError(error);
 
     cl_voxel_cell_particle_count = clCreateBuffer(context, CL_MEM_READ_WRITE,
                                                   grid_info.total_grid_cells * sizeof(cl_uint),
@@ -107,6 +109,8 @@ void OpenClParticleSimulator::allocateVoxelGridBuffer(const Parameters &params) 
                                  grid_info.total_grid_cells * sizeof(cl_uint),
                                  (const void *) voxel_cell_particle_indices_zeroes.data(),
                                  NULL, NULL, NULL);
+    CheckError(error);
+    error = clRetainMemObject(cl_voxel_cell_particle_count);
     CheckError(error);
 
     error = clFlush(command_queue);
@@ -125,6 +129,8 @@ void OpenClParticleSimulator::allocateVoxelGridBuffer(const Parameters &params) 
                                  (const void *) voxel_cell_particle_densities_zeroes.data(),
                                  NULL, NULL, NULL);
     CheckError(error);
+    error = clRetainMemObject(cl_densities);
+    CheckError(error);
 
     /* Setup force calculation buffer */
     std::vector<cl_float3> particle_forces_zeroes(n_particles);
@@ -137,6 +143,8 @@ void OpenClParticleSimulator::allocateVoxelGridBuffer(const Parameters &params) 
                                  particle_forces_zeroes.size() * sizeof(cl_float3),
                                  (const void *) particle_forces_zeroes.data(),
                                  NULL, NULL, NULL);
+    CheckError(error);
+    error = clRetainMemObject(cl_forces);
     CheckError(error);
 }
 
@@ -492,14 +500,26 @@ void OpenClParticleSimulator::runCalculateParticleDensitiesKernel(float dt_secon
                                 (void *) &particle_densities[0],
                                 0, NULL, NULL);
     CheckError(error);
+    clFinish(command_queue);
 
+    unsigned int zero_counter = 0;
+    unsigned int NaN_counter = 0;
+
+    std::cout << "Densities: \n";
     for (unsigned int i = 0; i < PARTICLE_DENSITIES_COUNT; ++i) {
         auto density = particle_densities[i];
 
-        //if (density > 0.0f) {
-        //std::cout << density << ", ";
-        //}
+        if (density < 0.0001f) {
+            ++zero_counter;
+        }
+        if (isnan(density)) {
+            ++NaN_counter;
+        }
+        if (density > 0.0001f && !isnan(density)) {
+            std::cout << density << ", ";
+        }
     }
+    std::cout << "\nNaN-count = " << NaN_counter << ", zero-count = " << zero_counter << "\n";
 
     std::cout << "\n";
 #endif
@@ -529,6 +549,9 @@ void OpenClParticleSimulator::runCalculateParticleForcesKernel() {
     error = clSetKernelArg(calculate_particle_forces, 7, sizeof(clFluidInfo), (void *) &fluid_info);
     CheckError(error);
 
+    error = clFinish(command_queue);
+    CheckError(error);
+
     error = clEnqueueNDRangeKernel(command_queue, calculate_particle_forces, 3, NULL,
                                    (const size_t *) grid_cells_count, NULL,
                                    NULL, NULL, NULL);
@@ -543,15 +566,20 @@ void OpenClParticleSimulator::runCalculateParticleForcesKernel() {
                                 0, NULL, NULL);
     CheckError(error);
 
+    unsigned int counter = 0;
     for (unsigned int i = 0; i < PARTICLE_FORCES_COUNT; ++i) {
         auto force = particle_forces[i];
 
+        if (isnan(force.s[0]) || isnan(force.s[1]) || isnan(force.s[2])) {
+            ++counter;
+        }
         //if (density > 0.0f) {
         std::cout << "[" << force.s[0] << " " << force.s[1] << " " << force.s[2] << "], ";
         //}
     }
 
     std::cout << "\n";
+    std::cout << "NaN-count = " << counter << "\n";
 #endif
 }
 

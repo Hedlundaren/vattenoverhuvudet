@@ -43,16 +43,16 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glDepthFunc(GL_GREATER);
-
     //Generate rotator
     MouseRotator rotator;
     rotator.init(window);
 
     //Set the GLFW-context the current window
     glfwMakeContextCurrent(window);
+
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
+    glDepthFunc(GL_LESS);
 
     // VSync: enable = 1, disable = 0
     glfwSwapInterval(0);

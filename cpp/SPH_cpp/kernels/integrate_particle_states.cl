@@ -13,6 +13,7 @@ typedef struct def_FluidInfo {
 	float sigma;
 	float k_threshold;
 	float k_wall_damper;
+	float k_wall_friction;
 
 	float3 gravity;
 } FluidInfo;
@@ -54,39 +55,35 @@ __kernel void integrate_particle_states(__global float* restrict positions,
     if (position.x < grid_info.grid_origin.x){
         position.x = grid_info.grid_origin.x;
         velocity.x =  - velocity.x * fluid_info.k_wall_damper;
-        velocity.y = -0.3f;
+        //velocity.y = -0.3f;
     } else if (position.x > grid_info.grid_origin.x + grid_info.grid_dimensions.x * grid_info.grid_cell_size) {
         position.x = grid_info.grid_origin.x + grid_info.grid_dimensions.x * grid_info.grid_cell_size;
 
         velocity.x = - velocity.x * fluid_info.k_wall_damper;
-        velocity.y = -0.3f;
+        //velocity.y = -0.3f;
     }
-
     // y-boundaries
     if (position.y < grid_info.grid_origin.y){
-        position.y = grid_info.grid_origin.y;
+        position.y = grid_info.grid_origin.y + 0.0001f;
 
         velocity.y = -velocity.y* fluid_info.k_wall_damper;
     } else if (position.y > grid_info.grid_origin.y + grid_info.grid_dimensions.y * grid_info.grid_cell_size){
         position.y = grid_info.grid_origin.y + grid_info.grid_dimensions.y * grid_info.grid_cell_size;
-
         velocity.y = -velocity.y* fluid_info.k_wall_damper;
     }
-        //velocity.y = - velocity.y * fluid_info.k_wall_damper;
 
     // z-boundaries
     if (position.z < grid_info.grid_origin.z){
         position.z = grid_info.grid_origin.z;
 
-        velocity.y = -0.3f;
+        //velocity.y = -0.3f;
         velocity.z = - velocity.z * fluid_info.k_wall_damper;
     } else if (position.z > grid_info.grid_origin.z + grid_info.grid_dimensions.z * grid_info.grid_cell_size) {
         position.z = grid_info.grid_origin.z + grid_info.grid_dimensions.z * grid_info.grid_cell_size;
 
-        velocity.y = -0.3f;
+        //velocity.y = -0.3f;
         velocity.z = - velocity.z * fluid_info.k_wall_damper;
     }
-
 	// Acceleration according to Newton's law: a = F / m
 	const float3 acceleration = force / fluid_info.mass + fluid_info.gravity;
 
@@ -94,14 +91,7 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 	// Todo investigate other methods such as velocity verlet or leap-frog
 	//velocity = velocity + acceleration * dt;
 	velocity = clamp(velocity + acceleration * dt, -VELOCITY_CLAMP, VELOCITY_CLAMP);
-	position = position + 0.1f * velocity * dt;
-
-	// Simple bounds-checking
-	// Todo replace with actual boundary-force calculations
-
-
-
-
+	position = position + velocity * dt;
 
 	// Write new position and velocity
 	positions[particle_position_id] = position.x;

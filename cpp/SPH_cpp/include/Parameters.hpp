@@ -40,6 +40,7 @@ struct Parameters {
     float near_bound;
     float far_bound;
     float k_wall_damper;
+    float k_wall_friction;
 
     inline float get_particle_mass() const {
         return total_mass / n_particles;
@@ -70,6 +71,7 @@ struct Parameters {
         fluid_info.k_threshold = k_threshold;
         fluid_info.k_viscosity = k_viscosity;
         fluid_info.k_wall_damper = k_wall_damper;
+        fluid_info.k_wall_friction = k_wall_friction;
         fluid_info.rest_density = rest_density;
         fluid_info.sigma = sigma;
 
@@ -95,8 +97,8 @@ struct Parameters {
     }
 
     inline static Parameters set_default_parameters(Parameters &p) {
-        p.total_mass = 100000.0f;
-        p.kernel_size = 0.2f;
+        p.total_mass = 1000000.0f;
+        p.kernel_size = 0.5f;
         p.k_gas = 0.01f;
         p.k_viscosity = 20.0f;
         p.rest_density = 100.0f;
@@ -104,13 +106,14 @@ struct Parameters {
         p.k_threshold = 0.1f;
         p.gravity = glm::vec3(0.0f, -9.82f, 0.0f);
 
-        p.left_bound = -10.0f;
-        p.right_bound = 10.0f;
+        p.left_bound = -7.5f;
+        p.right_bound = 7.5f;
         p.bottom_bound = 0.0f;
-        p.top_bound = 10.0f;
-        p.near_bound = -10.0f;
-        p.far_bound = 10.0f;
+        p.top_bound = 5.0f;
+        p.near_bound = -7.5f;
+        p.far_bound = 7.5f;
 
         p.k_wall_damper = 0.75f;
+        p.k_wall_friction = 0.99f;
     }
 };

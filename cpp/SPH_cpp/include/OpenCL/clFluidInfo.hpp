@@ -23,6 +23,7 @@ struct clFluidInfo {
     cl_float sigma;
     cl_float k_threshold;
     cl_float k_wall_damper;
+    cl_float k_wall_friction;
 
     cl_float3 gravity;
 };
