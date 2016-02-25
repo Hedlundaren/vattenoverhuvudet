@@ -97,12 +97,12 @@ struct Parameters {
     }
 
     inline static Parameters set_default_parameters(Parameters &p) {
-        p.total_mass = 100000.0f;
-        p.kernel_size = 0.25f;
+        p.total_mass = 1000000.0f;
+        p.kernel_size = 0.2f;
         p.k_gas = 0.5f;
         p.k_viscosity = 20.0f;
         p.rest_density = 100.0f;
-        p.sigma = 0.05f;
+        p.sigma = 1.0f;
         p.k_threshold = 0.1f;
         p.gravity = glm::vec3(0.0f, -9.82f, 0.0f);
 
@@ -114,6 +114,6 @@ struct Parameters {
         p.far_bound = 7.5f;
 
         p.k_wall_damper = 0.75f;
-        p.k_wall_friction = 0.999f;
+        p.k_wall_friction = 1.0f;
     }
 };

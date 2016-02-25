@@ -4,7 +4,8 @@
 
 __constant float EPSILON = 1e-5;
 __constant float PI = 3.1415926535f;
-__constant float3 VELOCITY_CLAMP = (float3)(10.0f, 10.0f, 10.0f);
+#define MAX_VEL 5.0f
+__constant float3 VELOCITY_CLAMP = (float3)(MAX_VEL, MAX_VEL, MAX_VEL);
 
 typedef struct def_FluidInfo {
 	// The mass of each fluid particle
@@ -83,17 +84,17 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 	// Apply forces from the walls
 	float3 boundary_force = zero3;
 	float diff = 0.0f;
-	float hardness = 10000.0f;
+	float hardness = 1000.0f;
 
 	// Bottom bound
 	float3 r = (float3)(0.0f, fabs(position.y - grid_info.grid_origin.y), 0.0f);
-	boundary_force = boundary_force - fluid_info.mass * 10.0f * hardness * gradW_spiky(r, 2.0f * grid_info.grid_cell_size);
+	boundary_force = boundary_force - fluid_info.mass * 10.0f * hardness * gradW_spiky(r, 5.0f * grid_info.grid_cell_size);
 
 	float distance = sqrt(pow(position.x, 2) + pow(position.z, 2));
 	// Using 1/2 of grid_origin.x as radius of cylinder
 	diff = 0.5f * grid_info.grid_dimensions.x * grid_info.grid_cell_size - distance;
 	r = - (float3)(position / distance) * diff;
-	boundary_force = boundary_force - fluid_info.mass * hardness * gradW_spiky(r, 2.0f * grid_info.grid_cell_size);
+	boundary_force = boundary_force - fluid_info.mass * hardness * gradW_spiky(r, 5.0f * grid_info.grid_cell_size);
 
     // Apply external forces
     force = force + boundary_force;
@@ -115,7 +116,7 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 	}
 */
 
-	position = position + 0.25f * velocity * dt;
+	position = position + 0.5f * velocity * dt;
 
 	// Write new position and velocity
 	positions[particle_position_id] = position.x;

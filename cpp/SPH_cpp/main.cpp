@@ -88,8 +88,8 @@ int main() {
 
     // Cylinder generation
     const float cylinder_radius = params.left_bound / 2;
-    const glm::vec3 origin(- cylinder_radius * 0.6f, params.top_bound / 2, - cylinder_radius * 0.6f);
-    const glm::vec3 size(cylinder_radius / 2, params.top_bound * 12, cylinder_radius / 2);
+    const glm::vec3 origin(- cylinder_radius * 0.75f, params.top_bound / 2, - cylinder_radius * 0.75f);
+    const glm::vec3 size(cylinder_radius / 2, params.top_bound, cylinder_radius / 2);
 
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles,
                                                               origin.x, origin.x + size.x,
