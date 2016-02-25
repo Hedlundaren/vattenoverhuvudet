@@ -83,21 +83,26 @@ int main() {
     std::cin >> n;
     const int n_particles = n;
 
-    int x = 0;
-    int y = 5;
-    int z = 0;
-    int size = 10;
-
     Parameters params(n_particles);
     Parameters::set_default_parameters(params);
 
+    // Cylinder generation
+    const float cylinder_radius = params.left_bound / 2;
+    const glm::vec3 origin(- cylinder_radius * 0.6f, params.top_bound / 2, - cylinder_radius * 0.6f);
+    const glm::vec3 size(cylinder_radius / 2, params.top_bound * 12, cylinder_radius / 2);
+
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles,
-                                                              params.left_bound / 2, params.right_bound / 2,
-                                                              params.top_bound / 4, params.top_bound,
-                                                              params.near_bound / 2, params.far_bound / 2);
+                                                              origin.x, origin.x + size.x,
+                                                              origin.y, origin.y + size.y,
+                                                              origin.z, origin.z + size.z);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
-    //std::vector<glm::vec3> positions = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
-    //std::vector<glm::vec3> velocities = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
+    /*
+    std::vector<glm::vec3> positions = generate_linear_vec3s(n_particles,
+                                                             origin.x, origin.x + size.x,
+                                                             origin.y, origin.y + size.y,
+                                                             origin.z, origin.z + size.z);
+    std::vector<glm::vec3> velocities = generate_linear_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
+    */
 
     //Generate VBOs
     GLuint pos_vbo = 0;
@@ -159,10 +164,11 @@ int main() {
 
         std::chrono::milliseconds dt_ms = std::chrono::duration_cast<std::chrono::milliseconds>(delta_time);
 
-        const float dt_s = 1e-3 * dt_ms.count();
+        float dt_s = 1e-3 * dt_ms.count();
 #ifdef MY_DEBUG
         std::cout << "Seconds: " << dt_s << "\n";
 #endif
+        dt_s = std::min(dt_s, 1.0f / 60);
 
         // Update window size
         glfwGetFramebufferSize(window, &width, &height);

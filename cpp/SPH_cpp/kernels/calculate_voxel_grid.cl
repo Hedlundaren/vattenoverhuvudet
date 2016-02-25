@@ -31,7 +31,7 @@ int3 calculate_voxel_cell_indices(const float3 position, const VoxelGridInfo gri
 	//return convert_int3(ceil((position - grid_info.grid_origin) / grid_info.grid_cell_size));
 	return clamp(convert_int3(floor((position - grid_info.grid_origin) / grid_info.grid_cell_size)), 
 		(int3)(0, 0, 0), // Minimum indices
-		(int3)(grid_info.grid_dimensions - (int3)(1, 1, 1)) // Maximum indices
+		(int3)(convert_int3(grid_info.grid_dimensions) - (int3)(1, 1, 1)) // Maximum indices
 	);
 }
 

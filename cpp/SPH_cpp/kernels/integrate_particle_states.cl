@@ -83,58 +83,20 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 	// Apply forces from the walls
 	float3 boundary_force = zero3;
 	float diff = 0.0f;
-	float hardness = 100000000.0f;
+	float hardness = 10000.0f;
 
 	// Bottom bound
-	float3 r = (float3)(0.0f, position.y - grid_info.grid_origin.y, 0.0f);
-	boundary_force = boundary_force - fluid_info.mass * hardness * gradW_spiky(r, 1000.0f * grid_info.grid_cell_size);
+	float3 r = (float3)(0.0f, fabs(position.y - grid_info.grid_origin.y), 0.0f);
+	boundary_force = boundary_force - fluid_info.mass * 10.0f * hardness * gradW_spiky(r, 2.0f * grid_info.grid_cell_size);
 
 	float distance = sqrt(pow(position.x, 2) + pow(position.z, 2));
-	// Using grid_origin.x as radius of cylinder
-	diff = grid_info.grid_origin.x - distance;
+	// Using 1/2 of grid_origin.x as radius of cylinder
+	diff = 0.5f * grid_info.grid_dimensions.x * grid_info.grid_cell_size - distance;
 	r = - (float3)(position / distance) * diff;
-	boundary_force = boundary_force - fluid_info.mass * hardness * gradW_spiky(r, grid_info.grid_cell_size);
+	boundary_force = boundary_force - fluid_info.mass * hardness * gradW_spiky(r, 2.0f * grid_info.grid_cell_size);
 
     // Apply external forces
-    //force = force + boundary_force;
-
-/*
-    // x-boundaries
-    if (position.x < grid_info.grid_origin.x){
-        position.x = grid_info.grid_origin.x;
-        velocity.x =  - velocity.x * fluid_info.k_wall_damper;
-        //velocity.y = -0.3f;
-    } else if (position.x > grid_info.grid_origin.x + grid_info.grid_dimensions.x * grid_info.grid_cell_size) {
-        position.x = grid_info.grid_origin.x + grid_info.grid_dimensions.x * grid_info.grid_cell_size;
-
-        velocity.x = - velocity.x * fluid_info.k_wall_damper;
-    }
-*/
-/*
-    // y-boundaries
-    if (position.y < grid_info.grid_origin.y){
-        position.y = grid_info.grid_origin.y;
-
-        velocity.y = -velocity.y* fluid_info.k_wall_damper;
-    } else if (position.y > grid_info.grid_origin.y + grid_info.grid_dimensions.y * grid_info.grid_cell_size){
-        position.y = grid_info.grid_origin.y + grid_info.grid_dimensions.y * grid_info.grid_cell_size;
-        velocity.y = -velocity.y* fluid_info.k_wall_damper;
-    }
-*/
-/*
-    // z-boundaries
-    if (position.z < grid_info.grid_origin.z){
-        position.z = grid_info.grid_origin.z;
-
-        //velocity.y = -0.3f;
-        velocity.z = - velocity.z * fluid_info.k_wall_damper;
-    } else if (position.z > grid_info.grid_origin.z + grid_info.grid_dimensions.z * grid_info.grid_cell_size) {
-        position.z = grid_info.grid_origin.z + grid_info.grid_dimensions.z * grid_info.grid_cell_size;
-
-        //velocity.y = -0.3f;
-        velocity.z = - velocity.z * fluid_info.k_wall_damper;
-    }
-*/
+    force = force + boundary_force;
 
 	// Acceleration according to Newton's law: a = F / m
 	const float3 acceleration = force / fluid_info.mass + fluid_info.gravity;
@@ -144,14 +106,16 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 	//velocity = velocity + acceleration * dt;
 	velocity = clamp(velocity + acceleration * dt, -VELOCITY_CLAMP, VELOCITY_CLAMP);
 
-	if (position.y - grid_info.grid_origin.y < grid_info.grid_cell_size) {
-		velocity = fluid_info.k_wall_friction * velocity;
+	if (position.y - grid_info.grid_origin.y < grid_info.grid_cell_size || euclidean_distance2(r) < grid_info.grid_cell_size) {
+		//velocity = (1 - dt) * fluid_info.k_wall_friction * velocity;
 	}
+	/*
 	if (euclidean_distance2(r) < grid_info.grid_cell_size) {
-		velocity = fluid_info.k_wall_friction * velocity;
+		velocity = dt * fluid_info.k_wall_friction * velocity;
 	}
+*/
 
-	position = position + velocity * dt;
+	position = position + 0.25f * velocity * dt;
 
 	// Write new position and velocity
 	positions[particle_position_id] = position.x;

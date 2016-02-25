@@ -1,13 +1,8 @@
 #include "OpenCL/OpenClParticleSimulator.hpp"
 
-#include <cmath>
-#include <OpenCL/opencl.h>
-
 #include "OpenCL/opencl_context_info.hpp"
 
 #include "common/FileReader.hpp"
-
-#include "Parameters.hpp"
 
 #include "common/tic_toc.hpp"
 
@@ -264,10 +259,10 @@ void OpenClParticleSimulator::initOpenCL() {
 #elif defined _WIN32
 #define GL_SHARING_EXTENSION "cl_khr_gl_sharing"
     cl_context_properties properties[] = {
-        CL_GL_CONTEXT_KHR, (cl_context_properties) wglGetCurrentContext(),
-        CL_WGL_HDC_KHR, (cl_context_properties) wglGetCurrentDC(),
-        CL_CONTEXT_PLATFORM, (cl_context_properties) platformIds[0],
-        0
+            CL_GL_CONTEXT_KHR, (cl_context_properties) wglGetCurrentContext(),
+            CL_WGL_HDC_KHR, (cl_context_properties) wglGetCurrentDC(),
+            CL_CONTEXT_PLATFORM, (cl_context_properties) platformIds[0],
+            0
     };
 #elif defined TARGET_OS_MAC
 #define GL_SHARING_EXTENSION "cl_APPLE_gl_sharing"
@@ -403,8 +398,9 @@ void OpenClParticleSimulator::runResetVoxelGridKernel() {
     error = clSetKernelArg(reset_voxel_grid, 2, sizeof(clVoxelGridInfo), (void *) &grid_info);
     CheckError(error);
 
+    const size_t total_grid_cells = static_cast<size_t>(grid_info.total_grid_cells);
     error = clEnqueueNDRangeKernel(command_queue, reset_voxel_grid, 1, NULL,
-                                   (const size_t *) &grid_info.total_grid_cells, NULL,
+                                   (const size_t *) &total_grid_cells, NULL,
                                    NULL, NULL, NULL);
     CheckError(error);
 
