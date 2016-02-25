@@ -240,7 +240,7 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 		if (isnan(processed_particle_forces[idp].x)) {
 			forces[particle_force_index].x = 0.0f;
 		} else {
-			forces[particle_force_index].y = processed_particle_forces[idp].x;
+			forces[particle_force_index].x = processed_particle_forces[idp].x;
 		}
 		
 		if (isnan(processed_particle_forces[idp].y)) {

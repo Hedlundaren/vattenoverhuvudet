@@ -66,8 +66,8 @@ __kernel void integrate_particle_states(__global float* restrict positions,
     if (position.y < grid_info.grid_origin.y){
         position.y = grid_info.grid_origin.y;
 
-        velocity.y = -velocity.y;
-    } else if (position.y > grid_info.grid_origin.y + grid_info.grid_dimensions.y * grid_info.grid_cell_size) {
+        velocity.y = -velocity.y* fluid_info.k_wall_damper;
+    } else if (position.y > grid_info.grid_origin.y + grid_info.grid_dimensions.y * grid_info.grid_cell_size){
         position.y = grid_info.grid_origin.y + grid_info.grid_dimensions.y * grid_info.grid_cell_size;
 
         velocity.y = -velocity.y* fluid_info.k_wall_damper;
@@ -92,8 +92,9 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 
 	// Integrate to new state using simple Euler integration
 	// Todo investigate other methods such as velocity verlet or leap-frog
+	//velocity = velocity + acceleration * dt;
 	velocity = clamp(velocity + acceleration * dt, -VELOCITY_CLAMP, VELOCITY_CLAMP);
-	position = position + velocity * dt;
+	position = position + 0.1f * velocity * dt;
 
 	// Simple bounds-checking
 	// Todo replace with actual boundary-force calculations

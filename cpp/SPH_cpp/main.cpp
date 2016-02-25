@@ -83,13 +83,18 @@ int main() {
     std::cin >> n;
     const int n_particles = n;
 
+    int x = 0;
+    int y = 5;
+    int z = 0;
+    int size = 10;
+
     Parameters params(n_particles);
     Parameters::set_default_parameters(params);
 
     std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles,
-                                                              params.left_bound, params.right_bound,
-                                                              params.bottom_bound, params.top_bound,
-                                                              params.near_bound, params.far_bound);
+                                                              x-size/2, x+size/2,
+                                                              y-size/2, y+size/2,
+                                                              z-size/2, z+size/2);
     std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
     //std::vector<glm::vec3> positions = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
     //std::vector<glm::vec3> velocities = generate_linear_vec3s(n_particles, -1, 1, -1, 1, -1, 1);
