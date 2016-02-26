@@ -1,11 +1,13 @@
-#version 330
+#version 330 core
 
+//Triangles
 layout (points) in;
 layout (triangle_strip, max_vertices = 12) out;
 out vec3 normal;
 out vec3 in_color;
 
-uniform mat4 MVP;
+uniform mat4 MV;
+uniform mat4 P;
 
 const float triangle_size = 0.1;
 
@@ -19,17 +21,17 @@ void make_face(vec3 a, vec3 b, vec3 c, vec3 face_color) {
 
     normal = face_normal;
     in_color = face_color;
-    gl_Position = MVP * vec4(a, 1.0);
+    gl_Position = P * MV * vec4(a, 1.0);
     EmitVertex();
 
     normal = face_normal;
     in_color = face_color;
-    gl_Position = MVP * vec4(b, 1.0);
+    gl_Position = P * MV * vec4(b, 1.0);
     EmitVertex();
 
     normal = face_normal;
     in_color = face_color;
-    gl_Position = MVP * vec4(c, 1.0);
+    gl_Position = P * MV * vec4(c, 1.0);
     EmitVertex();
 }
 

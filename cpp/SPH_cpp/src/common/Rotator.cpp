@@ -1,12 +1,12 @@
 #include "common/Rotator.hpp"
 
-void KeyRotator::init(GLFWwindow *window) {
-     phi = 0.0;
-     theta = 0.0;
+void KeyTranslator::init(GLFWwindow *window) {
+     horizontal = 0.0;
+     zoom = 0.0;
      lastTime = glfwGetTime();
 };
 
-void KeyRotator::poll(GLFWwindow *window) {
+void KeyTranslator::poll(GLFWwindow *window) {
 
 	double currentTime, elapsedTime;
 
@@ -15,24 +15,20 @@ void KeyRotator::poll(GLFWwindow *window) {
 	lastTime = currentTime;
 
 	if(glfwGetKey(window, GLFW_KEY_RIGHT)) {
-		phi += elapsedTime*M_PI/2.0; // Rotate 90 degrees per second (pi/2)
-		phi = fmod(phi, M_PI*2.0); // Wrap around at 360 degrees (2*pi)
+		horizontal += elapsedTime*5.0; //Move right with speed 5*dt
 	}
 
 	if(glfwGetKey(window, GLFW_KEY_LEFT)) {
-		phi -= elapsedTime*M_PI/2.0; // Rotate 90 degrees per second (pi/2)
-		phi = fmod(phi, M_PI*2.0);
-		if (phi < 0.0) phi += M_PI*2.0; // If phi<0, then fmod(phi,2*pi)<0
+		horizontal -= elapsedTime*5.0; //Move left with speed 5*dt
+
 	}
 
 	if(glfwGetKey(window, GLFW_KEY_UP)) {
-		theta += elapsedTime*M_PI/2.0; // Rotate 90 degrees per second
-		if (theta >= M_PI/2.0) theta = M_PI/2.0; // Clamp at 90
+		zoom += elapsedTime*2.0; // Zoom in with speed 3*dt
 	}
 
 	if(glfwGetKey(window, GLFW_KEY_DOWN)) {
-		theta -= elapsedTime*M_PI/2.0; // Rotate 90 degrees per second
-		if (theta < -M_PI/2.0) theta = -M_PI/2.0;      // Clamp at -90
+		zoom -= elapsedTime*2.0; // Zoom out with speed 3*dt
 	}
 }
 
@@ -59,18 +55,19 @@ void MouseRotator::poll(GLFWwindow *window) {
   // Find out where the mouse pointer is, and which buttons are pressed
   glfwGetCursorPos(window, &currentX, &currentY);
   currentLeft = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-  currentRight = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+  currentRight = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT); //Not used yet
   glfwGetWindowSize( window, &windowWidth, &windowHeight );
 
   if(currentLeft && lastLeft) { // If a left button drag is in progress
     moveX = currentX - lastX;
     moveY = currentY - lastY;
   	phi += M_PI * moveX/windowWidth; // Longest drag rotates 180 degrees
-	if (phi >= M_PI*2.0) phi = fmod(phi, M_PI*2.0);
-	if (phi < 0.0) phi += M_PI*2.0; // If phi<0, then fmod(phi,2*pi)<0
+	if (phi > M_PI*2.0) phi = 0.0f;
+	if (phi < 0.0) phi = M_PI*2.0f;
+
   	theta += M_PI * moveY/windowHeight; // Longest drag rotates 180 deg
-	if (theta >= M_PI/2.0) theta = M_PI/2.0;  // Clamp at 90
-	if (theta < -M_PI/2.0) theta = -M_PI/2.0; // Clamp at -90
+	if (theta > M_PI*2.0) theta = 0.0f;
+	if (theta < 0.0f) theta = M_PI*2.0f;
   }
   lastLeft = currentLeft;
   lastRight = currentRight;

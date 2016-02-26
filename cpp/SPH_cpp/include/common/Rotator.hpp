@@ -5,11 +5,11 @@
 #define M_PI (3.141592653589793)
 #endif
 
-class KeyRotator {
+class KeyTranslator {
 
 public:
-	float phi;
-	float theta;
+	float horizontal;
+	float zoom;
 
 private:
 	double lastTime;

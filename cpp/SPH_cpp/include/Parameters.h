@@ -18,24 +18,25 @@
 #include <CL/cl.hpp>
 #endif
 
-namespace Parameters {
-    constexpr float totalMass = 1000000.0f;
-    constexpr unsigned int n_particles = 1000;
-    constexpr float mass = totalMass / n_particles;
-    constexpr float kernelSize = 0.7f;
-    constexpr float gasConstantK = 0.1f;
-    constexpr float viscosityConstant = 50.0f;
-    constexpr float restDensity = 10.0f;
+namespace Params {
+    constexpr int n_particles = 250;    // Higher particle count may need higher wallFriction
+    constexpr float totalMass = 100.0f;
+    constexpr float mass = totalMass/n_particles;
+    constexpr float kernelSize = 0.5f;
+    constexpr float gasConstantK = 1.0f;
+    constexpr float viscosityConstant = 2.0f;
+    constexpr float restDensity = 0.0f;
     constexpr float sigma = 0.0072f;
-    constexpr float nThreshold = 0.1f;
+    constexpr float nThreshold = 0.02f;
     const glm::vec3 gravity(0.0f, -9.82f, 0.0f);
-    constexpr float leftBound = -5.0f;
-    constexpr float rightBound = 5.0f;
-    constexpr float bottomBound = 0.0f;
-    constexpr float topBound = 5.0f;
-    constexpr float nearBound = -5.0f;
-    constexpr float farBound = 5.0f;
-    constexpr float wallDamper = 0.75f;
+    constexpr float leftBound = -1.5f;
+    constexpr float rightBound = 1.5f;
+    constexpr float bottomBound = -1.0f;
+    constexpr float topBound = 1.9f;
+    constexpr float nearBound = -1.5f;
+    constexpr float farBound = 1.5f;
+    constexpr float wallDamper = 0.7f;
+    constexpr float wallFriction = 0.99f;
 
     inline float get_max_volume_side() {
         return std::max(std::max(rightBound - leftBound, topBound - bottomBound), farBound - nearBound);

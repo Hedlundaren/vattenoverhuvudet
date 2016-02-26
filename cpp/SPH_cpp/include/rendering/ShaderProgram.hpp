@@ -11,15 +11,16 @@
 #include <vector>
 #include <iostream>
 
-/// @brief //todo add brief description to ShaderProgram
-/// @author benjamin
 /// Adapted from http://stackoverflow.com/questions/2795044/easy-framework-for-opengl-shaders-in-c-c
+
 class ShaderProgram {
 public:
-    /// Constructs a GLSL shader program with V/F/G-shaders located in the specified files
-    ShaderProgram(std::string vertex_shader_filename,
-                  std::string fragment_shader_filename,
-                  std::string geometry_shader_filename = "");
+    /// Constructs a GLSL shader program with V/TC/TE/G/F-shaders located in the specified files
+    ShaderProgram(std::string vertex_shader_filename = "",
+                  std::string tessellation_control_shader_filename = "",
+                  std::string tessellation_eval_shader_filename = "",
+                  std::string geometry_shader_filename = "",
+                  std::string fragment_shader_filename = "");
 
     /// Get the GLuint corresponding to the OpenGL shader program
     inline operator GLuint() {
