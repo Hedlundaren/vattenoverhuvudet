@@ -36,7 +36,7 @@ namespace Params {
     constexpr float nearBound = -1.5f;
     constexpr float farBound = 1.5f;
     constexpr float wallDamper = 0.7f;
-    constexpr float wallFriction = 0.99f;
+    constexpr float wallFriction = 0.95f;
 
     inline float get_max_volume_side() {
         return std::max(std::max(rightBound - leftBound, topBound - bottomBound), farBound - nearBound);

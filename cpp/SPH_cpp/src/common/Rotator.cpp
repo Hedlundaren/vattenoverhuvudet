@@ -24,11 +24,11 @@ void KeyTranslator::poll(GLFWwindow *window) {
 	}
 
 	if(glfwGetKey(window, GLFW_KEY_UP)) {
-		zoom += elapsedTime*2.0; // Zoom in with speed 3*dt
+		zoom += elapsedTime*9.0; // Zoom in with speed 3*dt
 	}
 
 	if(glfwGetKey(window, GLFW_KEY_DOWN)) {
-		zoom -= elapsedTime*2.0; // Zoom out with speed 3*dt
+		zoom -= elapsedTime*9.0; // Zoom out with speed 3*dt
 	}
 }
 
@@ -61,13 +61,13 @@ void MouseRotator::poll(GLFWwindow *window) {
   if(currentLeft && lastLeft) { // If a left button drag is in progress
     moveX = currentX - lastX;
     moveY = currentY - lastY;
-  	phi += M_PI * moveX/windowWidth; // Longest drag rotates 180 degrees
+  	phi += M_PI * 2 * moveX/windowWidth; // Longest drag rotates 180 degrees
 	if (phi > M_PI*2.0) phi = 0.0f;
 	if (phi < 0.0) phi = M_PI*2.0f;
 
-  	theta += M_PI * moveY/windowHeight; // Longest drag rotates 180 deg
-	if (theta > M_PI*2.0) theta = 0.0f;
-	if (theta < 0.0f) theta = M_PI*2.0f;
+  	theta += M_PI * 2 * moveY/windowHeight; // Longest drag rotates 180 deg
+	if (theta >= M_PI/2.3) theta = M_PI/2.3f;
+	if (theta < -M_PI/2.3f) theta = -M_PI/2.3f;
   }
   lastLeft = currentLeft;
   lastRight = currentRight;

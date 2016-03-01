@@ -2,11 +2,11 @@
 #version 330 core
 
 //TessShader
-//in vec3 teNormal;
+in vec3 teNormal;
 
 //GeomShader
-in vec3 normal;
-in vec3 in_color;
+//in vec3 normal;
+//in vec3 in_color;
 
 out vec4 color;
 
@@ -14,12 +14,12 @@ uniform vec3 lDir;
 uniform mat4 MV;
 
 void main() {
-
+/*
 //GeomShader
 color = vec4(in_color, 1.0f);
+*/
+/*---------------------------------------------*/
 
-
-/*
 //TessShader
 vec3 V = vec3( 0.0, 0.0, 1.0 );
 vec3 L = normalize(lDir);
@@ -35,5 +35,5 @@ float dotRV = max(dot(R, V), 0.0);
 if ( dotNL == 0.0 ) dotRV = 0.0; // Do not show highlight on the dark side
 vec3 shadedcolor = ambient + diffuse*dotNL + specular*pow(dotRV, n);
 color =  vec4( shadedcolor , 1.0 ) ;
-*/
+
 }

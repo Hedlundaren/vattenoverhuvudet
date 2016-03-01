@@ -19,6 +19,9 @@
 #include "OpenCL/OpenClParticleSimulator.hpp"
 #include "CppParticleSimulator.hpp"
 
+#define USE_TESS_SHADER
+//You still need to change comments in vert- and frag-shaders
+
 void setWindowFPS(GLFWwindow *window, float fps);
 
 std::chrono::duration<double> second_accumulator;
@@ -134,13 +137,13 @@ int main() {
 
 
     // Declare which shader to use and bind it
-    //ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.tessCont.glsl", "../shaders/particles.tessEval.glsl", "", "../shaders/particles.frag");
-    ShaderProgram particlesShader("../shaders/particles.vert", "", "","../shaders/particles.geom", "../shaders/particles.frag");
+    #ifdef USE_TESS_SHADER
+        ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.tessCont.glsl", "../shaders/particles.tessEval.glsl", "", "../shaders/particles.frag");
+        glPatchParameteri(GL_PATCH_VERTICES, 1);  // tell OpenGL that every patch has 1 vertex
+    #else //Triagles
+        ShaderProgram particlesShader("../shaders/particles.vert", "", "","../shaders/particles.geom", "../shaders/particles.frag");
+    #endif
     particlesShader();
-
-    //Parameters for tessellation shaders
-    //glPatchParameteri(GL_PATCH_VERTICES, 1);  // tell OpenGL that every patch has 1 vertex
-
 
     //Declare uniform locations
     GLint MV_Loc, P_Loc, lDir_Loc, radius_Loc= -1;
@@ -220,8 +223,11 @@ int main() {
 
         //Send VAO to the GPU
         glBindVertexArray(vao);
-        glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
-        //glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
+        #ifdef USE_TESS_SHADER
+           glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
+        #else
+            glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
+        #endif
 
         glfwSwapBuffers(window);
         ++frames_last_second;

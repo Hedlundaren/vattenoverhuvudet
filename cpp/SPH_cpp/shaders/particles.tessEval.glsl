@@ -17,23 +17,20 @@ const float PI = 3.14159265;
 
 void main()
 {
-    //vec3 p = gl_in[0].gl_Position.xyz; //vrf?
+    vec3 p = gl_in[0].gl_Position.xyz; //vrf?
 
     float u = gl_TessCoord.x; //Value between [0 1]
     float v = gl_TessCoord.y;
-    float w = gl_TessCoord.z; //is ignored for quads
+    float w = gl_TessCoord.z; //is ignored for quads (but used for triangles)
 
     //Tutorials solution
     float phi = PI * (u-0.5 ); //-pi/2<phi<pi/2
     float theta = 2 * PI * (v-0.5); //-pi<theta<pi
     vec3 xyz = vec3( cos(phi)*cos(theta), sin(phi), cos(phi)*sin(theta) );
 
-    //Adams solution
-    //vec3 xyz = vec3(sin(phi)*cos(theta), sin(phi)*sin(theta), cos(phi));
-
     teNormal = xyz;
     xyz *= tcRadius;
-    xyz += tcPosition;
+    xyz -= tcPosition;
     gl_Position = P * MV * vec4( xyz, 1);
 
 }
