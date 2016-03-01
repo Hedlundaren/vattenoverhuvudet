@@ -350,13 +350,17 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
 
     new Label(window, "Kernel size", "sans-bold");
     Widget *panel = new Widget(window);
-    panel->setLayout(new BoxLayout(Orientation::Horizontal,
-                                   Alignment::Middle, 0, 20));
 
-    Slider *slider_kernel = new Slider(window);
+        panel->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Fill, 0, 20));
+
+    Slider *slider_kernel = new Slider(panel);
     slider_kernel->setValue(p->kernel_size);
+    slider_kernel->setFixedWidth(80);
 
-    TextBox *textBox_kernel = new TextBox(window);
+    TextBox *textBox_kernel = new TextBox(panel);
+    textBox_kernel->setFixedSize(Vector2i(60, 25));
+
     std::stringstream stream;
     stream << std::fixed << std::setprecision(1) << (double) p->kernel_size;
     textBox_kernel->setValue(stream.str());
