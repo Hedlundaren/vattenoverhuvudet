@@ -76,6 +76,11 @@ add_subdirectory(${PROJECT_EXT_DIR}/lodepng)
 set(ALL_LIBRARIES ${ALL_LIBRARIES} lodepng)
 set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${lodepng_SOURCE_DIR})
 
+### nanoflann ###
+add_subdirectory(${PROJECT_EXT_DIR}/nanoflann)
+set(ALL_LIBRARIES ${ALL_LIBRARIES} nanoflann)
+set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${nanoflann_SOURCE_DIR}/include)
+
 ### GLEW on Windows
 if (MINGW)
     set(GLEW_DIR ${PROJECT_EXT_DIR}/glew)

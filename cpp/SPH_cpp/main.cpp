@@ -24,6 +24,8 @@
 #include "lodepng.h"
 #include "lodepng_util.h"
 
+#include "nanoflann.hpp"
+
 nanogui::Screen *screen;
 
 using std::cout;
@@ -59,7 +61,7 @@ int main() {
 
     std::vector<unsigned char> hmap;
     unsigned int hmap_width, hmap_height;
-    unsigned int error = lodepng::decode(hmap, hmap_width, hmap_height, "../images/hmap_1.png");
+    unsigned int error = lodepng::decode(hmap, hmap_width, hmap_height, "../images/simple.hmap.png");
     if (error != 0) {
         cout << "LodePNG error " << error << ": " << lodepng_error_text(error) << endl;
         std::exit(EXIT_FAILURE);
@@ -88,6 +90,8 @@ int main() {
             break;
     }
     cout << "bitdepth=" << info.color.bitdepth << ", color type =\"" << colortype << "\"" << endl;
+
+
 
     GLFWwindow *window;
 
