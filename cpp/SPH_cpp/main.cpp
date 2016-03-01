@@ -412,11 +412,8 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
         p->k_viscosity = 20*value_gas;
     });
 
-    new Label(window, "Gravity", "sans-bold");
-    Widget *panel_grav = new Widget(window);
-    panel_grav->setLayout(new BoxLayout(Orientation::Horizontal,
-                                       Alignment::Minimum, 0, 25));
-    CheckBox *cb = new CheckBox(panel_grav, "On/Off",
+    new Label(window, "Other", "sans-bold");
+    CheckBox *cb = new CheckBox(window, "Gravity",
         [=](bool state) {
             if (state)
                 p->gravity.y = -9.82f;
@@ -424,6 +421,7 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
                 p->gravity.y = 0.0f;
         }
     );
+    cb->setFontSize(16);
     cb->setChecked(true);
 
     screen->performLayout();
