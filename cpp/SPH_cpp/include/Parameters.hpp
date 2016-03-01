@@ -42,6 +42,8 @@ struct Parameters {
     float k_wall_damper;
     float k_wall_friction;
 
+    glm::vec3 bg_color;
+
     inline float get_particle_mass() const {
         return total_mass / n_particles;
     }
@@ -115,5 +117,7 @@ struct Parameters {
 
         p.k_wall_damper = 0.75f;
         p.k_wall_friction = 1.0f;
+
+        p.bg_color = glm::vec3(0.1f, 0.1f, 0.1f);
     }
 };
