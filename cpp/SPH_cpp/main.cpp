@@ -349,17 +349,15 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     window->setLayout(new GroupLayout());
 
     new Label(window, "Kernel size", "sans-bold");
-    Widget *panel = new Widget(window);
+    Widget *panel_kernel = new Widget(window);
+        panel_kernel->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Fill, 0, 25));
 
-        panel->setLayout(new BoxLayout(Orientation::Horizontal,
-                                       Alignment::Fill, 0, 20));
-
-    Slider *slider_kernel = new Slider(panel);
+    Slider *slider_kernel = new Slider(panel_kernel);
     slider_kernel->setValue(p->kernel_size);
     slider_kernel->setFixedWidth(80);
 
-    TextBox *textBox_kernel = new TextBox(panel);
-    textBox_kernel->setFixedSize(Vector2i(60, 25));
+    TextBox *textBox_kernel = new TextBox(panel_kernel);
 
     std::stringstream stream;
     stream << std::fixed << std::setprecision(1) << (double) p->kernel_size;
@@ -374,13 +372,14 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
 
     new Label(window, "Gas Constant", "sans-bold");
     Widget *panel_gas = new Widget(window);
-    panel_gas->setLayout(new BoxLayout(Orientation::Horizontal,
-                                   Alignment::Middle, 0, 20));
+        panel_gas->setLayout(new BoxLayout(Orientation::Horizontal,
+                                   Alignment::Fill, 0, 25));
 
-    Slider *slider_gas = new Slider(window);
+    Slider *slider_gas = new Slider(panel_gas);
     slider_gas->setValue(p->k_gas);
+    slider_gas->setFixedWidth(80);
 
-    TextBox *textBox_gas = new TextBox(window);
+    TextBox *textBox_gas = new TextBox(panel_gas);
     std::stringstream stream_gas;
     stream_gas << std::fixed << std::setprecision(1) << (double) p->k_gas;
     textBox_gas->setValue(stream_gas.str());
@@ -395,12 +394,13 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     new Label(window, "Viscosity constant", "sans-bold");
     Widget *panel_vis = new Widget(window);
     panel_vis->setLayout(new BoxLayout(Orientation::Horizontal,
-                                       Alignment::Middle, 0, 20));
+                                       Alignment::Fill, 0, 25));
 
-    Slider *slider_vis = new Slider(window);
+    Slider *slider_vis = new Slider(panel_vis);
     slider_vis->setValue(1);
+    slider_vis->setFixedWidth(80);
 
-    TextBox *textBox_vis = new TextBox(window);
+    TextBox *textBox_vis = new TextBox(panel_vis);
     std::stringstream stream_vis;
     stream_vis << std::fixed << std::setprecision(1) << (double) p->k_viscosity;
     textBox_vis->setValue(stream_vis.str());
