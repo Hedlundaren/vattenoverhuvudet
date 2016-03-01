@@ -5,9 +5,11 @@ layout(vertices = 1) out; //variables defined per-vertex=out, per-patch=patch ou
 
 in vec3 vPosition[];
 in float vRadius[];
+in float vDepth[];
 
 patch out vec3 tcPosition;
 patch out float tcRadius;
+patch out float tcDepth;
 
 float uDetail = 70;
 float TessLevelInner = 4;
@@ -30,5 +32,7 @@ void main()
     gl_TessLevelOuter[3] = TessLevelOuter * tcRadius * uDetail;
     gl_TessLevelInner[0] = TessLevelInner * tcRadius * uDetail; // Inner [0],[1] are the inside sphere detail
     gl_TessLevelInner[1] = TessLevelInner * tcRadius * uDetail;
+
+    tcDepth = vDepth[0];
 
 }

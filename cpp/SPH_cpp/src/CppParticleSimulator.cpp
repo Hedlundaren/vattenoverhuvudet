@@ -170,7 +170,7 @@ glm::vec3 CppParticleSimulator::calculateBoundaryForceGlass(int i){
 
     //WALLS BOUND
     distance = sqrt(pow(positions[i].x,2.0f) + pow(positions[i].z,2.0f));
-    diff = Params::topBound - distance;
+    diff = Params::rightBound - distance;
     r = -positions[i]*diff/distance;
 
     if(diff < Params::kernelSize){

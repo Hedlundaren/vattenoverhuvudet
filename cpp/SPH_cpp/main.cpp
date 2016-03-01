@@ -146,11 +146,12 @@ int main() {
     particlesShader();
 
     //Declare uniform locations
-    GLint MV_Loc, P_Loc, lDir_Loc, radius_Loc= -1;
+    GLint MV_Loc, P_Loc, lDir_Loc, radius_Loc, camPos_Loc= -1;
     MV_Loc = glGetUniformLocation(particlesShader, "MV");
     P_Loc = glGetUniformLocation(particlesShader, "P");
     lDir_Loc = glGetUniformLocation(particlesShader, "lDir");
     radius_Loc = glGetUniformLocation(particlesShader, "radius");
+    camPos_Loc = glGetUniformLocation(particlesShader, "camPos");
     glm::mat4 MV, P;
     glm::vec3 lDir;
     glm::mat4 M = glm::mat4(1.0f);
@@ -198,7 +199,7 @@ int main() {
         glm::mat4 VTrans = glm::translate(M, glm::vec3(trans.horizontal, 0.0f, trans.zoom));
 
         glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
-
+        glm::vec4 camPos = eye_position;
         glm::mat4 V = VTrans * glm::lookAt(glm::vec3(eye_position), scene_center,
                                   glm::vec3(0.0f, 1.0f, 0.0f));
         P = glm::perspectiveFov(50.0f, static_cast<float>(width), static_cast<float>(height), 0.1f, 100.0f);
@@ -211,6 +212,7 @@ int main() {
         glUniformMatrix4fv(MV_Loc, 1, GL_FALSE, &MV[0][0]);
         glUniformMatrix4fv(P_Loc, 1, GL_FALSE, &P[0][0]);
         glUniform3fv(lDir_Loc, 1, &lDir[0]);
+        glUniform4fv(camPos_Loc, 1, &camPos[0]);
         glUniform1fv(radius_Loc, 1, &radius);
 
 

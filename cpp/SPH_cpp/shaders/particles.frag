@@ -3,6 +3,7 @@
 
 //TessShader
 in vec3 teNormal;
+in float teDepth;
 
 //GeomShader
 //in vec3 normal;
@@ -20,6 +21,7 @@ color = vec4(in_color, 1.0f);
 */
 /*---------------------------------------------*/
 
+/*
 //TessShader
 vec3 V = vec3( 0.0, 0.0, 1.0 );
 vec3 L = normalize(lDir);
@@ -35,5 +37,9 @@ float dotRV = max(dot(R, V), 0.0);
 if ( dotNL == 0.0 ) dotRV = 0.0; // Do not show highlight on the dark side
 vec3 shadedcolor = ambient + diffuse*dotNL + specular*pow(dotRV, n);
 color =  vec4( shadedcolor , 1.0 ) ;
+*/
+
+color = vec4(teDepth);
+//color = vec4(1.0f);
 
 }

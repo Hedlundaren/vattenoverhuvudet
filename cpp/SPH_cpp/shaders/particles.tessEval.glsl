@@ -7,8 +7,10 @@ layout(quads, equal_spacing, ccw) in;
 
 patch in vec3 tcPosition;
 patch in float tcRadius;
+patch in float tcDepth;
 
 out vec3 teNormal;
+out float teDepth;
 
 uniform mat4 MV;
 uniform mat4 P;
@@ -32,6 +34,8 @@ void main()
     xyz *= tcRadius;
     xyz -= tcPosition;
     gl_Position = P * MV * vec4( xyz, 1);
+
+    teDepth = tcDepth;
 
 }
 
