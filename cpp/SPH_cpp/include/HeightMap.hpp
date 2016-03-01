@@ -5,10 +5,6 @@
 
 #include "glm/glm.hpp"
 
-#include "lodepng.h"
-#include "lodepng_util.h"
-#include "nanoflann.hpp"
-
 typedef unsigned int uint;
 
 class HeightMap {
@@ -31,11 +27,7 @@ public:
 
     void debug_print();
 
-    void calcDensityVoxelSampler();
-
-    void calcBakedNormalVoxelSampler();
-
-    void calcNormalVoxelSampler();
+    void calcVoxelSamplers(float density_radius_norm = 0.01f);
 
 private:
     uint width, height;

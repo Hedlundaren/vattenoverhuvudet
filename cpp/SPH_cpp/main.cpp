@@ -10,6 +10,8 @@
 
 #include "GLFW/glfw3.h"
 
+#include "common/tic_toc.hpp"
+
 #include "rendering/ShaderProgram.hpp"
 #include "math/randomized.hpp"
 #include "common/Rotator.hpp"
@@ -61,12 +63,21 @@ unsigned int frames_last_second;
 int main() {
     using namespace nanogui;
 
+    HeightMap::SetMaxVoxelSamplerSize(32, 4, 32);
+    //HeightMap::SetMaxVoxelSamplerSize(8, 2, 8);
+
+    // normalized "kernel radius" for precomputed density-LUT
+    const float density_contribution_radius = 0.01f;
+
     HeightMap hmap;
-    if (!hmap.initFromPNGs("smiley")) {
+    if (!hmap.initFromPNGs("simple-lowres")) {
         return 0;
     }
 
-    hmap.debug_print();
+    //hmap.debug_print();
+    tic();
+    hmap.calcVoxelSamplers(density_contribution_radius);
+    toc();
 
     return 0;
 

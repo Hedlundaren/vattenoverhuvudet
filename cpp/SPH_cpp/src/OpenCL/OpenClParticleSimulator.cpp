@@ -4,7 +4,7 @@
 
 #include "common/FileReader.hpp"
 
-#include "common/tic_toc.hpp"
+//#include "common/tic_toc.hpp"
 
 void Exit() {
     std::exit(1);
