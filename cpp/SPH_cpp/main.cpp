@@ -21,6 +21,9 @@
 
 #include "nanogui/nanogui.h"
 
+#include "lodepng.h"
+#include "lodepng_util.h"
+
 nanogui::Screen *screen;
 
 using std::cout;
@@ -53,6 +56,38 @@ unsigned int frames_last_second;
 
 int main() {
     using namespace nanogui;
+
+    std::vector<unsigned char> hmap;
+    unsigned int hmap_width, hmap_height;
+    unsigned int error = lodepng::decode(hmap, hmap_width, hmap_height, "../images/hmap_1.png");
+    if (error != 0) {
+        cout << "LodePNG error " << error << ": " << lodepng_error_text(error) << endl;
+        std::exit(EXIT_FAILURE);
+    }
+
+    auto info = lodepng::getPNGHeaderInfo(hmap);
+    std::string colortype;
+    switch (info.color.colortype) {
+        case LodePNGColorType::LCT_GREY:
+            colortype = "greyscale";
+            break;
+        case LodePNGColorType::LCT_PALETTE:
+            colortype = "palette";
+            break;
+        case LodePNGColorType::LCT_RGB:
+            colortype = "RGB";
+            break;
+        case LodePNGColorType::LCT_GREY_ALPHA:
+            colortype = "greyscale with alpha";
+            break;
+        case LodePNGColorType::LCT_RGBA:
+            colortype = "RGBA";
+            break;
+        default:
+            colortype = "";
+            break;
+    }
+    cout << "bitdepth=" << info.color.bitdepth << ", color type =\"" << colortype << "\"" << endl;
 
     GLFWwindow *window;
 
@@ -140,7 +175,6 @@ int main() {
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
 
-
     // Declare which shader to use and bind it
     //ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.tessCont.glsl", "../shaders/particles.tessEval.glsl", "", "../shaders/particles.frag");
     ShaderProgram particlesShader("../shaders/particles.vert", "", "", "../shaders/particles.geom",
@@ -217,7 +251,6 @@ int main() {
         lDir = glm::vec3(1.0f);
 
         particlesShader();
-
 
         //Send uniform variables
         glUniformMatrix4fv(MV_Loc, 1, GL_FALSE, &MV[0][0]);

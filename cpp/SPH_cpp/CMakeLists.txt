@@ -71,6 +71,11 @@ add_subdirectory(${PROJECT_EXT_DIR}/nanogui)
 set(ALL_LIBRARIES ${ALL_LIBRARIES} nanogui)
 set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${NanoGUI_SOURCE_DIR}/include ${GLFW_SOURCE_DIR}/include)
 
+### LodePNG ###
+add_subdirectory(${PROJECT_EXT_DIR}/lodepng)
+set(ALL_LIBRARIES ${ALL_LIBRARIES} lodepng)
+set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${lodepng_SOURCE_DIR})
+
 ### GLEW on Windows
 if (MINGW)
     set(GLEW_DIR ${PROJECT_EXT_DIR}/glew)
