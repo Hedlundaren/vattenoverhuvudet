@@ -98,6 +98,7 @@ struct Parameters {
                                      grid_info.grid_dimensions.s[2];
     }
 
+
     inline static Parameters set_default_parameters(Parameters &p) {
         p.total_mass = 1000000.0f;
         p.kernel_size = 0.2f;

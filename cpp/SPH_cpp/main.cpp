@@ -252,7 +252,7 @@ int main() {
         // Clear the buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_BACK);
-        cout << "bg color = " << glm::to_string(params.bg_color) << endl;
+        //cout << "bg color = " << glm::to_string(params.bg_color) << endl;
         glClearColor(params.bg_color.r,
                      params.bg_color.g,
                      params.bg_color.b,
@@ -347,6 +347,20 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     window->setPosition(Vector2i(15, 15));
     window->setLayout(new GroupLayout());
 
+    Slider *slider = new Slider(window);
+    slider->setValue(0.5f);
+    slider->setFixedWidth(80);
+
+    TextBox *textBox = new TextBox(window);
+    textBox->setFixedSize(Vector2i(60, 25));
+    textBox->setValue("50");
+    textBox->setUnits("%");
+
+    slider->setCallback([=](float value) {
+        textBox->setValue(std::to_string((int) (value * 100)));
+        p->kernel_size = value;
+    });
+
     window = new Window(screen, "Background color");
     window->setPosition(Vector2i(425, 288));
     GridLayout *layout =
@@ -360,7 +374,7 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     ColorWheel *colorwheel = new ColorWheel(window);
 
     colorwheel->setCallback([=](const Color &value) {
-        cout << "Color wheel" << endl;
+        //cout << "Color wheel" << endl;
         p->bg_color.r = value.r();
         p->bg_color.g = value.g();
         p->bg_color.b = value.b();
