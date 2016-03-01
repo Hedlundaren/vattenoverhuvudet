@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <iomanip>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -347,17 +348,25 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     window->setPosition(Vector2i(15, 15));
     window->setLayout(new GroupLayout());
 
+    new Label(window, "Kernel size", "sans-bold");
+    Widget *panel = new Widget(window);
+        panel->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Middle, 0, 20));
+
     Slider *slider = new Slider(window);
-    slider->setValue(0.5f);
+    slider->setValue(p->kernel_size);
     slider->setFixedWidth(80);
 
     TextBox *textBox = new TextBox(window);
     textBox->setFixedSize(Vector2i(60, 25));
-    textBox->setValue("50");
-    textBox->setUnits("%");
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(1) << (double) p->kernel_size;
+    textBox->setValue(stream.str());
 
     slider->setCallback([=](float value) {
-        textBox->setValue(std::to_string((int) (value * 100)));
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(1) << (double) value;
+        textBox->setValue(stream.str());
         p->kernel_size = value;
     });
 
