@@ -1,11 +1,15 @@
 #include "HeightMap.hpp"
 
+#include <cmath>
+
 #include "glm/gtx/string_cast.hpp"
 #include "common/image_util.hpp"
 
 using std::cout;
 using std::cerr;
 using std::endl;
+
+static glm::uvec3 HeightMap::MAX_VOXEL_SAMPLER_SIZE = glm::uvec3(32, 32, 32);
 
 float uchar_to_float(unsigned char a) {
     return static_cast<float>(a) / 255.0f;
@@ -19,7 +23,7 @@ bool HeightMap::initFromPNGs(std::string map_name) {
     // load heightmap
     const std::string hmap_name = map_name + ".hmap.png";
     std::vector<unsigned char> hmap;
-    unsigned int hmap_width = 0, hmap_height = 0;
+    uint hmap_width = 0, hmap_height = 0;
     success &= loadPNGfromImagesFolder(hmap, hmap_width, hmap_height, hmap_name);
 
     if (!success) {
@@ -30,7 +34,7 @@ bool HeightMap::initFromPNGs(std::string map_name) {
     // load normalmap
     const std::string nmap_name = map_name + ".nmap.png";
     std::vector<unsigned char> nmap;
-    unsigned int nmap_width = 0, nmap_height = 0;
+    uint nmap_width = 0, nmap_height = 0;
     success &= loadPNGfromImagesFolder(nmap, nmap_width, nmap_height, nmap_name);
 
     if (!success) {
@@ -52,24 +56,40 @@ bool HeightMap::initFromPNGs(std::string map_name) {
 
     generateHeightMap(hmap);
     generateNormalMap(nmap);
+
+    return true;
 }
 
 void HeightMap::generateHeightMap(const std::vector<unsigned char> &hmap_src) {
+    uint CHANNEL_COUNT = 0;
+
     auto info = lodepng::getPNGHeaderInfo(hmap_src);
-    if (info.color.colortype != LodePNGColorType::LCT_GREY) {
-        cerr << "Heightmap must be a greyscale image." << endl;
-        std::exit(EXIT_FAILURE);
+    switch (info.color.colortype) {
+        case LodePNGColorType::LCT_GREY:
+            cerr << "Cannot create normalmap from greyscale image." << endl;
+            std::exit(EXIT_FAILURE);
+        case LodePNGColorType::LCT_RGB:
+            CHANNEL_COUNT = 3;
+            break;
+        case LodePNGColorType::LCT_GREY_ALPHA:
+            CHANNEL_COUNT = 2;
+            break;
+        case LodePNGColorType::LCT_RGBA:
+            CHANNEL_COUNT = 4;
+            break;
     }
 
-    heightmap.reserve(hmap_src.size());
+    heightmap.resize(width * height);
 
-    for (unsigned int idx = 0; idx < hmap_src.size(); ++idx) {
-        heightmap[idx] = uchar_to_float(hmap_src[idx]);
+    for (uint y = 0; y < height; ++y) {
+        for (uint x = 0; x < width; ++x) {
+            heightmap.at(width * y + x) = std::min(1.0f, uchar_to_float(hmap_src[CHANNEL_COUNT * (width * y + x)]));
+        }
     }
 }
 
 void HeightMap::generateNormalMap(const std::vector<unsigned char> &nmap_src) {
-    unsigned int CHANNEL_COUNT = 0;
+    uint CHANNEL_COUNT = 0;
 
     auto info = lodepng::getPNGHeaderInfo(nmap_src);
     switch (info.color.colortype) {
@@ -87,12 +107,12 @@ void HeightMap::generateNormalMap(const std::vector<unsigned char> &nmap_src) {
             break;
     }
 
-    normalmap.reserve(nmap_src.size());
+    normalmap.resize(width * height);
 
-    for (unsigned int y = 0; y < height; ++y) {
-        for (unsigned int x = 0; x < width; ++x) {
+    for (uint y = 0; y < height; ++y) {
+        for (uint x = 0; x < width; ++x) {
             // red channel contains x-component of normal
-            unsigned int channel = 0; // red
+            uint channel = 0; // red
             const float red = uchar_to_float(nmap_src[CHANNEL_COUNT * width * y + CHANNEL_COUNT * x + channel]);
 
             // green channel contains z-component of normal
@@ -100,7 +120,7 @@ void HeightMap::generateNormalMap(const std::vector<unsigned char> &nmap_src) {
             const float green = uchar_to_float(nmap_src[CHANNEL_COUNT * width * y + CHANNEL_COUNT * x + channel]);
 
             // extract y-component and store in normalmap
-            normalmap[width * y + x] = unbakeNormal(red, green);
+            normalmap.at(width * y + x) = unbakeNormal(red, green);
         }
     }
 }
@@ -127,4 +147,22 @@ void HeightMap::debug_print() {
         cout << glm::to_string(value) << ", ";
     }
     cout << endl;
+}
+
+void HeightMap::calcDensityVoxelSampler() {
+    density_voxel_sampler.resize(MAX_VOXEL_SAMPLER_SIZE.x *
+                                 MAX_VOXEL_SAMPLER_SIZE.y *
+                                 MAX_VOXEL_SAMPLER_SIZE.z);
+}
+
+void HeightMap::calcBakedNormalVoxelSampler() {
+    baked_normal_voxel_sampler.resize(MAX_VOXEL_SAMPLER_SIZE.x *
+                                      MAX_VOXEL_SAMPLER_SIZE.y *
+                                      MAX_VOXEL_SAMPLER_SIZE.z);
+}
+
+void HeightMap::calcNormalVoxelSampler() {
+    normal_voxel_sampler.resize(MAX_VOXEL_SAMPLER_SIZE.x *
+                                MAX_VOXEL_SAMPLER_SIZE.y *
+                                MAX_VOXEL_SAMPLER_SIZE.z);
 }

@@ -62,7 +62,7 @@ int main() {
     using namespace nanogui;
 
     HeightMap hmap;
-    if (!hmap.initFromPNGs("simple")) {
+    if (!hmap.initFromPNGs("smiley")) {
         return 0;
     }
 
