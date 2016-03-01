@@ -26,6 +26,8 @@ nanogui::Screen *screen;
 using std::cout;
 using std::endl;
 
+ParticleSimulator *createSimulator(std::vector<glm::vec3> &positions, std::vector<glm::vec3> &velocities, Parameters &params);
+
 void setWindowFPS(GLFWwindow *window, float fps);
 
 void setNanoScreenCallbacksGLFW(GLFWwindow *window, nanogui::Screen *screen);
@@ -97,45 +99,20 @@ int main() {
         return -1;
     }
 #endif
-
-    ParticleSimulator *simulator;
-
-#ifdef USE_OPENCL_SIMULATION
-    simulator = new OpenClParticleSimulator();
-#else
-    simulator = new CppParticleSimulator();
-#endif
-
-    //Generate particles
-    int n = -1;
     cout << "How many particles? ";
-    std::cin >> n;
-    const int n_particles = n;
+    int n_particles;
+    std::cin >> n_particles;
 
     Parameters params(n_particles);
     Parameters::set_default_parameters(params);
+
+    std::vector<glm::vec3> positions, velocities;
+    ParticleSimulator *simulator = createSimulator(positions, velocities, params);
 
     screen = new Screen;
     screen->initialize(window, true);
     setNanoScreenCallbacksGLFW(window, screen);
     createGUI(screen, params);
-
-#ifdef USE_OPENCL_SIMULATION
-    // Cylinder generation
-    const float cylinder_radius = params.left_bound / 2;
-    const glm::vec3 origin(- cylinder_radius * 0.75f, params.top_bound / 2, - cylinder_radius * 0.75f);
-    const glm::vec3 size(cylinder_radius / 2, params.top_bound, cylinder_radius / 2);
-
-    std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles,
-                                                              origin.x, origin.x + size.x,
-                                                              origin.y, origin.y + size.y,
-                                                              origin.z, origin.z + size.z);
-    std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
-#else
-    std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, -0.2, 0, 1, -1, 1);
-    std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
-#endif
-
 
     //Generate VBOs
     GLuint pos_vbo = 0;
@@ -252,7 +229,6 @@ int main() {
         // Clear the buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_BACK);
-        cout << "bg color = " << glm::to_string(params.bg_color) << endl;
         glClearColor(params.bg_color.r,
                      params.bg_color.g,
                      params.bg_color.b,
@@ -360,11 +336,39 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     ColorWheel *colorwheel = new ColorWheel(window);
 
     colorwheel->setCallback([=](const Color &value) {
-        cout << "Color wheel" << endl;
         p->bg_color.r = value.r();
         p->bg_color.g = value.g();
         p->bg_color.b = value.b();
     });
 
     screen->performLayout();
+}
+
+ParticleSimulator *createSimulator(std::vector<glm::vec3> &positions, std::vector<glm::vec3> &velocities,
+                                   Parameters &params) {
+    cout << "Use C++ [0] or OpenCL [1] for fluid simulation? ";
+    int choice = -1;
+    std::cin >> choice;
+
+    if (choice == 0) {
+        positions = generate_uniform_vec3s(params.n_particles, -1, -0.2, 0, 1, -1, 1);
+        velocities = generate_uniform_vec3s(params.n_particles, 0, 0, 0, 0, 0, 0);
+
+        return new CppParticleSimulator;
+    } else if (choice == 1) {
+        // Cylinder generation
+        const float cylinder_radius = params.left_bound / 2;
+        const glm::vec3 origin(-cylinder_radius * 0.75f, params.top_bound / 2, -cylinder_radius * 0.75f);
+        const glm::vec3 size(cylinder_radius / 2, params.top_bound, cylinder_radius / 2);
+
+        positions = generate_uniform_vec3s(params.n_particles,
+                                           origin.x, origin.x + size.x,
+                                           origin.y, origin.y + size.y,
+                                           origin.z, origin.z + size.z);
+        velocities = generate_uniform_vec3s(params.n_particles, 0, 0, 0, 0, 0, 0);
+
+        return new OpenClParticleSimulator;
+    }
+
+    std::exit(EXIT_FAILURE);
 }
