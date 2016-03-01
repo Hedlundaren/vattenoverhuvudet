@@ -49,6 +49,7 @@ void createGUI(nanogui::Screen *screen, Parameters &params);
 
 std::chrono::duration<double> second_accumulator;
 unsigned int frames_last_second;
+nanogui::TextBox *fpsBox;
 
 int main() {
     using namespace nanogui;
@@ -279,6 +280,8 @@ int main() {
         if (second_accumulator.count() >= 1.0) {
             float newFPS = static_cast<float>( frames_last_second / second_accumulator.count());
             setWindowFPS(window, newFPS);
+            params.fps = newFPS;
+            fpsBox->setValue(std::to_string(newFPS));
             frames_last_second = 0;
             second_accumulator = std::chrono::duration<double>(0);
         }
@@ -423,6 +426,16 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     );
     cb->setFontSize(16);
     cb->setChecked(true);
+
+    Widget *panel_fps = new Widget(window);
+    panel_fps->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Maximum, 5, 10));
+    new Label(panel_fps, "FPS: ", "sans-bold");
+    fpsBox = new TextBox(panel_fps);
+    fpsBox->setFixedSize(Vector2i(100, 20));
+    fpsBox->setDefaultValue("0.0");
+    fpsBox->setFontSize(16);
+    fpsBox->setFormat("[-]?[0-9]*\\.?[0-9]+");
 
     screen->performLayout();
 }
