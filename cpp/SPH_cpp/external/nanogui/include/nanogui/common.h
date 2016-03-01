@@ -11,7 +11,7 @@
 
 #pragma once
 
-#include <Eigen/Core>
+#include "../../ext/eigen/Eigen/Core"
 #include <stdint.h>
 #include <array>
 #include <vector>
