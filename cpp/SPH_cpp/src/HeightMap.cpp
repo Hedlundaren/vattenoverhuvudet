@@ -2,9 +2,11 @@
 #include "HeightMapData.hpp"
 
 #include <cmath>
+#include <algorithm>
 
 #include "glm/gtx/string_cast.hpp"
 #include "common/image_util.hpp"
+#include "rendering/ShaderProgram.hpp"
 
 // LodePNG for PNG loading
 #include "lodepng.h"
@@ -12,6 +14,8 @@
 
 // nanoflann for kd-tree nearest neighbour calculation, used for voxel grid sampler calc
 #include "nanoflann.hpp"
+
+#define ALWAYS_CALCULATE_CLOSEST_NORMAL true
 
 using std::cout;
 using std::cerr;
@@ -157,7 +161,8 @@ void HeightMap::debug_print() {
     cout << endl;
 }
 
-void HeightMap::calcVoxelSamplers(float density_radius_norm) {
+void HeightMap::calcVoxelSamplers(std::function<float(const std::vector<float>, const float)> density_func,
+                                  float density_radius_norm) {
     using namespace nanoflann;
     typedef KDTreeSingleIndexAdaptor<
             L2_Simple_Adaptor<float, HeightMapData>,
@@ -172,6 +177,7 @@ void HeightMap::calcVoxelSamplers(float density_radius_norm) {
     };
 
     density_voxel_sampler.resize(size.x * size.y * size.z);
+    normal_voxel_sampler.resize(size.x * size.y * size.z);
 
     // Create heightmap data set for kdTree nearest neighbour algorithm
     std::shared_ptr<std::vector<glm::vec3>> tmp_map(new std::vector<glm::vec3>);
@@ -197,26 +203,25 @@ void HeightMap::calcVoxelSamplers(float density_radius_norm) {
     for (uint vox_idx = 0; vox_idx < size.x; ++vox_idx) {
         for (uint vox_idy = 0; vox_idy < size.y; ++vox_idy) {
             for (uint vox_idz = 0; vox_idz < size.z; ++vox_idz) {
+                const uint flat_index = get_flat_index(vox_idx, vox_idy, vox_idz);
+
                 // knnSearch: perform a search for the N closest points
                 const glm::vec3 query(static_cast<float>(vox_idx) / size.x,
                                       static_cast<float>(vox_idy) / size.y,
                                       static_cast<float>(vox_idz) / size.z);
 
-//                const size_t result_count = 5;
-//                std::vector<size_t> ret_index(result_count);
-//                std::vector<float> out_distance_sqr(result_count);
-//                index.knnSearch(&(query[0]), result_count, ret_index.data(), out_distance_sqr.data());
-#ifdef MY_DEBUG
-                cout << "knnSearch(): query=" << glm::to_string(query) << ", result_count=" << result_count << endl;
-                for (uint result = 0; result < result_count; ++result) {
-                    cout << "idx[" << result << "]=" << ret_index[result] << " dist[" << result << "]=" <<
-                    out_distance_sqr[result] << endl;
-                }
-                cout << endl;
-#endif
-
+                // Find neighbours within "density-contribution-range"
                 std::vector<std::pair<size_t, float>> indices_distances;
                 index.radiusSearch(&(query[0]), density_radius_norm, indices_distances, SearchParams());
+
+                // Extract distances and calculate the total density contribution
+                std::vector<float> distances;
+                std::transform(indices_distances.begin(), indices_distances.end(), std::back_inserter(distances),
+                               [](const std::pair<size_t, float> &p) { return p.second; });
+
+                const float density_contribution = density_func(distances, density_radius_norm);
+                density_voxel_sampler[flat_index] = density_contribution;
+
 #ifdef MY_DEBUG
                 cout << "radiusSearch(): query=" << glm::to_string(query) << ", result_count=" <<
                 indices_distances.size() << endl;
@@ -226,7 +231,86 @@ void HeightMap::calcVoxelSamplers(float density_radius_norm) {
                 }
                 cout << endl;
 #endif
+
+#if !ALWAYS_CALCULATE_CLOSEST_NORMAL
+                if (indices_distances.empty() ) {
+#endif
+                // Find the closest neighbour
+                size_t closest_index = 0;
+                float distance = INFINITY;
+                index.knnSearch(&(query[0]), 1, &closest_index, &distance);
+
+                // todo investigate indexing here
+                normal_voxel_sampler[flat_index] = normalmap[closest_index];
+
+#if !ALWAYS_CALCULATE_CLOSEST_NORMAL
+                } else {
+                    normal_voxel_sampler[flat_index] = glm::vec3(0.0f, 1.0f, 0.0f);
+                }
+#endif
+
+#ifdef MY_DEBUG
+                cout << "knnSearch(): query=" << glm::to_string(query) << endl;
+                cout << "closest index=" << closest_index << ", distance=" << distance << endl;
+#endif
             }
         }
     }
+}
+
+void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
+    std::vector<glm::vec3> positions(width * height);
+
+    glm::vec3 position;
+    for (uint imx = 0; imx < width; ++imx) {
+        for (uint imy = 0; imy < height; ++imy) {
+            // x/z-coords are simply generated from for-loop indices
+            position.x = (static_cast<float>(imx) / width) * dimensions.x - origin.x;
+            position.z = (static_cast<float>(imy) / height) * dimensions.z - origin.z;
+
+            // Read y-coord of vertex from heightmap
+            position.y = heightmap[imx + width * imy] * dimensions.y - origin.y;
+
+            positions[imx + width * imy] = position;
+        }
+    }
+
+    /// setup shader
+    shader = std::shared_ptr<ShaderProgram>(new ShaderProgram("../shaders/heightmap.vert",
+                                                              "", "", "", // no tesselation or geometry
+                                                              "../shaders/heightmap.frag"));
+    MVP_loc = glGetUniformLocation(*shader, "MVP");
+
+    // generate vertex buffer for positions
+    glGenBuffers(1, &VBO_positions);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_positions);
+    glBufferData(GL_ARRAY_BUFFER, 3 * width * height * sizeof(float), positions.data(), GL_STATIC_DRAW);
+
+    // generate vertex buffer for normals
+    glGenBuffers(1, &VBO_normals);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_normals);
+    glBufferData(GL_ARRAY_BUFFER, 3 * width * height * sizeof(float), normalmap.data(), GL_STATIC_DRAW);
+
+    // setup vertex triangle indices
+
+
+    /// setup Vertex Array Object
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_positions);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL); //position
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_normals);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL); //normal
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+}
+
+void HeightMap::render(glm::mat4 MVP) {
+    glUseProgram(*shader);
+    glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, &MVP[0][0]);
+
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, width * height);
+    glBindVertexArray(0);
 }

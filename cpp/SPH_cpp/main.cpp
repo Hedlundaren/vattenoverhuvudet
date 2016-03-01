@@ -35,7 +35,8 @@ nanogui::Screen *screen;
 using std::cout;
 using std::endl;
 
-ParticleSimulator *createSimulator(std::vector<glm::vec3> &positions, std::vector<glm::vec3> &velocities, Parameters &params);
+ParticleSimulator *createSimulator(std::vector<glm::vec3> &positions, std::vector<glm::vec3> &velocities,
+                                   Parameters &params);
 
 void setWindowFPS(GLFWwindow *window, float fps);
 
@@ -76,10 +77,14 @@ int main() {
 
     //hmap.debug_print();
     tic();
-    hmap.calcVoxelSamplers(density_contribution_radius);
+    hmap.calcVoxelSamplers([](const std::vector<float> &distances, const float max_radius) {
+        float sum = 0.0f;
+        for (const auto distance : distances) {
+            sum += (max_radius - distance);
+        }
+        return sum;
+    }, density_contribution_radius);
     toc();
-
-    return 0;
 
     GLFWwindow *window;
 
@@ -140,6 +145,10 @@ int main() {
     screen->initialize(window, true);
     setNanoScreenCallbacksGLFW(window, screen);
     createGUI(screen, params);
+
+    hmap.initGL(glm::vec3(params.left_bound, params.bottom_bound, params.near_bound),
+                glm::vec3(params.right_bound - params.left_bound, params.top_bound - params.bottom_bound,
+                          params.far_bound - params.near_bound));
 
     //Generate VBOs
     GLuint pos_vbo = 0;
@@ -263,6 +272,8 @@ int main() {
         glBindVertexArray(vao);
         glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
         //glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
+
+        hmap.render(P * MV);
 
         screen->drawWidgets();
 
