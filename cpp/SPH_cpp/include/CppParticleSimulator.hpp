@@ -13,13 +13,13 @@ public:
 
     void updateSimulation(const Parameters &params, float dt_seconds);
 
-    void checkBoundaries();
+    void checkBoundaries(const Parameters &params);
 
-    void checkBoundariesGlass();
+    void checkBoundariesGlass(const Parameters &params);
 
-    glm::vec3 calculateBoundaryForce(int i);
+    glm::vec3 calculateBoundaryForce(const Parameters &params, int i);
 
-    glm::vec3 calculateBoundaryForceGlass(int i);
+    glm::vec3 calculateBoundaryForceGlass(const Parameters &params, int i);
 
 private:
     std::vector<glm::vec3> positions, velocities;
