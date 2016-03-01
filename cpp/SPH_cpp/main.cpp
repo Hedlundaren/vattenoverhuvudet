@@ -351,7 +351,7 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     new Label(window, "Kernel size", "sans-bold");
     Widget *panel_kernel = new Widget(window);
         panel_kernel->setLayout(new BoxLayout(Orientation::Horizontal,
-                                       Alignment::Fill, 0, 25));
+                                       Alignment::Minimum, 0, 25));
 
     Slider *slider_kernel = new Slider(panel_kernel);
     slider_kernel->setValue(p->kernel_size);
@@ -373,7 +373,7 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     new Label(window, "Gas Constant", "sans-bold");
     Widget *panel_gas = new Widget(window);
         panel_gas->setLayout(new BoxLayout(Orientation::Horizontal,
-                                   Alignment::Fill, 0, 25));
+                                   Alignment::Minimum, 0, 25));
 
     Slider *slider_gas = new Slider(panel_gas);
     slider_gas->setValue(p->k_gas);
@@ -394,7 +394,7 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     new Label(window, "Viscosity constant", "sans-bold");
     Widget *panel_vis = new Widget(window);
     panel_vis->setLayout(new BoxLayout(Orientation::Horizontal,
-                                       Alignment::Fill, 0, 25));
+                                       Alignment::Minimum, 0, 25));
 
     Slider *slider_vis = new Slider(panel_vis);
     slider_vis->setValue(1);
