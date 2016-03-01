@@ -26,6 +26,8 @@
 
 #include "nanoflann.hpp"
 
+#include "HeightMap.hpp"
+
 nanogui::Screen *screen;
 
 using std::cout;
@@ -59,39 +61,14 @@ unsigned int frames_last_second;
 int main() {
     using namespace nanogui;
 
-    std::vector<unsigned char> hmap;
-    unsigned int hmap_width, hmap_height;
-    unsigned int error = lodepng::decode(hmap, hmap_width, hmap_height, "../images/simple.hmap.png");
-    if (error != 0) {
-        cout << "LodePNG error " << error << ": " << lodepng_error_text(error) << endl;
-        std::exit(EXIT_FAILURE);
+    HeightMap hmap;
+    if (!hmap.initFromPNGs("simple")) {
+        return 0;
     }
 
-    auto info = lodepng::getPNGHeaderInfo(hmap);
-    std::string colortype;
-    switch (info.color.colortype) {
-        case LodePNGColorType::LCT_GREY:
-            colortype = "greyscale";
-            break;
-        case LodePNGColorType::LCT_PALETTE:
-            colortype = "palette";
-            break;
-        case LodePNGColorType::LCT_RGB:
-            colortype = "RGB";
-            break;
-        case LodePNGColorType::LCT_GREY_ALPHA:
-            colortype = "greyscale with alpha";
-            break;
-        case LodePNGColorType::LCT_RGBA:
-            colortype = "RGBA";
-            break;
-        default:
-            colortype = "";
-            break;
-    }
-    cout << "bitdepth=" << info.color.bitdepth << ", color type =\"" << colortype << "\"" << endl;
+    hmap.debug_print();
 
-
+    return 0;
 
     GLFWwindow *window;
 
