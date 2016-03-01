@@ -19,12 +19,34 @@
 #include "OpenCL/OpenClParticleSimulator.hpp"
 #include "CppParticleSimulator.hpp"
 
+#include "nanogui/nanogui.h"
+
+nanogui::Screen *screen;
+
 void setWindowFPS(GLFWwindow *window, float fps);
+
+void setNanoScreenCallbacksGLFW(GLFWwindow *window, nanogui::Screen *screen);
+
+void cursorPosCallback(GLFWwindow *window, double x, double y);
+
+void mouseButtonCallback(GLFWwindow *window, int button, int action, int modifiers);
+
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+
+void charCallback(GLFWwindow *window, unsigned int codepoint);
+
+void dropCallback(GLFWwindow *window, int count, const char **filenames);
+
+void scrollCallback(GLFWwindow *window, double x, double y);
+
+void framebufferSizeCallback(GLFWwindow *window, int width, int height);
 
 std::chrono::duration<double> second_accumulator;
 unsigned int frames_last_second;
 
 int main() {
+    using namespace nanogui;
+
     GLFWwindow *window;
 
     if (!glfwInit()) {
@@ -71,6 +93,19 @@ int main() {
     }
 #endif
 
+    screen = new Screen;
+    screen->initialize(window, true);
+    setNanoScreenCallbacksGLFW(window, screen);
+
+    bool hello = false;
+
+    FormHelper *gui = new FormHelper(screen);
+    ref<Window> wnd = gui->addWindow(Eigen::Vector2i(10, 10), "Fluid simulation");
+    gui->addGroup("Parameters");
+    gui->addVariable("bool", hello);
+    screen->setVisible(true);
+    screen->performLayout();
+    wnd->center();
 
     ParticleSimulator *simulator;
 
@@ -135,7 +170,8 @@ int main() {
 
     // Declare which shader to use and bind it
     //ShaderProgram particlesShader("../shaders/particles.vert", "../shaders/particles.tessCont.glsl", "../shaders/particles.tessEval.glsl", "", "../shaders/particles.frag");
-    ShaderProgram particlesShader("../shaders/particles.vert", "", "","../shaders/particles.geom", "../shaders/particles.frag");
+    ShaderProgram particlesShader("../shaders/particles.vert", "", "", "../shaders/particles.geom",
+                                  "../shaders/particles.frag");
     particlesShader();
 
     //Parameters for tessellation shaders
@@ -143,7 +179,7 @@ int main() {
 
 
     //Declare uniform locations
-    GLint MV_Loc, P_Loc, lDir_Loc, radius_Loc= -1;
+    GLint MV_Loc, P_Loc, lDir_Loc, radius_Loc = -1;
     MV_Loc = glGetUniformLocation(particlesShader, "MV");
     P_Loc = glGetUniformLocation(particlesShader, "P");
     lDir_Loc = glGetUniformLocation(particlesShader, "lDir");
@@ -197,12 +233,15 @@ int main() {
         glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
 
         glm::mat4 V = VTrans * glm::lookAt(glm::vec3(eye_position), scene_center,
-                                  glm::vec3(0.0f, 1.0f, 0.0f));
+                                           glm::vec3(0.0f, 1.0f, 0.0f));
         P = glm::perspectiveFov(50.0f, static_cast<float>(width), static_cast<float>(height), 0.1f, 100.0f);
         MV = V * M;
 
         //Calculate light direction
         lDir = glm::vec3(1.0f);
+
+        particlesShader();
+
 
         //Send uniform variables
         glUniformMatrix4fv(MV_Loc, 1, GL_FALSE, &MV[0][0]);
@@ -215,13 +254,15 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_BACK);
 
-        glClearColor(0.0,0.1,0.2,1);
+        glClearColor(0.0, 0.1, 0.2, 1);
 
 
         //Send VAO to the GPU
         glBindVertexArray(vao);
         glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
         //glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
+
+        screen->drawWidgets();
 
         glfwSwapBuffers(window);
         ++frames_last_second;
@@ -251,4 +292,48 @@ void setWindowFPS(GLFWwindow *window, float fps) {
     ss << "FPS: " << fps;
 
     glfwSetWindowTitle(window, ss.str().c_str());
+}
+
+void setNanoScreenCallbacksGLFW(GLFWwindow *window, nanogui::Screen *screen) {
+    /* Propagate GLFW events to the appropriate Screen instance */
+    glfwSetCursorPosCallback(window, &cursorPosCallback);
+    glfwSetMouseButtonCallback(window, &mouseButtonCallback);
+    glfwSetKeyCallback(window, &keyCallback);
+    glfwSetCharCallback(window, &charCallback);
+    glfwSetDropCallback(window, &dropCallback);
+    glfwSetScrollCallback(window, &scrollCallback);
+
+    /* React to framebuffer size events -- includes window
+       size events and also catches things like dragging
+       a window from a Retina-capable screen to a normal
+       screen on Mac OS X */
+    glfwSetFramebufferSizeCallback(window, &framebufferSizeCallback);
+}
+
+void cursorPosCallback(GLFWwindow *window, double x, double y) {
+    screen->cursorPosCallbackEvent(x, y);
+}
+
+void mouseButtonCallback(GLFWwindow *window, int button, int action, int modifiers) {
+    screen->mouseButtonCallbackEvent(button, action, modifiers);
+}
+
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    screen->keyCallbackEvent(key, scancode, action, mods);
+}
+
+void charCallback(GLFWwindow *window, unsigned int codepoint) {
+    screen->charCallbackEvent(codepoint);
+}
+
+void dropCallback(GLFWwindow *window, int count, const char **filenames) {
+    screen->dropCallbackEvent(count, filenames);
+}
+
+void scrollCallback(GLFWwindow *window, double x, double y) {
+    screen->scrollCallbackEvent(x, y);
+}
+
+void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
+    screen->resizeCallbackEvent(width, height);
 }
