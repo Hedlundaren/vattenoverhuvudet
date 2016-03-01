@@ -350,43 +350,62 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
 
     new Label(window, "Kernel size", "sans-bold");
     Widget *panel = new Widget(window);
-        panel->setLayout(new BoxLayout(Orientation::Horizontal,
-                                       Alignment::Middle, 0, 20));
+    panel->setLayout(new BoxLayout(Orientation::Horizontal,
+                                   Alignment::Middle, 0, 20));
 
-    Slider *slider = new Slider(window);
-    slider->setValue(p->kernel_size);
-    slider->setFixedWidth(80);
+    Slider *slider_kernel = new Slider(window);
+    slider_kernel->setValue(p->kernel_size);
 
-    TextBox *textBox = new TextBox(window);
-    textBox->setFixedSize(Vector2i(60, 25));
+    TextBox *textBox_kernel = new TextBox(window);
     std::stringstream stream;
     stream << std::fixed << std::setprecision(1) << (double) p->kernel_size;
-    textBox->setValue(stream.str());
+    textBox_kernel->setValue(stream.str());
 
-    slider->setCallback([=](float value) {
-        std::stringstream stream;
-        stream << std::fixed << std::setprecision(1) << (double) value;
-        textBox->setValue(stream.str());
-        p->kernel_size = value;
+    slider_kernel->setCallback([=](float value) {
+        std::stringstream stream_kernel;
+        stream_kernel << std::fixed << std::setprecision(1) << (double) p->kernel_size;
+        textBox_kernel->setValue(stream_kernel.str());
+        p->kernel_size = value*2 + 0.1;
     });
 
-    window = new Window(screen, "Background color");
-    window->setPosition(Vector2i(425, 288));
-    GridLayout *layout =
-            new GridLayout(Orientation::Horizontal, 2,
-                           Alignment::Middle, 15, 5);
-    layout->setColAlignment(
-            {Alignment::Maximum, Alignment::Fill});
-    layout->setSpacing(0, 10);
-    window->setLayout(layout);
+    new Label(window, "Gas Constant", "sans-bold");
+    Widget *panel_gas = new Widget(window);
+    panel_gas->setLayout(new BoxLayout(Orientation::Horizontal,
+                                   Alignment::Middle, 0, 20));
 
-    ColorWheel *colorwheel = new ColorWheel(window);
+    Slider *slider_gas = new Slider(window);
+    slider_gas->setValue(p->k_gas);
 
-    colorwheel->setCallback([=](const Color &value) {
-        //cout << "Color wheel" << endl;
-        p->bg_color.r = value.r();
-        p->bg_color.g = value.g();
-        p->bg_color.b = value.b();
+    TextBox *textBox_gas = new TextBox(window);
+    std::stringstream stream_gas;
+    stream_gas << std::fixed << std::setprecision(1) << (double) p->k_gas;
+    textBox_gas->setValue(stream_gas.str());
+
+    slider_gas->setCallback([=](float value_gas) {
+        std::stringstream stream_gas;
+        stream_gas << std::fixed << std::setprecision(1) << (double) p->k_gas;
+        textBox_gas->setValue(stream_gas.str());
+        p->k_gas = value_gas;
+    });
+
+    new Label(window, "Viscosity constant", "sans-bold");
+    Widget *panel_vis = new Widget(window);
+    panel_vis->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Middle, 0, 20));
+
+    Slider *slider_vis = new Slider(window);
+    slider_vis->setValue(1);
+
+    TextBox *textBox_vis = new TextBox(window);
+    std::stringstream stream_vis;
+    stream_vis << std::fixed << std::setprecision(1) << (double) p->k_viscosity;
+    textBox_vis->setValue(stream_vis.str());
+
+    slider_vis->setCallback([=](float value_gas) {
+        std::stringstream stream_vis;
+        stream_vis << std::fixed << std::setprecision(1) << (double) p->k_viscosity;
+        textBox_vis->setValue(stream_vis.str());
+        p->k_viscosity = 20*value_gas;
     });
 
     screen->performLayout();
