@@ -347,142 +347,7 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     window->setPosition(Vector2i(15, 15));
     window->setLayout(new GroupLayout());
 
-    /* No need to store a pointer, the data structure will be automatically
-       freed when the parent window is deleted */
-    new Label(window, "Push buttons", "sans-bold");
-
-    Button *b = new Button(window, "Plain button");
-    b->setCallback([] { cout << "pushed!" << endl; });
-    b = new Button(window, "Styled", ENTYPO_ICON_ROCKET);
-    b->setBackgroundColor(Color(0, 0, 255, 25));
-    b->setCallback([] { cout << "pushed!" << endl; });
-
-    new Label(window, "Toggle buttons", "sans-bold");
-    b = new Button(window, "Toggle me");
-    b->setFlags(Button::ToggleButton);
-    b->setChangeCallback([](bool state) { cout << "Toggle button state: " << state << endl; });
-
-    new Label(window, "Radio buttons", "sans-bold");
-    b = new Button(window, "Radio button 1");
-    b->setFlags(Button::RadioButton);
-    b = new Button(window, "Radio button 2");
-    b->setFlags(Button::RadioButton);
-
-    new Label(window, "A tool palette", "sans-bold");
-    Widget *tools = new Widget(window);
-    tools->setLayout(new BoxLayout(Orientation::Horizontal,
-                                   Alignment::Middle, 0, 6));
-
-    b = new ToolButton(tools, ENTYPO_ICON_CLOUD);
-    b = new ToolButton(tools, ENTYPO_ICON_FF);
-    b = new ToolButton(tools, ENTYPO_ICON_COMPASS);
-    b = new ToolButton(tools, ENTYPO_ICON_INSTALL);
-
-    new Label(window, "Popup buttons", "sans-bold");
-    PopupButton *popupBtn = new PopupButton(window, "Popup", ENTYPO_ICON_EXPORT);
-    Popup *popup = popupBtn->popup();
-    popup->setLayout(new GroupLayout());
-    new Label(popup, "Arbitrary widgets can be placed here");
-    new CheckBox(popup, "A check box");
-    popupBtn = new PopupButton(popup, "Recursive popup", ENTYPO_ICON_FLASH);
-    popup = popupBtn->popup();
-    popup->setLayout(new GroupLayout());
-    new CheckBox(popup, "Another check box");
-
-    window = new Window(screen, "Basic widgets");
-    window->setPosition(Vector2i(200, 15));
-    window->setLayout(new GroupLayout());
-
-    new Label(window, "Message dialog", "sans-bold");
-    tools = new Widget(window);
-    tools->setLayout(new BoxLayout(Orientation::Horizontal,
-                                   Alignment::Middle, 0, 6));
-    b = new Button(tools, "Info");
-    b->setCallback([&] {
-        auto dlg = new MessageDialog(screen, MessageDialog::Type::Information, "Title",
-                                     "This is an information message");
-        dlg->setCallback([](int result) { cout << "Dialog result: " << result << endl; });
-    });
-    b = new Button(tools, "Warn");
-    b->setCallback([&] {
-        auto dlg = new MessageDialog(screen, MessageDialog::Type::Warning, "Title", "This is a warning message");
-        dlg->setCallback([](int result) { cout << "Dialog result: " << result << endl; });
-    });
-    b = new Button(tools, "Ask");
-    b->setCallback([&] {
-        auto dlg = new MessageDialog(screen, MessageDialog::Type::Warning, "Title", "This is a question message", "Yes",
-                                     "No", true);
-        dlg->setCallback([](int result) { cout << "Dialog result: " << result << endl; });
-    });
-
-    new Label(window, "File dialog", "sans-bold");
-    tools = new Widget(window);
-    tools->setLayout(new BoxLayout(Orientation::Horizontal,
-                                   Alignment::Middle, 0, 6));
-    b = new Button(tools, "Open");
-    b->setCallback([&] {
-        cout << "File dialog result: " << file_dialog(
-                {{"png", "Portable Network Graphics"},
-                 {"txt", "Text file"}}, false) << endl;
-    });
-    b = new Button(tools, "Save");
-    b->setCallback([&] {
-        cout << "File dialog result: " << file_dialog(
-                {{"png", "Portable Network Graphics"},
-                 {"txt", "Text file"}}, true) << endl;
-    });
-
-    new Label(window, "Combo box", "sans-bold");
-    new ComboBox(window, {"Combo box item 1", "Combo box item 2", "Combo box item 3"});
-    new Label(window, "Check box", "sans-bold");
-    CheckBox *cb = new CheckBox(window, "Flag 1",
-                                [](bool state) { cout << "Check box 1 state: " << state << endl; }
-    );
-    cb->setChecked(true);
-    cb = new CheckBox(window, "Flag 2",
-                      [](bool state) { cout << "Check box 2 state: " << state << endl; }
-    );
-
-    new Label(window, "Slider and text box", "sans-bold");
-
-    Widget *panel = new Widget(window);
-    panel->setLayout(new BoxLayout(Orientation::Horizontal,
-                                   Alignment::Middle, 0, 20));
-
-    Slider *slider = new Slider(panel);
-    slider->setValue(0.5f);
-    slider->setFixedWidth(80);
-
-    TextBox *textBox = new TextBox(panel);
-    textBox->setFixedSize(Vector2i(60, 25));
-    textBox->setValue("50");
-    textBox->setUnits("%");
-    slider->setCallback([textBox](float value) {
-        textBox->setValue(std::to_string((int) (value * 100)));
-    });
-    slider->setFinalCallback([&](float value) {
-        cout << "Final slider value: " << (int) (value * 100) << endl;
-    });
-    textBox->setFixedSize(Vector2i(60, 25));
-    textBox->setFontSize(20);
-    textBox->setAlignment(TextBox::Alignment::Right);
-
-    window = new Window(screen, "Misc. widgets");
-    window->setPosition(Vector2i(425, 15));
-    window->setLayout(new GroupLayout());
-    new Label(window, "Color wheel", "sans-bold");
-    new ColorWheel(window);
-    new Label(window, "Function graph", "sans-bold");
-    Graph *graph = new Graph(window, "Some function");
-    graph->setHeader("E = 2.35e-3");
-    graph->setFooter("Iteration 89");
-    VectorXf &func = graph->values();
-    func.resize(100);
-    for (int i = 0; i < 100; ++i)
-        func[i] = 0.5f * (0.5f * std::sin(i / 10.f) +
-                          0.5f * std::cos(i / 23.f) + 1);
-
-    window = new Window(screen, "Grid of small widgets");
+    window = new Window(screen, "Background color");
     window->setPosition(Vector2i(425, 288));
     GridLayout *layout =
             new GridLayout(Orientation::Horizontal, 2,
@@ -492,74 +357,13 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     layout->setSpacing(0, 10);
     window->setLayout(layout);
 
-    {
-        new Label(window, "Floating point :", "sans-bold");
-        textBox = new TextBox(window);
-        textBox->setEditable(true);
-        textBox->setFixedSize(Vector2i(100, 20));
-        textBox->setValue("50");
-        textBox->setUnits("GiB");
-        textBox->setDefaultValue("0.0");
-        textBox->setFontSize(16);
-        textBox->setFormat("[-]?[0-9]*\\.?[0-9]+");
-    }
-
-    {
-        new Label(window, "Positive integer :", "sans-bold");
-        textBox = new TextBox(window);
-        textBox->setEditable(true);
-        textBox->setFixedSize(Vector2i(100, 20));
-        textBox->setValue("50");
-        textBox->setUnits("Mhz");
-        textBox->setDefaultValue("0.0");
-        textBox->setFontSize(16);
-        textBox->setFormat("[1-9][0-9]*");
-    }
-
-    {
-        new Label(window, "Checkbox :", "sans-bold");
-
-        cb = new CheckBox(window, "Check me");
-        cb->setFontSize(16);
-        cb->setChecked(true);
-    }
-
-    new Label(window, "Combo box :", "sans-bold");
-    ComboBox *cobo =
-            new ComboBox(window, {"Item 1", "Item 2", "Item 3"});
-    cobo->setFontSize(16);
-    cobo->setFixedSize(Vector2i(100, 20));
-
-    new Label(window, "Color button :", "sans-bold");
-    popupBtn = new PopupButton(window, "", 0);
-    popupBtn->setBackgroundColor(Color(255, 120, 0, 255));
-    popupBtn->setFontSize(16);
-    popupBtn->setFixedSize(Vector2i(100, 20));
-    popup = popupBtn->popup();
-    popup->setLayout(new GroupLayout());
-
-    ColorWheel *colorwheel = new ColorWheel(popup);
-    colorwheel->setColor(popupBtn->backgroundColor());
-
-    Button *colorBtn = new Button(popup, "Pick");
-    colorBtn->setFixedSize(Vector2i(100, 25));
-    Color c = colorwheel->color();
-    colorBtn->setBackgroundColor(c);
+    ColorWheel *colorwheel = new ColorWheel(window);
 
     colorwheel->setCallback([=](const Color &value) {
         cout << "Color wheel" << endl;
-        colorBtn->setBackgroundColor(value);
         p->bg_color.r = value.r();
         p->bg_color.g = value.g();
         p->bg_color.b = value.b();
-    });
-
-    colorBtn->setChangeCallback([colorBtn, popupBtn](bool pushed) {
-        cout << "Color button" << endl;
-        if (pushed) {
-            popupBtn->setBackgroundColor(colorBtn->backgroundColor());
-            popupBtn->setPushed(false);
-        }
     });
 
     screen->performLayout();
