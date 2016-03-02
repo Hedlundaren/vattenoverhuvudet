@@ -17,6 +17,7 @@ class ShaderProgram;
 class HeightMap {
 public:
     HeightMap();
+    ~HeightMap();
 
     inline static void SetMaxVoxelSamplerSize(uint max_size) {
         SetMaxVoxelSamplerSize(max_size, max_size, max_size);
@@ -32,7 +33,7 @@ public:
     // Returns true if it succeeded
     bool initFromPNGs(std::string map_name = "simple");
 
-    void debug_print();
+    void debug_print(int print_count = -1);
 
     // first argument is functor that takes in vector of distances, the maximum radius (aka kernel size) and returns the
     // density contribution (arbitrary units)
@@ -67,4 +68,6 @@ private:
 
     GLuint VAO;
     GLuint VBO_positions, VBO_normals, VEO_indices;
+
+    uint vertex_indices_count;
 };

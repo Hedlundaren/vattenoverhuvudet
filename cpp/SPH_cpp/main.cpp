@@ -69,13 +69,14 @@ int main() {
 
     // normalized "kernel radius" for precomputed density-LUT
     const float density_contribution_radius = 0.01f;
+    std::string nmap_name = "simple-lowres";
 
     HeightMap hmap;
-    if (!hmap.initFromPNGs("simple-lowres")) {
+    if (!hmap.initFromPNGs(nmap_name)) {
         return 0;
     }
 
-    //hmap.debug_print();
+    hmap.debug_print(50);
     tic();
     hmap.calcVoxelSamplers([](const std::vector<float> &distances, const float max_radius) {
         float sum = 0.0f;
@@ -147,7 +148,8 @@ int main() {
     createGUI(screen, params);
 
     hmap.initGL(glm::vec3(params.left_bound, params.bottom_bound, params.near_bound),
-                glm::vec3(params.right_bound - params.left_bound, params.top_bound - params.bottom_bound,
+                glm::vec3(params.right_bound - params.left_bound,
+                          0.25f * (params.top_bound - params.bottom_bound),
                           params.far_bound - params.near_bound));
 
     //Generate VBOs

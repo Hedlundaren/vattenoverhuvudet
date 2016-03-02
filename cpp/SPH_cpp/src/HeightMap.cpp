@@ -29,6 +29,15 @@ float uchar_to_float(unsigned char a) {
 
 HeightMap::HeightMap() { }
 
+HeightMap::~HeightMap() {
+    glDeleteBuffers(1, &VBO_positions);
+    glDeleteBuffers(1, &VBO_normals);
+    glDeleteBuffers(1, &VEO_indices);
+    glDeleteVertexArrays(1, &VAO);
+
+    // ShaderProgram is automatically deleted since it is a smart pointer
+}
+
 bool HeightMap::initFromPNGs(std::string map_name) {
     bool success = true;
 
@@ -132,31 +141,46 @@ void HeightMap::generateNormalMap(const std::vector<unsigned char> &nmap_src) {
             const float green = uchar_to_float(nmap_src[CHANNEL_COUNT * width * y + CHANNEL_COUNT * x + channel]);
 
             // extract y-component and store in normalmap
-            normalmap.at(width * y + x) = unbakeNormal(red, green);
+            normalmap[width * y + x] = unbakeNormal(red, green);
         }
     }
 }
 
 glm::vec3 HeightMap::unbakeNormal(float x, float z) {
+    const float y = 2 * sqrtf(1 - x * x - z * z) - 1;
+
     // todo should this be done before or after calculating y?
     x = 2 * x - 1;
     z = 2 * z - 1;
 
-    const float y = sqrtf(1 - x * x - z * z);
-
-    return glm::vec3(x, y, z);
+    return glm::normalize(glm::vec3(x, y, z));
 }
 
-void HeightMap::debug_print() {
+void HeightMap::debug_print(int print_count) {
+    if (print_count == -1) {
+        print_count = height * width;
+    }
+
+    uint counter = 0;
     cout << "Height map:" << endl;
     for (const auto value : heightmap) {
         cout << value << ", ";
+
+        if (++counter >= print_count) {
+            counter = 0;
+            break;
+        }
     }
     cout << endl;
 
     cout << "Normal map:" << endl;
     for (const auto value : normalmap) {
         cout << glm::to_string(value) << ", ";
+
+        if (++counter >= print_count) {
+            counter = 0;
+            break;
+        }
     }
     cout << endl;
 }
@@ -260,6 +284,7 @@ void HeightMap::calcVoxelSamplers(std::function<float(const std::vector<float>, 
 
 void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
     std::vector<glm::vec3> positions(width * height);
+    std::vector<uint> indices((width - 1) * (height - 1) * 3 * 2);
 
     glm::vec3 position;
     for (uint imx = 0; imx < width; ++imx) {
@@ -291,8 +316,43 @@ void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
     glBindBuffer(GL_ARRAY_BUFFER, VBO_normals);
     glBufferData(GL_ARRAY_BUFFER, 3 * width * height * sizeof(float), normalmap.data(), GL_STATIC_DRAW);
 
-    // setup vertex triangle indices
+    const auto calc_flat_index = [&](uint imx, uint imy) {
+        return imx + width * imy;
+    };
 
+    // setup vertex triangle indices
+    for (uint imx = 0; imx + 1 < width; ++imx) {
+        for (uint imy = 0; imy + 1 < width; ++imy) {
+//              0      1
+//            3 x------x
+//              |\     |
+//              | \  A |
+//              |  \   |
+//              |   \  |
+//              |  B \ |
+//              |     \|
+//            5 x------x 2
+//                     4
+
+            const uint flat_index = calc_flat_index(imx, imy);
+
+            // triangle A
+            indices[6 * flat_index + 0] = flat_index;
+            indices[6 * flat_index + 1] = calc_flat_index(imx + 1, imy);
+            indices[6 * flat_index + 2] = calc_flat_index(imx + 1, imy + 1);
+
+            // triangle B
+            indices[6 * flat_index + 3] = flat_index;
+            indices[6 * flat_index + 4] = calc_flat_index(imx + 1, imy + 1);
+            indices[6 * flat_index + 5] = calc_flat_index(imx, imy + 1);
+        }
+    }
+
+    glGenBuffers(1, &VEO_indices);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VEO_indices);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(uint), indices.data(), GL_STATIC_DRAW);
+
+    vertex_indices_count = indices.size();
 
     /// setup Vertex Array Object
     glGenVertexArrays(1, &VAO);
@@ -311,6 +371,8 @@ void HeightMap::render(glm::mat4 MVP) {
     glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, &MVP[0][0]);
 
     glBindVertexArray(VAO);
-    glDrawArrays(GL_TRIANGLES, 0, width * height);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VEO_indices);
+    //glDrawArrays(GL_TRIANGLES, 0, width * height);
+    glDrawElements(GL_TRIANGLES, vertex_indices_count, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
