@@ -160,7 +160,10 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, vel_vbo);
     glBufferData(GL_ARRAY_BUFFER, n_particles * 3 * sizeof(float), velocities.data(), GL_DYNAMIC_DRAW);
 
-    simulator->setupSimulation(params, positions, velocities, pos_vbo, vel_vbo);
+    simulator->setupSimulation(params, positions, velocities, pos_vbo, vel_vbo,
+                               hmap.get_density_voxel_sampler(),
+                               hmap.get_normal_voxel_sampler(),
+                               hmap.get_voxel_sampler_size());
 
     // Generate VAO with all VBOs
     GLuint vao = 0;
@@ -382,8 +385,8 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
 
     new Label(window, "Kernel size", "sans-bold");
     Widget *panel_kernel = new Widget(window);
-        panel_kernel->setLayout(new BoxLayout(Orientation::Horizontal,
-                                       Alignment::Minimum, 0, 25));
+    panel_kernel->setLayout(new BoxLayout(Orientation::Horizontal,
+                                          Alignment::Minimum, 0, 25));
 
     Slider *slider_kernel = new Slider(panel_kernel);
     slider_kernel->setValue(p->kernel_size);
@@ -399,13 +402,13 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
         std::stringstream stream_kernel;
         stream_kernel << std::fixed << std::setprecision(1) << (double) p->kernel_size;
         textBox_kernel->setValue(stream_kernel.str());
-        p->kernel_size = value*2 + 0.1;
+        p->kernel_size = value * 2 + 0.1;
     });
 
     new Label(window, "Gas Constant", "sans-bold");
     Widget *panel_gas = new Widget(window);
-        panel_gas->setLayout(new BoxLayout(Orientation::Horizontal,
-                                   Alignment::Minimum, 0, 25));
+    panel_gas->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Minimum, 0, 25));
 
     Slider *slider_gas = new Slider(panel_gas);
     slider_gas->setValue(p->k_gas);
@@ -441,17 +444,17 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
         std::stringstream stream_vis;
         stream_vis << std::fixed << std::setprecision(1) << (double) p->k_viscosity;
         textBox_vis->setValue(stream_vis.str());
-        p->k_viscosity = 20*value_gas;
+        p->k_viscosity = 20 * value_gas;
     });
 
     new Label(window, "Other", "sans-bold");
     CheckBox *cb = new CheckBox(window, "Gravity",
-        [=](bool state) {
-            if (state)
-                p->gravity.y = -9.82f;
-            else
-                p->gravity.y = 0.0f;
-        }
+                                [=](bool state) {
+                                    if (state)
+                                        p->gravity.y = -9.82f;
+                                    else
+                                        p->gravity.y = 0.0f;
+                                }
     );
     cb->setFontSize(16);
     cb->setChecked(true);

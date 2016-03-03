@@ -147,7 +147,10 @@ void OpenClParticleSimulator::setupSimulation(const Parameters &params,
                                               const std::vector<glm::vec3> &particle_positions,
                                               const std::vector<glm::vec3> &particle_velocities,
                                               const GLuint &vbo_positions,
-                                              const GLuint &vbo_velocities) {
+                                              const GLuint &vbo_velocities,
+                                              const std::vector<float> &density_voxel_sampler,
+                                              const std::vector<glm::vec3> &normal_voxel_sampler,
+                                              const glm::uvec3 voxel_sampler_size) {
     positions = particle_positions;
 
     initOpenCL();

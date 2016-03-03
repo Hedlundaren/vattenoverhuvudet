@@ -194,15 +194,15 @@ void HeightMap::calcVoxelSamplers(std::function<float(const std::vector<float>, 
             HeightMapData,
             1> kdTree;
 
-    const glm::uvec3 size(std::min(MAX_VOXEL_SAMPLER_SIZE.x, width),
+    voxel_sampler_size = glm::uvec3(std::min(MAX_VOXEL_SAMPLER_SIZE.x, width),
                           std::min(MAX_VOXEL_SAMPLER_SIZE.y, std::max(width, height)),
                           std::min(MAX_VOXEL_SAMPLER_SIZE.z, height));
     auto get_flat_index = [&](uint x, uint y, uint z) {
-        return x + size.x * (y + size.y * z);
+        return x + voxel_sampler_size.x * (y + voxel_sampler_size.y * z);
     };
 
-    density_voxel_sampler.resize(size.x * size.y * size.z);
-    normal_voxel_sampler.resize(size.x * size.y * size.z);
+    density_voxel_sampler.resize(voxel_sampler_size.x * voxel_sampler_size.y * voxel_sampler_size.z);
+    normal_voxel_sampler.resize(voxel_sampler_size.x * voxel_sampler_size.y * voxel_sampler_size.z);
 
     // Create heightmap data set for kdTree nearest neighbour algorithm
     std::shared_ptr<std::vector<glm::vec3>> tmp_map(new std::vector<glm::vec3>);
@@ -225,15 +225,15 @@ void HeightMap::calcVoxelSamplers(std::function<float(const std::vector<float>, 
 
     uint counter = 0;
 
-    for (uint vox_idx = 0; vox_idx < size.x; ++vox_idx) {
-        for (uint vox_idy = 0; vox_idy < size.y; ++vox_idy) {
-            for (uint vox_idz = 0; vox_idz < size.z; ++vox_idz) {
+    for (uint vox_idx = 0; vox_idx < voxel_sampler_size.x; ++vox_idx) {
+        for (uint vox_idy = 0; vox_idy < voxel_sampler_size.y; ++vox_idy) {
+            for (uint vox_idz = 0; vox_idz < voxel_sampler_size.z; ++vox_idz) {
                 const uint flat_index = get_flat_index(vox_idx, vox_idy, vox_idz);
 
                 // knnSearch: perform a search for the N closest points
-                const glm::vec3 query(static_cast<float>(vox_idx) / size.x,
-                                      static_cast<float>(vox_idy) / size.y,
-                                      static_cast<float>(vox_idz) / size.z);
+                const glm::vec3 query(static_cast<float>(vox_idx) / voxel_sampler_size.x,
+                                      static_cast<float>(vox_idy) / voxel_sampler_size.y,
+                                      static_cast<float>(vox_idz) / voxel_sampler_size.z);
 
                 // Find neighbours within "density-contribution-range"
                 std::vector<std::pair<size_t, float>> indices_distances;
@@ -291,11 +291,11 @@ void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
     for (uint imx = 0; imx < width; ++imx) {
         for (uint imy = 0; imy < height; ++imy) {
             // x/z-coords are simply generated from for-loop indices
-            position.x = (static_cast<float>(imx) / width) * dimensions.x - origin.x;
-            position.z = (static_cast<float>(imy) / height) * dimensions.z - origin.z;
+            position.x =  origin.x + (static_cast<float>(imx) / width) * dimensions.x;
+            position.z =  origin.z + (static_cast<float>(imy) / height) * dimensions.z;
 
             // Read y-coord of vertex from heightmap
-            position.y = heightmap[imx + width * imy] * dimensions.y - origin.y;
+            position.y = origin.y + heightmap[imx + width * imy] * dimensions.y;
 
             positions[imx + width * imy] = position;
         }

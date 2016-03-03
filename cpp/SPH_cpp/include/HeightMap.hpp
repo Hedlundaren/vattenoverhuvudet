@@ -32,13 +32,25 @@ public:
 
     // Initialize the HeightMap with the provided PNGs located in the images/ folder
     // Returns true if it succeeded
-    bool initFromPNGs(std::string map_name = "simple");
+    bool initFromPNGs(std::string map_name = "smiley");
 
     void debug_print(int print_count = -1);
 
     // first argument is functor that takes in vector of distances, the maximum radius (aka kernel size) and returns the
     // density contribution (arbitrary units)
     void calcVoxelSamplers(std::function<float(std::vector<float>, float)> density_func, float density_radius_norm = 0.01f);
+
+    inline const std::vector<float> &get_density_voxel_sampler() const {
+        return density_voxel_sampler;
+    }
+
+    inline const std::vector<glm::vec3> &get_normal_voxel_sampler() {
+        return normal_voxel_sampler;
+    }
+
+    inline const glm::uvec3 get_voxel_sampler_size() const {
+        return voxel_sampler_size;
+    }
 
     void initGL(glm::vec3 origin, glm::vec3 dimensions);
 
@@ -54,6 +66,7 @@ private:
 
     std::vector<float> density_voxel_sampler;
     std::vector<glm::vec3> normal_voxel_sampler;
+    glm::uvec3 voxel_sampler_size;
 
     void generateHeightMap(const std::vector<unsigned char> &hmap_src);
     void generateNormalMap(const std::vector<unsigned char> &nmap_src);
