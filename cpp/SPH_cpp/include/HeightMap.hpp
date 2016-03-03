@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 
+#include "rendering/ShaderProgram.hpp"
 #include "GLFW/glfw3.h"
 
 #include "glm/glm.hpp"
@@ -12,7 +13,7 @@
 typedef unsigned int uint;
 
 // forward declaration of classes
-class ShaderProgram;
+//class ShaderProgram;
 
 class HeightMap {
 public:

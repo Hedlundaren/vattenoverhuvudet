@@ -6,7 +6,7 @@
 
 #include "glm/gtx/string_cast.hpp"
 #include "common/image_util.hpp"
-#include "rendering/ShaderProgram.hpp"
+
 
 // LodePNG for PNG loading
 #include "lodepng.h"
