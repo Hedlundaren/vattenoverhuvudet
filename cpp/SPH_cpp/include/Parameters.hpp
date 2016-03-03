@@ -42,6 +42,8 @@ struct Parameters {
     float k_wall_damper;
     float k_wall_friction;
 
+    float fps;
+
     glm::vec3 bg_color;
 
     inline float get_particle_mass() const {
@@ -98,6 +100,7 @@ struct Parameters {
                                      grid_info.grid_dimensions.s[2];
     }
 
+
     inline static Parameters set_default_parameters(Parameters &p) {
         p.total_mass = 1000000.0f;
         p.kernel_size = 0.2f;
@@ -117,6 +120,8 @@ struct Parameters {
 
         p.k_wall_damper = 0.75f;
         p.k_wall_friction = 1.0f;
+
+        p.fps = 0.0f;
 
         p.bg_color = glm::vec3(0.1f, 0.1f, 0.1f);
     }
