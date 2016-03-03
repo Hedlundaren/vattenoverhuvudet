@@ -33,6 +33,9 @@ public:
     }
 
     static const std::string getShaderType(GLuint type);
+    static GLint MVP_Loc, lDir_Loc, MV_Loc, P_Loc, radius_Loc, camPos_Loc = -1;
+
+
 
     ~ShaderProgram();
 
