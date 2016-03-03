@@ -54,7 +54,7 @@ public:
 
     void initGL(glm::vec3 origin, glm::vec3 dimensions);
 
-    void render(glm::mat4 P, glm::mat4 MV);
+    void render(glm::mat4 P, glm::mat4 MV, bool render_as_wireframe);
 
 private:
     uint width, height;
@@ -83,5 +83,5 @@ private:
     GLuint VAO;
     GLuint VBO_positions, VBO_normals, VEO_indices;
 
-    uint vertex_indices_count;
+    GLuint vertex_indices_count;
 };

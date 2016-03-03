@@ -55,12 +55,13 @@ void createGUI(nanogui::Screen *screen, Parameters &params);
 std::chrono::duration<double> second_accumulator;
 unsigned int frames_last_second;
 nanogui::TextBox *fpsBox;
+bool hmap_wireframe = false;
 
 int main() {
     using namespace nanogui;
 
-    HeightMap::SetMaxVoxelSamplerSize(32, 4, 32);
-    //HeightMap::SetMaxVoxelSamplerSize(8, 2, 8);
+    //HeightMap::SetMaxVoxelSamplerSize(32, 4, 32);
+    HeightMap::SetMaxVoxelSamplerSize(8, 2, 8);
 
     // normalized "kernel radius" for precomputed density-LUT
     const float density_contribution_radius = 0.01f;
@@ -275,7 +276,7 @@ int main() {
         glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
         //glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
 
-        hmap.render(P, MV);
+        hmap.render(P, MV, hmap_wireframe);
 
         screen->drawWidgets();
 
@@ -455,6 +456,14 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
                                     else
                                         p->gravity.y = 0.0f;
                                 }
+    );
+    cb->setFontSize(16);
+    cb->setChecked(true);
+
+    cb = new CheckBox(window, "Heightmap wireframe",
+                      [=](bool state) {
+                          hmap_wireframe = state;
+                      }
     );
     cb->setFontSize(16);
     cb->setChecked(true);

@@ -195,8 +195,8 @@ void HeightMap::calcVoxelSamplers(std::function<float(const std::vector<float>, 
             1> kdTree;
 
     voxel_sampler_size = glm::uvec3(std::min(MAX_VOXEL_SAMPLER_SIZE.x, width),
-                          std::min(MAX_VOXEL_SAMPLER_SIZE.y, std::max(width, height)),
-                          std::min(MAX_VOXEL_SAMPLER_SIZE.z, height));
+                                    std::min(MAX_VOXEL_SAMPLER_SIZE.y, std::max(width, height)),
+                                    std::min(MAX_VOXEL_SAMPLER_SIZE.z, height));
     auto get_flat_index = [&](uint x, uint y, uint z) {
         return x + voxel_sampler_size.x * (y + voxel_sampler_size.y * z);
     };
@@ -291,8 +291,8 @@ void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
     for (uint imx = 0; imx < width; ++imx) {
         for (uint imy = 0; imy < height; ++imy) {
             // x/z-coords are simply generated from for-loop indices
-            position.x =  origin.x + (static_cast<float>(imx) / width) * dimensions.x;
-            position.z =  origin.z + (static_cast<float>(imy) / height) * dimensions.z;
+            position.x = origin.x + (static_cast<float>(imx) / width) * dimensions.x;
+            position.z = origin.z + (static_cast<float>(imy) / height) * dimensions.z;
 
             // Read y-coord of vertex from heightmap
             position.y = origin.y + heightmap[imx + width * imy] * dimensions.y;
@@ -368,7 +368,9 @@ void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
     glEnableVertexAttribArray(1);
 }
 
-void HeightMap::render(glm::mat4 P, glm::mat4 MV) {
+void HeightMap::render(glm::mat4 P, glm::mat4 MV, bool render_as_wireframe) {
+    if (render_as_wireframe) { glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); }
+
     glUseProgram(*shader);
     glUniformMatrix4fv(MV_loc, 1, GL_FALSE, &MV[0][0]);
     glUniformMatrix4fv(P_loc, 1, GL_FALSE, &P[0][0]);
@@ -379,4 +381,6 @@ void HeightMap::render(glm::mat4 P, glm::mat4 MV) {
     glCullFace(GL_FRONT);
     glDrawElements(GL_TRIANGLES, vertex_indices_count, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+    if (render_as_wireframe) { glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); }
 }

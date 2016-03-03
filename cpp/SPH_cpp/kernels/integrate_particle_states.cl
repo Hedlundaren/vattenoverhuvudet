@@ -81,6 +81,7 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 									 velocities[particle_position_id + 1],
 									 velocities[particle_position_id + 2]);
 
+/*
 	// Apply forces from the walls
 	float3 boundary_force = zero3;
 	float diff = 0.0f;
@@ -98,6 +99,7 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 
     // Apply external forces
     force = force + boundary_force;
+*/
 
 	// Acceleration according to Newton's law: a = F / m
 	const float3 acceleration = force / fluid_info.mass + fluid_info.gravity;
@@ -107,12 +109,13 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 	//velocity = velocity + acceleration * dt;
 	velocity = clamp(velocity + acceleration * dt, -VELOCITY_CLAMP, VELOCITY_CLAMP);
 
+/*
 	if (position.y - grid_info.grid_origin.y < grid_info.grid_cell_size || euclidean_distance2(r) < grid_info.grid_cell_size) {
 		//velocity = (1 - dt) * fluid_info.k_wall_friction * velocity;
 	}
-	/*
+
 	if (euclidean_distance2(r) < grid_info.grid_cell_size) {
-		velocity = dt * fluid_info.k_wall_friction * velocity;
+		//velocity = dt * fluid_info.k_wall_friction * velocity;
 	}
 */
 

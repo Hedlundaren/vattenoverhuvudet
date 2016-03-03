@@ -90,7 +90,10 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 						   	   __global const uint* restrict indices,   // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
 						   	   __global const uint* restrict cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
 						   	   const VoxelGridInfo grid_info,
-						   	   const FluidInfo fluid_info) {
+						   	   const FluidInfo fluid_info,
+						   	   __global const float* bounds_density_voxel_sampler,
+						   	   __global const float* bounds_normal_voxel_sampler,
+						   	   const uint3 bounds_voxel_sampler_size) {
 	
 	const uint3 voxel_cell_indices = (uint3)(get_global_id(0), get_global_id(1), get_global_id(2));
 	const uint voxel_cell_index = calculate_voxel_cell_index(voxel_cell_indices, grid_info);
@@ -248,7 +251,9 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 										   	     __global const uint* restrict indices, // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
 										   	     __global const uint* restrict cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
 										   	     const VoxelGridInfo grid_info,
-										   	     const FluidInfo fluid_info) {
+										   	     const FluidInfo fluid_info,
+										   	     __global const float* bounds_density_voxel_sampler,
+						   	   					 const uint3 bounds_voxel_sampler_size) {
 	const uint3 voxel_cell_indices = (uint3)(get_global_id(0), get_global_id(1), get_global_id(2));
 	const uint voxel_cell_index = calculate_voxel_cell_index(voxel_cell_indices, grid_info);
 	const uint particle_count = cell_particle_count[voxel_cell_index];
@@ -265,6 +270,10 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 																  indices,
 																  positions);
 		processed_particle_densities[idp] = 0.0f;
+	}
+
+	for (uint idp = 0; idp < particle_count; ++idp) {
+		// Calculate boundary density contribution
 	}
 
 	// Pre-define this before x*y*z loop
