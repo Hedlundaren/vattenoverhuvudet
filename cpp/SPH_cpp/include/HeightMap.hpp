@@ -41,7 +41,7 @@ public:
 
     void initGL(glm::vec3 origin, glm::vec3 dimensions);
 
-    void render(glm::mat4 MVP);
+    void render(glm::mat4 P, glm::mat4 MV);
 
 private:
     uint width, height;
@@ -64,7 +64,7 @@ private:
     //////////////////////
 
     std::shared_ptr<ShaderProgram> shader;
-    GLint MVP_loc;
+    GLint MV_loc, P_loc;
 
     GLuint VAO;
     GLuint VBO_positions, VBO_normals, VEO_indices;

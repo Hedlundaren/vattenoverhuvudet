@@ -69,14 +69,16 @@ int main() {
 
     // normalized "kernel radius" for precomputed density-LUT
     const float density_contribution_radius = 0.01f;
-    std::string nmap_name = "simple-lowres";
+    std::string nmap_name;
+    cout << "Heightmap name: ";
+    std::cin >> nmap_name;
 
     HeightMap hmap;
     if (!hmap.initFromPNGs(nmap_name)) {
         return 0;
     }
 
-    hmap.debug_print(50);
+    //hmap.debug_print(50);
     tic();
     hmap.calcVoxelSamplers([](const std::vector<float> &distances, const float max_radius) {
         float sum = 0.0f;
@@ -264,7 +266,6 @@ int main() {
 
         // Clear the buffers
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glCullFace(GL_BACK);
         glClearColor(params.bg_color.r,
                      params.bg_color.g,
                      params.bg_color.b,
@@ -272,10 +273,11 @@ int main() {
 
         //Send VAO to the GPU
         glBindVertexArray(vao);
+        glCullFace(GL_BACK);
         glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
         //glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
 
-        hmap.render(P * MV);
+        hmap.render(P, MV);
 
         screen->drawWidgets();
 

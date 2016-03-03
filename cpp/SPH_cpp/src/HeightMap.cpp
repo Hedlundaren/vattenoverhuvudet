@@ -114,18 +114,15 @@ void HeightMap::generateNormalMap(const std::vector<unsigned char> &nmap_src) {
 
     auto info = lodepng::getPNGHeaderInfo(nmap_src);
     switch (info.color.colortype) {
-        case LodePNGColorType::LCT_GREY:
-            cerr << "Cannot create normalmap from greyscale image." << endl;
-            std::exit(EXIT_FAILURE);
         case LodePNGColorType::LCT_RGB:
             CHANNEL_COUNT = 3;
-            break;
-        case LodePNGColorType::LCT_GREY_ALPHA:
-            CHANNEL_COUNT = 2;
             break;
         case LodePNGColorType::LCT_RGBA:
             CHANNEL_COUNT = 4;
             break;
+        default:
+            cerr << "Normalmap image must have at least 3 channels." << endl;
+            std::exit(EXIT_FAILURE);
     }
 
     normalmap.resize(width * height);
@@ -136,12 +133,16 @@ void HeightMap::generateNormalMap(const std::vector<unsigned char> &nmap_src) {
             uint channel = 0; // red
             const float red = uchar_to_float(nmap_src[CHANNEL_COUNT * width * y + CHANNEL_COUNT * x + channel]);
 
-            // green channel contains z-component of normal
+            // green channel contains y-component of normal
             channel = 1; // green
             const float green = uchar_to_float(nmap_src[CHANNEL_COUNT * width * y + CHANNEL_COUNT * x + channel]);
 
+            // blue channel contains z-component of normal
+            channel = 2; // green
+            const float blue = uchar_to_float(nmap_src[CHANNEL_COUNT * width * y + CHANNEL_COUNT * x + channel]);
+
             // extract y-component and store in normalmap
-            normalmap[width * y + x] = unbakeNormal(red, green);
+            normalmap[width * y + x] = glm::vec3(red, green, blue);
         }
     }
 }
@@ -304,7 +305,8 @@ void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
     shader = std::shared_ptr<ShaderProgram>(new ShaderProgram("../shaders/heightmap.vert",
                                                               "", "", "", // no tesselation or geometry
                                                               "../shaders/heightmap.frag"));
-    MVP_loc = glGetUniformLocation(*shader, "MVP");
+    MV_loc = glGetUniformLocation(*shader, "MV");
+    P_loc = glGetUniformLocation(*shader, "P");
 
     // generate vertex buffer for positions
     glGenBuffers(1, &VBO_positions);
@@ -366,13 +368,15 @@ void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
     glEnableVertexAttribArray(1);
 }
 
-void HeightMap::render(glm::mat4 MVP) {
+void HeightMap::render(glm::mat4 P, glm::mat4 MV) {
     glUseProgram(*shader);
-    glUniformMatrix4fv(MVP_loc, 1, GL_FALSE, &MVP[0][0]);
+    glUniformMatrix4fv(MV_loc, 1, GL_FALSE, &MV[0][0]);
+    glUniformMatrix4fv(P_loc, 1, GL_FALSE, &P[0][0]);
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VEO_indices);
     //glDrawArrays(GL_TRIANGLES, 0, width * height);
+    glCullFace(GL_FRONT);
     glDrawElements(GL_TRIANGLES, vertex_indices_count, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }
