@@ -1,5 +1,5 @@
 #include <iostream>
-#include <chrono>
+#include <iomanip>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -15,18 +15,12 @@
 #include "rendering/ShaderProgram.hpp"
 #include "math/randomized.hpp"
 #include "common/Rotator.hpp"
-#include "constants.hpp"
 
 #include "ParticleSimulator.hpp"
 #include "OpenCL/OpenClParticleSimulator.hpp"
 #include "CppParticleSimulator.hpp"
 
 #include "nanogui/nanogui.h"
-
-#include "lodepng.h"
-#include "lodepng_util.h"
-
-#include "nanoflann.hpp"
 
 #include "HeightMap.hpp"
 
@@ -60,6 +54,7 @@ void createGUI(nanogui::Screen *screen, Parameters &params);
 
 std::chrono::duration<double> second_accumulator;
 unsigned int frames_last_second;
+nanogui::TextBox *fpsBox;
 
 int main() {
     using namespace nanogui;
@@ -294,6 +289,10 @@ int main() {
         if (second_accumulator.count() >= 1.0) {
             float newFPS = static_cast<float>( frames_last_second / second_accumulator.count());
             setWindowFPS(window, newFPS);
+            params.fps = newFPS;
+            std::stringstream fpsString;
+            fpsString << std::fixed << std::setprecision(0) << newFPS;
+            fpsBox->setValue(fpsString.str());
             frames_last_second = 0;
             second_accumulator = std::chrono::duration<double>(0);
         }
@@ -359,27 +358,113 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     using namespace nanogui;
     Parameters *p = &params;
 
-    Window *window = new Window(screen, "Fluid parameters");
-    window->setPosition(Vector2i(15, 15));
-    window->setLayout(new GroupLayout());
-
-    window = new Window(screen, "Background color");
-    window->setPosition(Vector2i(425, 288));
+    Window *window_bgcolor = new Window(screen, "Background color");
+    window_bgcolor->setPosition(Vector2i(425, 288));
     GridLayout *layout =
             new GridLayout(Orientation::Horizontal, 2,
                            Alignment::Middle, 15, 5);
     layout->setColAlignment(
             {Alignment::Maximum, Alignment::Fill});
     layout->setSpacing(0, 10);
-    window->setLayout(layout);
+    window_bgcolor->setLayout(layout);
 
-    ColorWheel *colorwheel = new ColorWheel(window);
+    ColorWheel *colorwheel = new ColorWheel(window_bgcolor);
 
     colorwheel->setCallback([=](const Color &value) {
         p->bg_color.r = value.r();
         p->bg_color.g = value.g();
         p->bg_color.b = value.b();
     });
+
+    Window *window = new Window(screen, "Fluid parameters");
+    window->setPosition(Vector2i(15, 15));
+    window->setLayout(new GroupLayout());
+
+    new Label(window, "Kernel size", "sans-bold");
+    Widget *panel_kernel = new Widget(window);
+        panel_kernel->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Minimum, 0, 25));
+
+    Slider *slider_kernel = new Slider(panel_kernel);
+    slider_kernel->setValue(p->kernel_size);
+    slider_kernel->setFixedWidth(80);
+
+    TextBox *textBox_kernel = new TextBox(panel_kernel);
+
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(1) << (double) p->kernel_size;
+    textBox_kernel->setValue(stream.str());
+
+    slider_kernel->setCallback([=](float value) {
+        std::stringstream stream_kernel;
+        stream_kernel << std::fixed << std::setprecision(1) << (double) p->kernel_size;
+        textBox_kernel->setValue(stream_kernel.str());
+        p->kernel_size = value*2 + 0.1;
+    });
+
+    new Label(window, "Gas Constant", "sans-bold");
+    Widget *panel_gas = new Widget(window);
+        panel_gas->setLayout(new BoxLayout(Orientation::Horizontal,
+                                   Alignment::Minimum, 0, 25));
+
+    Slider *slider_gas = new Slider(panel_gas);
+    slider_gas->setValue(p->k_gas);
+    slider_gas->setFixedWidth(80);
+
+    TextBox *textBox_gas = new TextBox(panel_gas);
+    std::stringstream stream_gas;
+    stream_gas << std::fixed << std::setprecision(1) << (double) p->k_gas;
+    textBox_gas->setValue(stream_gas.str());
+
+    slider_gas->setCallback([=](float value_gas) {
+        std::stringstream stream_gas;
+        stream_gas << std::fixed << std::setprecision(1) << (double) p->k_gas;
+        textBox_gas->setValue(stream_gas.str());
+        p->k_gas = value_gas;
+    });
+
+    new Label(window, "Viscosity constant", "sans-bold");
+    Widget *panel_vis = new Widget(window);
+    panel_vis->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Minimum, 0, 25));
+
+    Slider *slider_vis = new Slider(panel_vis);
+    slider_vis->setValue(1);
+    slider_vis->setFixedWidth(80);
+
+    TextBox *textBox_vis = new TextBox(panel_vis);
+    std::stringstream stream_vis;
+    stream_vis << std::fixed << std::setprecision(1) << (double) p->k_viscosity;
+    textBox_vis->setValue(stream_vis.str());
+
+    slider_vis->setCallback([=](float value_gas) {
+        std::stringstream stream_vis;
+        stream_vis << std::fixed << std::setprecision(1) << (double) p->k_viscosity;
+        textBox_vis->setValue(stream_vis.str());
+        p->k_viscosity = 20*value_gas;
+    });
+
+    new Label(window, "Other", "sans-bold");
+    CheckBox *cb = new CheckBox(window, "Gravity",
+        [=](bool state) {
+            if (state)
+                p->gravity.y = -9.82f;
+            else
+                p->gravity.y = 0.0f;
+        }
+    );
+    cb->setFontSize(16);
+    cb->setChecked(true);
+
+    Widget *panel_fps = new Widget(window);
+    panel_fps->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Maximum, 5, 10));
+    new Label(panel_fps, "FPS: ", "sans-bold");
+    fpsBox = new TextBox(panel_fps);
+    fpsBox->setFixedSize(Vector2i(100, 20));
+    fpsBox->setDefaultValue("0.0");
+    fpsBox->setFontSize(16);
+    fpsBox->setFormat("[-]?[0-9]*\\.?[0-9]+");
 
     screen->performLayout();
 }

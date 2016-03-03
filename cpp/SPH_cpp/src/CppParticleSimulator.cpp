@@ -21,7 +21,7 @@ void CppParticleSimulator::setupSimulation(const Parameters &parameters,
     densities.resize(positions.size());
 }
 
-void CppParticleSimulator::updateSimulation(const Parameters &parameters, float dt_seconds) {
+void CppParticleSimulator::updateSimulation(const Parameters &params, float dt_seconds) {
 
     // Set forces to 0 and calculate densities
     for (int i = 0; i < positions.size(); ++i) {
@@ -30,7 +30,7 @@ void CppParticleSimulator::updateSimulation(const Parameters &parameters, float 
 
         for (int j = 0; j < positions.size(); ++j) {
             glm::vec3 relativePos = positions[i] - positions[j];
-            density += Params::mass * Wpoly6(relativePos, Params::kernelSize);
+            density += params.get_particle_mass() * Wpoly6(relativePos, params.kernel_size);
         }
 
         densities[i] = density;
@@ -38,7 +38,7 @@ void CppParticleSimulator::updateSimulation(const Parameters &parameters, float 
 
     // Calculate forces
     for (int i = 0; i < positions.size(); ++i) {
-        float iPressure = (densities[i] - Params::restDensity) * Params::gasConstantK;
+        float iPressure = (densities[i] - params.rest_density) * params.k_gas;
         float cs = 0;
         glm::vec3 n = {0, 0, 0};
         float laplacianCs = 0;
@@ -50,40 +50,40 @@ void CppParticleSimulator::updateSimulation(const Parameters &parameters, float 
             glm::vec3 relativePos = positions[i] - positions[j];
 
             // Particle j's pressure force on i
-            float jPressure = (densities[j] - Params::restDensity) * Params::gasConstantK;
-            pressureForce = pressureForce - Params::mass *
+            float jPressure = (densities[j] - params.rest_density) * params.k_gas;
+            pressureForce = pressureForce - params.get_particle_mass() *
                 ((iPressure + jPressure) / (2 * densities[j])) *
-                gradWspiky(relativePos, Params::kernelSize);
+                gradWspiky(relativePos, params.kernel_size);
 
             // Particle j's viscosity force in i
-            viscosityForce += Params::viscosityConstant *
-                Params::mass * ((velocities[j] - velocities[i]) / densities[j]) *
-                laplacianWviscosity(relativePos, Params::kernelSize);
+            viscosityForce += params.k_viscosity *
+                params.get_particle_mass() * ((velocities[j] - velocities[i]) / densities[j]) *
+                laplacianWviscosity(relativePos, params.kernel_size);
 
             // cs for particle j
-            cs += Params::mass * (1 / densities[j]) * Wpoly6(relativePos, Params::kernelSize);
+            cs += params.get_particle_mass() * (1 / densities[j]) * Wpoly6(relativePos, params.kernel_size);
 
             // Gradient of cs for particle j
-            n += Params::mass * (1 / densities[j]) * gradWpoly6(relativePos, Params::kernelSize);
+            n += params.get_particle_mass() * (1 / densities[j]) * gradWpoly6(relativePos, params.kernel_size);
 
             // Laplacian of cs for particle j
-            laplacianCs += Params::mass * (1 /densities[j]) * laplacianWpoly6(relativePos, Params::kernelSize);
+            laplacianCs += params.get_particle_mass() * (1 /densities[j]) * laplacianWpoly6(relativePos, params.kernel_size);
         }
 
         glm::vec3 tensionForce;
 
-        if (glm::length(n) < Params::nThreshold) {
+        if (glm::length(n) < params.k_threshold) {
             tensionForce = {0, 0, 0};
         } else {
-            tensionForce = Params::sigma * (- laplacianCs / glm::length(n)) * n;
+            tensionForce = params.sigma * (- laplacianCs / glm::length(n)) * n;
         }
 
         //glm::vec3 n = {0, 0, 0};
         glm::vec3 boundaryForce = {0, 0, 0};
-        boundaryForce = calculateBoundaryForceGlass(i);
+        boundaryForce = calculateBoundaryForceGlass(params, i);
 
         // Add external forces on i
-        forces[i] = pressureForce + viscosityForce + tensionForce + Params::gravity + boundaryForce;
+        forces[i] = pressureForce + viscosityForce + tensionForce + params.gravity + boundaryForce;
 
         // Euler time step
         velocities[i] += (forces[i] / densities[i]) * dt_seconds;
@@ -91,14 +91,14 @@ void CppParticleSimulator::updateSimulation(const Parameters &parameters, float 
 
     }
 
-     //checkBoundariesGlass();
+    checkBoundariesGlass(params);
 
     glBindBuffer (GL_ARRAY_BUFFER, vbo_pos);
     glBufferData (GL_ARRAY_BUFFER, positions.size() * 3 * sizeof (float), positions.data(), GL_STATIC_DRAW);
 }
 
 
-glm::vec3 CppParticleSimulator::calculateBoundaryForce(int i){
+glm::vec3 CppParticleSimulator::calculateBoundaryForce(const Parameters &params, int i){
 
     glm::vec3 boundaryForce = {0, 0, 0};
     glm::vec3 r = {0, 0, 0};
@@ -112,45 +112,45 @@ glm::vec3 CppParticleSimulator::calculateBoundaryForce(int i){
     //glm::vec3 r = n*d;
 
     // BOTTOM BOUND
-    r = {0, positions[i].y - Params::bottomBound, 0};
+    r = {0, positions[i].y - params.bottom_bound, 0};
     radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
-    if(radius < Params::kernelSize){
-        boundaryForce = -Params::mass * hardness * gradWspiky(r, Params::kernelSize);
+    if(radius < params.kernel_size){
+        boundaryForce = -params.get_particle_mass() * hardness * gradWspiky(r, params.kernel_size);
     }
 
     // RIGHT BOUND
-    r = {positions[i].x - Params::rightBound, 0, 0};
+    r = {positions[i].x - params.right_bound, 0, 0};
     radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
-    if(radius < Params::kernelSize){
-        boundaryForce = boundaryForce -Params::mass * hardness * gradWspiky(r, Params::kernelSize);
+    if(radius < params.kernel_size){
+        boundaryForce = boundaryForce -params.get_particle_mass() * hardness * gradWspiky(r, params.kernel_size);
     }
 
     // LEFT BOUND
-    r = {positions[i].x - Params::leftBound, 0, 0};
+    r = {positions[i].x - params.left_bound, 0, 0};
     radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
-    if(radius < Params::kernelSize){
-        boundaryForce = boundaryForce -Params::mass * hardness * gradWspiky(r, Params::kernelSize);
+    if(radius < params.kernel_size){
+        boundaryForce = boundaryForce -params.get_particle_mass() * hardness * gradWspiky(r, params.kernel_size);
     }
 
     // FAR BOUND
-    r = {0, 0, positions[i].z - Params::farBound};
+    r = {0, 0, positions[i].z - params.far_bound};
     radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
-    if(radius < Params::kernelSize){
-        boundaryForce = boundaryForce -Params::mass * hardness * gradWspiky(r, Params::kernelSize);
+    if(radius < params.kernel_size){
+        boundaryForce = boundaryForce -params.get_particle_mass() * hardness * gradWspiky(r, params.kernel_size);
     }
 
     // NEAR BOUND
-    r = {0, 0, positions[i].z - Params::nearBound};
+    r = {0, 0, positions[i].z - params.near_bound};
     radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
-    if(radius < Params::kernelSize){
-        boundaryForce = boundaryForce -Params::mass * hardness * gradWspiky(r, Params::kernelSize);
+    if(radius < params.kernel_size){
+        boundaryForce = boundaryForce -params.get_particle_mass() * hardness * gradWspiky(r, params.kernel_size);
     }
 
     return boundaryForce;
 }
 
 
-glm::vec3 CppParticleSimulator::calculateBoundaryForceGlass(int i){
+glm::vec3 CppParticleSimulator::calculateBoundaryForceGlass(const Parameters &params, int i){
 
     glm::vec3 boundaryForce = {0, 0, 0};
     glm::vec3 r = {0, 0, 0};
@@ -161,83 +161,83 @@ glm::vec3 CppParticleSimulator::calculateBoundaryForceGlass(int i){
 
 
     // BOTTOM BOUND
-    r = {0, positions[i].y - Params::bottomBound, 0};
+    r = {0, positions[i].y - params.bottom_bound, 0};
     radius = sqrt(pow(r.x,2.0f) + pow(r.y,2.0f) + pow(r.z,2.0f));
-    if(radius < Params::kernelSize){
-        boundaryForce = -Params::mass * hardness * gradWspiky(r, Params::kernelSize);
-        velocities[i] *= Params::wallFriction;
+    if(radius < params.kernel_size){
+        boundaryForce = -params.get_particle_mass() * hardness * gradWspiky(r, params.kernel_size);
+        velocities[i] *= params.k_wall_friction;
     }
 
     //WALLS BOUND
     distance = sqrt(pow(positions[i].x,2.0f) + pow(positions[i].z,2.0f));
-    diff = Params::topBound - distance;
+    diff = params.top_bound - distance;
     r = -positions[i]*diff/distance;
 
-    if(diff < Params::kernelSize){
-        boundaryForce += -Params::mass * hardness * gradWspiky(r, Params::kernelSize);
-        velocities[i] *= Params::wallFriction;
+    if(diff < params.kernel_size){
+        boundaryForce += -params.get_particle_mass() * hardness * gradWspiky(r, params.kernel_size);
+        velocities[i] *= params.k_wall_friction;
     }
 
     return boundaryForce;
 }
 
-void CppParticleSimulator::checkBoundaries() {
+void CppParticleSimulator::checkBoundaries(const Parameters &params) {
     for (int i = 0; i < positions.size(); ++i) {
 
 
-        if (positions[i].y < Params::bottomBound || positions[i].y > Params::topBound) {
-            positions[i].y = fmax(fmin(positions[i].y, Params::topBound), Params::bottomBound);
-            velocities[i].y = Params::wallDamper * (- velocities[i].y);
+        if (positions[i].y < params.bottom_bound || positions[i].y > params.top_bound) {
+            positions[i].y = fmax(fmin(positions[i].y, params.top_bound), params.bottom_bound);
+            velocities[i].y = params.k_wall_damper * (- velocities[i].y);
         }
 
-        if (positions[i].x < Params::leftBound || positions[i].x > Params::rightBound) {
-            positions[i].x = fmax(fmin(positions[i].x, Params::rightBound), Params::leftBound);
-            velocities[i].x = Params::wallDamper * (- velocities[i].x);
+        if (positions[i].x < params.left_bound || positions[i].x > params.right_bound) {
+            positions[i].x = fmax(fmin(positions[i].x, params.right_bound), params.left_bound);
+            velocities[i].x = params.k_wall_damper * (- velocities[i].x);
         }
 
-        if (positions[i].z < Params::nearBound || positions[i].z > Params::farBound) {
-            positions[i].z = fmax(fmin(positions[i].z, Params::farBound), Params::nearBound);
-            velocities[i].z = Params::wallDamper * (- velocities[i].z);
+        if (positions[i].z < params.near_bound || positions[i].z > params.far_bound) {
+            positions[i].z = fmax(fmin(positions[i].z, params.far_bound), params.near_bound);
+            velocities[i].z = params.k_wall_damper * (- velocities[i].z);
         }
     }
 }
 
-void CppParticleSimulator::checkBoundariesGlass() {
+void CppParticleSimulator::checkBoundariesGlass(const Parameters &params) {
     for (int i = 0; i < positions.size(); ++i) {
 
         float dp = 0.01f;
         float radius = sqrt(pow(positions[i].x,2.0f) + pow(positions[i].z,2.0f));
 
-        if (radius > Params::rightBound && positions[i].x > 0 && positions[i].z > 0) {
+        if (radius > params.right_bound && positions[i].x > 0 && positions[i].z > 0) {
             positions[i].x -= dp;
             positions[i].z -= dp;
-            velocities[i].x = Params::wallDamper * (- velocities[i].x);
-            velocities[i].z = Params::wallDamper * (- velocities[i].x);
+            velocities[i].x = params.k_wall_damper * (- velocities[i].x);
+            velocities[i].z = params.k_wall_damper * (- velocities[i].x);
         }
 
-        if (radius > Params::rightBound && positions[i].x < 0 && positions[i].z > 0) {
+        if (radius > params.right_bound && positions[i].x < 0 && positions[i].z > 0) {
             positions[i].x += dp;
             positions[i].z -= dp;
-            velocities[i].x = Params::wallDamper * (- velocities[i].x);
-            velocities[i].z = Params::wallDamper * (- velocities[i].x);
+            velocities[i].x = params.k_wall_damper * (- velocities[i].x);
+            velocities[i].z = params.k_wall_damper * (- velocities[i].x);
         }
-        if (radius > Params::rightBound && positions[i].x > 0 && positions[i].z < 0) {
+        if (radius > params.right_bound && positions[i].x > 0 && positions[i].z < 0) {
             positions[i].x -= dp;
             positions[i].z += dp;
-            velocities[i].x = Params::wallDamper * (- velocities[i].x);
-            velocities[i].z = Params::wallDamper * (- velocities[i].x);
+            velocities[i].x = params.k_wall_damper * (- velocities[i].x);
+            velocities[i].z = params.k_wall_damper * (- velocities[i].x);
         }
 
-        if (radius > Params::rightBound && positions[i].x < 0 && positions[i].z < 0) {
+        if (radius > params.right_bound && positions[i].x < 0 && positions[i].z < 0) {
             positions[i].x += dp;
             positions[i].z += dp;
-            velocities[i].x = Params::wallDamper * (- velocities[i].x);
-            velocities[i].z = Params::wallDamper * (- velocities[i].x);
+            velocities[i].x = params.k_wall_damper * (- velocities[i].x);
+            velocities[i].z = params.k_wall_damper * (- velocities[i].x);
         }
 
-        if (positions[i].y < Params::bottomBound || positions[i].y > Params::topBound) {
-            positions[i].y = fmax(fmin(positions[i].y, Params::topBound), Params::bottomBound);
-            velocities[i].y = Params::wallDamper * (- velocities[i].y);
+        if (positions[i].y < params.bottom_bound || positions[i].y > params.top_bound) {
+            positions[i].y = fmax(fmin(positions[i].y, params.top_bound), params.bottom_bound);
+            velocities[i].y = params.k_wall_damper * (- velocities[i].y);
         }
 
     }
