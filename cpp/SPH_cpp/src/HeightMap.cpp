@@ -15,7 +15,7 @@
 // nanoflann for kd-tree nearest neighbour calculation, used for voxel grid sampler calc
 #include "nanoflann.hpp"
 
-#define ALWAYS_CALCULATE_CLOSEST_NORMAL true
+#define ALWAYS_CALCULATE_CLOSEST_NORMAL
 
 using std::cout;
 using std::cerr;
@@ -257,7 +257,7 @@ void HeightMap::calcVoxelSamplers(std::function<float(const std::vector<float>, 
                 cout << endl;
 #endif
 
-#if !ALWAYS_CALCULATE_CLOSEST_NORMAL
+#ifdef ALWAYS_CALCULATE_CLOSEST_NORMAL
                 if (indices_distances.empty() ) {
 #endif
                 // Find the closest neighbour
@@ -268,7 +268,7 @@ void HeightMap::calcVoxelSamplers(std::function<float(const std::vector<float>, 
                 // todo investigate indexing here
                 normal_voxel_sampler[flat_index] = normalmap[closest_index];
 
-#if !ALWAYS_CALCULATE_CLOSEST_NORMAL
+#ifdef ALWAYS_CALCULATE_CLOSEST_NORMAL
                 } else {
                     normal_voxel_sampler[flat_index] = glm::vec3(0.0f, 1.0f, 0.0f);
                 }

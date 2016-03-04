@@ -302,6 +302,10 @@ int main() {
         }
     }
 
+    glDeleteBuffers(1, &pos_vbo);
+    glDeleteBuffers(1, &vel_vbo);
+    glDeleteVertexArrays(1, &vao);
+
     glfwDestroyWindow(window);
     glfwTerminate();
     exit(EXIT_SUCCESS);

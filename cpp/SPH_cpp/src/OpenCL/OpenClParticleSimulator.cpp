@@ -12,6 +12,40 @@ void Exit() {
 
 OpenClParticleSimulator::~OpenClParticleSimulator() {
     // TODO clean up allocated space on the GPU (clRelease[...] ?)
+    cl_int error = CL_SUCCESS;
+
+    error = clReleaseMemObject(cl_voxel_cell_particle_indices);
+    CheckError(error, __LINE__);
+    error = clReleaseMemObject(cl_voxel_cell_particle_count);
+    CheckError(error, __LINE__);
+    error = clReleaseMemObject(cl_positions);
+    CheckError(error, __LINE__);
+    error = clReleaseMemObject(cl_velocities);
+    CheckError(error, __LINE__);
+    error = clReleaseMemObject(cl_densities);
+    CheckError(error, __LINE__);
+    error = clReleaseMemObject(cl_forces);
+    CheckError(error, __LINE__);
+    error = clReleaseMemObject(cl_hmap_density_voxel_sampler);
+    CheckError(error, __LINE__);
+    error = clReleaseMemObject(cl_hmap_normal_voxel_sampler);
+    CheckError(error, __LINE__);
+
+    error = clReleaseKernel(calculate_voxel_grid);
+    CheckError(error, __LINE__);
+    error = clReleaseKernel(reset_voxel_grid);
+    CheckError(error, __LINE__);
+    error = clReleaseKernel(calculate_particle_densities);
+    CheckError(error, __LINE__);
+    error = clReleaseKernel(calculate_particle_forces);
+    CheckError(error, __LINE__);
+    error = clReleaseKernel(integrate_particle_states);
+    CheckError(error, __LINE__);
+
+    error = clReleaseCommandQueue(command_queue);
+    CheckError(error, __LINE__);
+    error = clReleaseContext(context);
+    CheckError(error, __LINE__);
 }
 
 void OpenClParticleSimulator::createAndBuildKernel(cl_kernel &kernel_out, std::string kernel_name,
