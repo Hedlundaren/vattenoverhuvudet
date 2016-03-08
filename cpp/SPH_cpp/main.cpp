@@ -60,8 +60,8 @@ bool hmap_wireframe = false;
 int main() {
     using namespace nanogui;
 
-    //HeightMap::SetMaxVoxelSamplerSize(32, 4, 32);
-    HeightMap::SetMaxVoxelSamplerSize(8, 2, 8);
+    HeightMap::SetMaxVoxelSamplerSize(32, 4, 32);
+    //HeightMap::SetMaxVoxelSamplerSize(8, 2, 8);
 
     // normalized "kernel radius" for precomputed density-LUT
     const float density_contribution_radius = 0.01f;

@@ -182,10 +182,12 @@ std::string GetErrorString(cl_int error) {
 }
 
 void CheckError(cl_int error, int line_number = -1) {
+#ifdef MY_DEBUG
     if (error != CL_SUCCESS) {
         std::cerr << "OpenCL call failed (line=" << line_number << ") with error: " << GetErrorString(error) << std::endl;
         std::exit(1);
     }
+#endif
 }
 
 int PrintOpenClContextInfo() {

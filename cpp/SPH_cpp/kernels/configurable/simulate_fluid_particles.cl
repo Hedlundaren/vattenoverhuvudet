@@ -5,7 +5,7 @@
 __constant float PI = 3.1415926535f;
 __constant float EPSILON = 1e-5;
 
-__constant float DENSITY_MIN = 5000.0f;
+__constant float DENSITY_MIN = 500.0f;
 __constant float DENSITY_MAX = 100000.0f;
 
 typedef struct def_VoxelGridInfo {
@@ -85,8 +85,7 @@ uint calculate_voxel_cell_index(const uint3 voxel_cell_indices, const VoxelGridI
 __kernel void calculate_forces(__global const float* restrict positions, // The position of each particle
 							   __global const float* restrict velocities, // The position of each particle
 							   __global float3* restrict forces, 		 // The force on each particle
-							   __global const float* restrict densities, // The density of each particle. Is [max_cell_particle_count * total_grid_cells] long, since
-																	   // it does NOT need to match up with the particle's global positions/velocities buffers 
+							   __global const float* restrict densities, // The density of each particle
 						   	   __global const uint* restrict indices,   // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
 						   	   __global const uint* restrict cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
 						   	   const VoxelGridInfo grid_info,
@@ -127,7 +126,10 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 																   velocities);
 
 		// Pre-calculate the pressure
-		processed_particle_pressure[idp] = (densities[voxel_cell_index * grid_info.max_cell_particle_count + idp] - fluid_info.rest_density) * fluid_info.k_gas;
+		processed_particle_pressure[idp] = (densities[get_particle_buffer_index(voxel_cell_index,
+													  idp,
+													  grid_info.max_cell_particle_count,
+													  indices)] - fluid_info.rest_density) * fluid_info.k_gas;
 
 		// Initialize the force sum and all colorfield sums to zeroes
 		processed_particle_forces[idp] = (float3)(0.0f, 0.0f, 0.0f);
@@ -172,18 +174,14 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 								// of a particle we have to calculate its global buffer index and retrieve it that way. This is a slow operation.
 								// So instead of having the outer-most loop be over each particle in the current voxel we loop through the voxels
 								// This way we only need to fetch the position of each particle in the neighbouring cells ONCE. :D
-								const float3 position = get_particle_position(current_voxel_cell_index, 
-																			  idp,
-																			  grid_info.max_cell_particle_count,
-																			  indices,
-																			  positions);
-								const float3 velocity = get_particle_velocity(current_voxel_cell_index, 
-																			  idp,
-																			  grid_info.max_cell_particle_count,
-																			  indices,
-																			  velocities);
+								const uint particle_buffer_index = get_particle_buffer_index(voxel_cell_index,
+																						 	 idp,
+																						  	 grid_info.max_cell_particle_count,
+																						  	 indices);
+								const float3 position = positions[particle_buffer_index];
+								const float3 velocity = velocities[particle_buffer_index];
+								const float density   = densities[particle_buffer_index];
 
-								const float density = clamp(densities[voxel_cell_index * grid_info.max_cell_particle_count + idp], DENSITY_MIN, DENSITY_MAX);
 								//const float density = 6000.0f;
 								const float pressure = (density - fluid_info.rest_density) * fluid_info.k_gas;
 
@@ -246,14 +244,13 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 }
 
 __kernel void calculate_particle_densities(__global const float* restrict positions, // The position of each particle
-											     __global float* restrict out_densities,   // The density of each particle. Is [max_cell_particle_count * total_grid_cells] long, since
-											 											   // it does NOT need to match up with the particle's global positions/velocities buffers 
-										   	     __global const uint* restrict indices, // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
-										   	     __global const uint* restrict cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
-										   	     const VoxelGridInfo grid_info,
-										   	     const FluidInfo fluid_info,
-										   	     __global const float* bounds_density_voxel_sampler,
-						   	   					 const uint3 bounds_voxel_sampler_size) {
+									       __global float* restrict out_densities,   // The density of each particle (README update: it now has to match up with the positions/velocities buffers)
+								   	       __global const uint* restrict indices, // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
+								   	       __global const uint* restrict cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
+								   	       const VoxelGridInfo grid_info,
+								   	       const FluidInfo fluid_info,
+								   	       __global const float* bounds_density_voxel_sampler,
+				   	   					   const uint3 bounds_voxel_sampler_size) {
 	const uint3 voxel_cell_indices = (uint3)(get_global_id(0), get_global_id(1), get_global_id(2));
 	const uint voxel_cell_index = calculate_voxel_cell_index(voxel_cell_indices, grid_info);
 	const uint particle_count = cell_particle_count[voxel_cell_index];
@@ -331,11 +328,11 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 	for (uint idp = 0; idp < particle_count; ++idp) {
 		// The global density buffer array is simply linear with the particles in no particular order
 		// To retrieve the correct index for a particle in a particular voxel cell we have to call our special function :)
-
-		out_densities[voxel_cell_index * grid_info.max_cell_particle_count + idp] = processed_particle_densities[idp];
-
-		//out_densities[voxel_cell_index * grid_info.max_cell_particle_count + idp]
-		//	= clamp(processed_particle_densities[idp], DENSITY_MIN, DENSITY_MAX);
+		
+		out_densities[get_particle_buffer_index(voxel_cell_index,
+												idp,
+												grid_info.max_cell_particle_count,
+												indices)] = clamp(processed_particle_densities[idp], DENSITY_MIN, DENSITY_MAX);
 	}
 }
 

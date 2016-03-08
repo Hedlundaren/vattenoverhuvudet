@@ -267,6 +267,10 @@ void HeightMap::calcVoxelSamplers(std::function<float(const std::vector<float>, 
 
                 // todo investigate indexing here
                 normal_voxel_sampler[flat_index] = normalmap[closest_index];
+#ifdef MY_DEBUG
+                cout << "knnSearch(): query=" << glm::to_string(query) << endl;
+                cout << "closest index=" << closest_index << ", distance=" << distance << endl;
+#endif
 
 #ifdef ALWAYS_CALCULATE_CLOSEST_NORMAL
                 } else {
@@ -274,10 +278,6 @@ void HeightMap::calcVoxelSamplers(std::function<float(const std::vector<float>, 
                 }
 #endif
 
-#ifdef MY_DEBUG
-                cout << "knnSearch(): query=" << glm::to_string(query) << endl;
-                cout << "closest index=" << closest_index << ", distance=" << distance << endl;
-#endif
             }
         }
     }
@@ -366,6 +366,8 @@ void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
+
+    glFinish();
 }
 
 void HeightMap::render(glm::mat4 P, glm::mat4 MV, bool render_as_wireframe) {
