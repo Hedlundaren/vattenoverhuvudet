@@ -1,39 +1,27 @@
-//#version 400 compatibility
-#version 330 core
-#define USE_TESS_SHADER
+#version 400 compatibility
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 velocity;
 
-//TessShader
+uniform mat4 P;
+uniform mat4 MV;
+uniform vec2 screenSize;
+
 out vec3 vPosition;
 out float vRadius;
-out float vDepth;
-
-uniform float radius;
-uniform vec4 camPos;
+out float vVelocity;
 
 void main() {
 
-/*
-    //GeomShader
-    gl_Position = vec4(position, 1.0f);
-    gl_PointSize = 1;
-    */
-/*--------------------------------------------------*/
+    vec4 pos4 = vec4(position, 1.0f) * MV; //Fel ordning?
+    vPosition = vec3(pos4);
+    vRadius = 1.0f / (-eyespacePos.z *4.0f * (1.0f/ screenSize.y));
+    vec4 clipspacePos = pos4 * P; //Fel ordning?
 
-    //TessShader
-    vPosition = position.xyz; //Spheres
-    vRadius = radius;
+    gl_Position = clipspacePos;
+    gl_PointSize = vRadius;
 
-    gl_Position = vec4(position, 1.0f);
-    //gl_Position = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-
-    //Depth
-    float maxPos = length(camPos)+1.5f;
-    float minPos = length(camPos)-1.5f;
-    vec4 dis = vec4(position, 1.0f)-camPos;
-    vDepth = (length(dis)-minPos)/(maxPos-minPos);
+    vVelocity = length(velocity);
 
 }
 

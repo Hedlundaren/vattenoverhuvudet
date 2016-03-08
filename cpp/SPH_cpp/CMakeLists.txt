@@ -20,7 +20,7 @@ if (APPLE)
 endif (APPLE)
 
 ## Comment out this line to use C++ simulation
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENCL_SIMULATION")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENCL_SIMULATION")
 
 ## Define if in debug mode or not (comment out line below to disable logging -> faster)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMY_DEBUG")
@@ -97,7 +97,7 @@ message(WARNING "All include dirs: ${ALL_INCLUDES}")
 # Get all source files by traversing the source directory recursively
 file(GLOB_RECURSE PROJECT_CPP_FILES ${PROJECT_CPP_DIR}/*.cpp)
 
-set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES})
+set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES} src/rendering/texture.cpp include/rendering/texture.hpp)
 add_executable(SPH_cpp ${SOURCE_FILES})
 
 target_link_libraries(SPH_cpp ${ALL_LIBRARIES})

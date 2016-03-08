@@ -1,5 +1,28 @@
-#version 120
+#version 400 core
+
+// Parameters from the vertex shader
+in vec3 vPosition;
+in float vRadius;
+in float vVelocity;
+
+// Uniforms
+uniform mat4 P;
+uniform vec2 screenSize;
+
+// Output
+out float velocityMap;
 
 void main() {
-	gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+	vec3 normal;
+
+	// See where we are inside the point sprite
+	normal.xy = (gl_PointCoord - 0.5f) * 2.0f;
+	float dist = length(normal);
+
+	// Outside sphere? Discard.
+	if(dist > 1.0f) {
+		discard;
+	}
+
+	velocityMap = vVelocity;
 }

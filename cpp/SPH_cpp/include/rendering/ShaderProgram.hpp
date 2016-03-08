@@ -33,7 +33,8 @@ public:
     }
 
     static const std::string getShaderType(GLuint type);
-    static GLint MVP_Loc, lDir_Loc, MV_Loc, P_Loc, radius_Loc, camPos_Loc = -1;
+    GLint lDir_Loc, MV_Loc, P_Loc, screenSize_Loc = -1;
+    GLint backgroundTex, terrainTex, lowTex, highTex, particleTex, environmentTex, particleThicknessTex, velocityTex = -1;
 
 
 
