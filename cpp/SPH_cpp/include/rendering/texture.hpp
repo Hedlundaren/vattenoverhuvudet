@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
-#include <GL/glew.h>
+#include <GL/gl.h>
 
 
 GLuint makeTextureBuffer(int w, int h, GLenum format, GLint internalFormat);

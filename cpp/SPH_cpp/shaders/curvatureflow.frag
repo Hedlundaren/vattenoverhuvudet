@@ -1,4 +1,4 @@
-#version 400 core
+#version 330 core
 
 // Parameters from the vertex shader
 in vec2 coords;
@@ -20,20 +20,20 @@ vec3 meanCurvature(vec2 pos) {
 	vec2 dy = vec2(0.0f, 1.0f / screenSize.y);
 
 	// Central z value
-	float zc =  texture(particleTexture, pos);
+	float zc =  texture2D(particleTexture, pos).z;
 
 	// Take finite differences
 	// Central differences give better results than one-sided here.
 	// TODO better boundary conditions, possibly.
 	// Remark: This is not easy, get to choose between bad oblique view smoothing
 	// or merging of unrelated particles
-	float zdxp = texture(particleTexture, pos + dx);
-	float zdxn = texture(particleTexture, pos - dx);
+	float zdxp = texture(particleTexture, pos + dx).z;
+	float zdxn = texture(particleTexture, pos - dx).z;
 	float zdx = 0.5f * (zdxp - zdxn);
 	zdx = (zdxp == 0.0f || zdxn == 0.0f) ? 0.0f : zdx;
 
-	float zdyp = texture(particleTexture, pos + dy);
-	float zdyn = texture(particleTexture, pos - dy);
+	float zdyp = texture(particleTexture, pos + dy).z;
+	float zdyn = texture(particleTexture, pos - dy).z;
 	float zdy = 0.5f * (zdyp - zdyn);
 	zdy = (zdyp == 0.0f || zdyn == 0.0f) ? 0.0f : zdy;
 
@@ -42,15 +42,15 @@ vec3 meanCurvature(vec2 pos) {
 	float zdy2 = zdyp + zdyn - 2.0f * zc;
 
 	// Second order finite differences, alternating variables
-	float zdxpyp = texture(particleTexture, pos + dx + dy);
-	float zdxnyn = texture(particleTexture, pos - dx - dy);
-	float zdxpyn = texture(particleTexture, pos + dx - dy);
-	float zdxnyp = texture(particleTexture, pos - dx + dy);
+	float zdxpyp = texture(particleTexture, pos + dx + dy).z;
+	float zdxnyn = texture(particleTexture, pos - dx - dy).z;
+	float zdxpyn = texture(particleTexture, pos + dx - dy).z;
+	float zdxnyp = texture(particleTexture, pos - dx + dy).z;
 	float zdxy = (zdxpyp + zdxnyn - zdxpyn - zdxnyp) / 4.0f;
 
 	// Projection transform inversion terms
-	float cx = 2.0f / (screenSize * -projection[0][0]);
-	float cy = 2.0f / (screenSize.y * -projection[1][1]);
+	float cx = 2.0f / (screenSize.x * -P[0][0]);
+	float cy = 2.0f / (screenSize.y * -P[1][1]);
 
 	// Normalization term
 	float d = cy * cy * zdx * zdx + cx * cx * zdy * zdy + cx * cx * cy * cy * zc * zc;
@@ -70,7 +70,7 @@ vec3 meanCurvature(vec2 pos) {
 }
 
 void main() {
-	float particleDepth = texture(particleTexture, coords);
+	float particleDepth = texture(particleTexture, coords).z;
 
 	if(particleDepth == 0.0f) {
 		outDepth = 0.0f;

@@ -1,4 +1,4 @@
-#version 400 core
+#version 330 core
 
 // From vertex shader
 in vec3 objectPos;
@@ -14,7 +14,8 @@ uniform vec3 lDir;
 out vec4 outColor;
 
 float heightmap(vec2 coords) {
-	return texture(terrainTexture, coords);
+	vec4 tex = texture(terrainTexture, coords);
+	return tex.z; //Oklart vad som händer
 }
 
 vec2 heightmapCoords(vec2 coordsIn) {
@@ -22,7 +23,7 @@ vec2 heightmapCoords(vec2 coordsIn) {
 }
 
 vec3 grad(vec2 pos) {
-	float off = 1.0f / 4096f;
+	float off = 1.0f / 4096.0f;
 	float yx = heightmap(pos + vec2(off, 0.0f));
 	float yz = heightmap(pos + vec2(0.0f, off));
 	float yxn = heightmap(pos - vec2(off, 0.0f));

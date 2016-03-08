@@ -1,4 +1,4 @@
-#version 400 core
+#version 330 core
 
 // Parameters from the vertex shader
 in vec2 coords;
@@ -28,9 +28,9 @@ vec2 spheremap(vec3 dir) {
 }
 
 vec3 eyespacePos(vec2 pos) {
-	float depth = texture(particleTexture, pos);
+	float depth = texture(particleTexture, pos).z;
 	pos = (pos - vec2(0.5f)) * 2.0f;
-	return(depth * vec3(-pos.x * projection[0][0], -pos.y * projection[1][1], 1.0f));
+	return(depth * vec3(-pos.x * P[0][0], -pos.y * P[1][1], 1.0f));
 }
 
 // Compute eye-space normal. Adapted from PySPH.
@@ -40,27 +40,27 @@ vec3 eyespaceNormal(vec2 pos) {
 	vec2 dy = vec2(0.0f, 1.0f / screenSize.y);
 
 	// Central z
-	float zc =  texture(particleTexture, pos);
+	float zc =  texture(particleTexture, pos).z;
 
 	// Derivatives of z
 	// For shading, one-sided only-the-one-that-works version
-	float zdxp = texture(particleTexture, pos + dx);
-	float zdxn = texture(particleTexture, pos - dx);
+	float zdxp = texture(particleTexture, pos + dx).z;
+	float zdxn = texture(particleTexture, pos - dx).z;
 	float zdx = (zdxp == 0.0f) ? (zdxn == 0.0f ? 0.0f : (zc - zdxn)) : (zdxp - zc);
 
-	float zdyp = texture(particleTexture, pos + dy);
-	float zdyn = texture(particleTexture, pos - dy);
+	float zdyp = texture(particleTexture, pos + dy).z;
+	float zdyn = texture(particleTexture, pos - dy).z;
 	float zdy = (zdyp == 0.0f) ? (zdyn == 0.0f ? 0.0f : (zc - zdyn)) : (zdyp - zc);
 
 	// Projection inversion
-	float cx = 2.0f / (screenSize.x * -projection[0][0]);
-	float cy = 2.0f / (screenSize.y * -projection[1][1]);
+	float cx = 2.0f / (screenSize.x * -P[0][0]);
+	float cy = 2.0f / (screenSize.y * -P[1][1]);
 
 	// Screenspace coordinates
 	float sx = floor(pos.x * (screenSize.x - 1.0f));
 	float sy = floor(pos.y * (screenSize.y - 1.0f));
-	float wx = (screenSize.x - 2.0f * sx) / (screenSize.x * projection[0][0]);
-	float wy = (screenSize.y - 2.0f * sy) / (screenSize.y * projection[1][1]);
+	float wx = (screenSize.x - 2.0f * sx) / (screenSize.x * P[0][0]);
+	float wy = (screenSize.y - 2.0f * sy) / (screenSize.y * P[1][1]);
 
 	// Eyespace position derivatives
 	vec3 pdx = normalize(vec3(cx * zc + wx * zdx, wy * zdx, zdx));
@@ -86,9 +86,9 @@ float fresnel(float rr1, float rr2, vec3 n, vec3 d) {
 }
 
 void main() {
-	float particleDepth = texture(particleTexture, coords);
-	float particleThickness = texture(particleThicknessTexture, coords);
-	float velocity = texture(velocityTexture, coords);
+	float particleDepth = texture(particleTexture, coords).z;
+	float particleThickness = texture(particleThicknessTexture, coords).z;
+	float velocity = texture(velocityTexture, coords).z;
 
 	vec3 normal = eyespaceNormal(coords);
 	normal = normal * inverse(mat3(MV));

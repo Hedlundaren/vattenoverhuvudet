@@ -1,5 +1,4 @@
-//#version 400 compatibility
-#version 330 core
+#version 400 compatibility
 
 //TessShader
 in vec3 teNormal;

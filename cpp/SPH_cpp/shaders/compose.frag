@@ -1,4 +1,4 @@
-#version 400 core
+#version 330 core
 
 // Parameters from the vertex shader
 in vec2 coords;

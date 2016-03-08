@@ -182,7 +182,7 @@ int main() {
     terrain.lowTexture = loadTexture("../textures/sand.tga");
     terrain.highTexture = loadTexture("../textures/stone.tga");
     // Load terrain
-    terrain.heightData = loadPGM("../grand_canyon.pgm", 4096, 4096);
+    terrain.heightData = loadPGM("../textures/grand_canyon.pgm", 4096, 4096);
 
     // Make terrain texture
     terrain.heightTexture = genFloatTexture(terrain.heightData, 4096, 4096);
