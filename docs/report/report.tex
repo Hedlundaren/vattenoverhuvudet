@@ -17,8 +17,8 @@
 %\pagestyle{fancyplain} % Makes all pages in the document conform to the custom headers and footers
 
 %\usepackage{fourier} % Use the Adobe Utopia font for the document - comment this line to return to the LaTeX default
-
 \numberwithin{equation}{section} % Number equations within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
+
 \numberwithin{figure}{section} % Number figures within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
 \numberwithin{table}{section} % Number tables within sections (i.e. 1.1, 1.2, 2.1, 2.2 instead of 1, 2, 3, 4)
 
@@ -49,37 +49,71 @@
 
 \maketitle % Print the title
 
-%---------
-% test
-%--------
+\chapter*{Abstract}
+This report describes the physical concept of fluids as well as a mathematical model for fluids governed by the Navier-Stokes equations. The Smoothed Particle Hydrodynamics method (SPH) for simulating fluids is described, and implementation details of the method. Numerical integration methods such as Euler and Leap-Frog integration are discussed. \\
+The presented result is a program with support for real-time simulation and rendering of three-dimensional fluids. The properties of the fluid can be adjusted through a graphical interface, and the fluid particles can be rendered either as spheres or as an approximative fluid surface. The program is written in C++ with the SPH simulation implemented in OpenCL and rendering implemented in OpenGL.
 
-\section{hej}
+\tableofcontents
 
-\lipsum[2] % Dummy text
+\chapter{Introduction}
+\section{Background}
+Simulating fluids, e.g.\ water, with computer graphics has been done with many different techniques in different contexts. At limited volumes, advanced techniques can produce very realistic looking fluids -- often at a great cost of performance, which may not be of interest in applications where high performance is otherwise desired, such as video games. \\
+As technology and computing resources have advanced, some of the different approaches that have surfaced have become more common than others. One such approach is smoothed particle hydrodynamics (SPH), an implementation of which is described in this report.
 
-\begin{align} 
-\begin{split}
-(x+y)^3 	&= (x+y)^2(x+y)\\
-&=(x^2+2xy+y^2)(x+y)\\
-&=(x^3+2x^2y+xy^2) + (x^2y+2xy^2+y^3)\\
-&=x^3+3x^2y+3xy^2+y^3
-\end{split}					
-\end{align}
+% math tips
+%\begin{align} 
+%\begin{split}
+%(x+y)^3 	&= (x+y)^2(x+y)\\
+%&=(x^2+2xy+y^2)(x+y)\\
+%&=(x^3+2x^2y+xy^2) + (x^2y+2xy^2+y^3)\\
+%&=x^3+3x^2y+3xy^2+y^3
+%\end{split}					
+%\end{align}
 
-Phasellus viverra nulla ut metus varius laoreet. Quisque rutrum. Aenean imperdiet. Etiam ultricies nisi vel augue. Curabitur ullamcorper ultricies
+%\begin{align}
+%A = 
+%\begin{bmatrix}
+%A_{11} & A_{21} \\
+%A_{21} & A_{22}
+%\end{bmatrix}
+%\end{align}
 
-%------------------------------------------------
+\chapter{Fluid physics}
+%Discussion of physics of fluid. What causes it to be fluid-like? Keywords: incompressible, viscosity, surface tension, pressure
 
-\subsection{Heading on level 2 (subsection)}
+\section{The Navier-Stokes equations}
+%Description of the NS-equations. Keywords: incompressible vs.\ compressible, viscosity, advection, pressure, density, surface tension
 
-Lorem ipsum dolor sit amet, consectetuer adipiscing elit. 
-\begin{align}
-A = 
-\begin{bmatrix}
-A_{11} & A_{21} \\
-A_{21} & A_{22}
-\end{bmatrix}
-\end{align}
-Aenean commodo ligula eget dolor. Aenean massa. Cum sociis natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Donec quam felis, ultricies nec, pellentesque eu, pretium quis, sem.
+\section{Smoothed particle hydrodynamics}
+%Description of the SPH-method. Awesome figure of some particles and a smoothing kernel. Keywords: scalar and vector fields, smoothing kernels, density, numerical stability with few vs.\ many particles, parameters, boundary conditions (constraint- or force-based)
+
+\chapter{Fluid simulation}
+\section{Numerical methods}
+\subsection{Euler integration}
+\subsection{Leap-frog integration}
+
+\section{Simulation}
+\subsection{Spatial partitioning}
+%Description of voxel grid partitioning method, reduction of O(n\^2) simulation to O(n*m) simulation.
+
+\subsection{Boundary conditions}
+One of the central parts of a natural-looking fluid is its interaction with other physical objects, e.g.\ a floor or wall. There are multiple ways of 
+
+\subsection{Viscosity of water}
+%Discussion of whether the viscosity term of the fluid can be neglected when simulating water.
+
+\section{Rendering}
+\subsection{Direct particle rendering}
+Rendering of particles as spheres
+
+\subsection{Fluid surface through screen-space point splatting}
+\subsection{Reflection and refraction}
+
+\chapter{Results}
+
+\chapter{Discussion}
+
+%bibliography thing?
+\chapter{References}
 
 \end{document}
