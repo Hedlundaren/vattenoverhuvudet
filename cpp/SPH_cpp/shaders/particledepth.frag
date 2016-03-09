@@ -7,7 +7,7 @@ in float vVelocity;
 uniform mat4 P;
 uniform vec2 screenSize;
 
-uniform sampler2D terrainTexture;
+//uniform sampler2D terrainTexture;
 
 out float particleDepth;
 
@@ -40,8 +40,8 @@ void main() {
     float fragDepth = (((far - near) * deviceDepth) + near + far) / 2.0;
     gl_FragDepth = fragDepth;
 
-    if(fragDepth > texture(terrainTexture, gl_FragCoord.xy / screenSize).w) {
-        discard;
-    }
+    //if(fragDepth > texture(terrainTexture, gl_FragCoord.xy / screenSize).w) {
+    //    discard;
+    //}
     particleDepth = clipspacePos.z;
 }

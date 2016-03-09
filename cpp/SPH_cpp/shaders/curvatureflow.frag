@@ -20,7 +20,7 @@ vec3 meanCurvature(vec2 pos) {
 	vec2 dy = vec2(0.0f, 1.0f / screenSize.y);
 
 	// Central z value
-	float zc =  texture2D(particleTexture, pos).z;
+	float zc =  texture(particleTexture, pos).z;
 
 	// Take finite differences
 	// Central differences give better results than one-sided here.

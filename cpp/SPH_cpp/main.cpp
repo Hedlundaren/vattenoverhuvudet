@@ -174,18 +174,19 @@ int main() {
     //How many attributes do we have? Enable them!
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
+    glBindVertexArray(0);
 
     /*----------------------------------------------------------------------------------------*/
 
     //Load textures
     terrain.envTexture = loadTexture("../textures/skymap_b.tga");
-    terrain.lowTexture = loadTexture("../textures/sand.tga");
-    terrain.highTexture = loadTexture("../textures/stone.tga");
+    //terrain.lowTexture = loadTexture("../textures/sand.tga");
+    //terrain.highTexture = loadTexture("../textures/stone.tga");
     // Load terrain
-    terrain.heightData = loadPGM("../textures/grand_canyon.pgm", 4096, 4096);
+    //terrain.heightData = loadPGM("../textures/grand_canyon.pgm", 4096, 4096);
 
     // Make terrain texture
-    terrain.heightTexture = genFloatTexture(terrain.heightData, 4096, 4096);
+    //terrain.heightTexture = genFloatTexture(terrain.heightData, 4096, 4096);
 
     /*------------------------------Generate FBOs----------------------------------------------*/
 
@@ -237,16 +238,16 @@ int main() {
 
 
     //---------------------FBOs for particle thickness
-    GLuint particleThicknessFBO[2];
-    GLuint particleThicknessTexture[2];
-    for(int i = 0; i < 2; i++) {
-        glGenFramebuffers(1, &particleThicknessFBO[i]);
-        glBindFramebuffer(GL_FRAMEBUFFER, particleThicknessFBO[i]);
-        particleThicknessTexture[i] = makeTextureBuffer(WIDTH / RESOLUTION, HEIGHT / RESOLUTION, GL_RED, GL_R32F);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, particleThicknessTexture[i], 0);
+    GLuint particleThicknessFBO;
+    GLuint particleThicknessTexture;
+    //for(int i = 0; i < 2; i++) {
+        glGenFramebuffers(1, &particleThicknessFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, particleThicknessFBO);
+        particleThicknessTexture = makeTextureBuffer(WIDTH / RESOLUTION, HEIGHT / RESOLUTION, GL_RED, GL_R32F);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, particleThicknessTexture, 0);
         // Attach depth
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferLowres);
-    }
+    //}
 
     //Unbind framebuffers
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -278,7 +279,7 @@ int main() {
         //ShaderProgram particlesShader("../shaders/particles.vert", "", "","../shaders/particles.geom", "../shaders/particles.frag");
     #endif
 
-    ShaderProgram backgroundShader("../shaders/simple.vert", "", "", "", "../shaders/simple.frag");
+    //ShaderProgram backgroundShader("../shaders/simple.vert", "", "", "", "../shaders/simple.frag");
     ShaderProgram particleDepthShader("../shaders/particles.vert", "", "", "", "../shaders/particledepth.frag");
     ShaderProgram particleThicknessShader("../shaders/particles.vert", "", "", "", "../shaders/particlethickness.frag");
     ShaderProgram particleVelocityShader("../shaders/particles.vert", "", "", "", "../shaders/particlevelocity.frag");
@@ -289,7 +290,7 @@ int main() {
     /*------------------------------------------------------------------------------------*/
 
     /*---------------------------Declare uniform locations-----------------------------*/
-
+    /*
     //BACKGROUND SHADER
     backgroundShader.MV_Loc = glGetUniformLocation(backgroundShader, "MV");
     backgroundShader.P_Loc = glGetUniformLocation(backgroundShader, "P");
@@ -299,13 +300,13 @@ int main() {
     backgroundShader.highTex = glGetUniformLocation(backgroundShader, "highTexture");
     // Bind output variables
     glBindFragDataLocation(backgroundShader, 0, "outColor");
-
+    */
 
     //PARTICLE_DEPTH SHADER
     particleDepthShader.MV_Loc = glGetUniformLocation(particleDepthShader, "MV");
     particleDepthShader.P_Loc = glGetUniformLocation(particleDepthShader, "P");
     particleDepthShader.screenSize_Loc = glGetUniformLocation(particleDepthShader, "screenSize");
-    particleDepthShader.terrainTex = glGetUniformLocation(particleDepthShader, "terrainTexture");
+    //particleDepthShader.terrainTex = glGetUniformLocation(particleDepthShader, "terrainTexture");
     // Bind output variables
     glBindFragDataLocation(particleDepthShader, 0, "particleDepth");
 
@@ -314,7 +315,7 @@ int main() {
     particleThicknessShader.MV_Loc = glGetUniformLocation(particleThicknessShader, "MV");
     particleThicknessShader.P_Loc = glGetUniformLocation(particleThicknessShader, "P");
     particleThicknessShader.screenSize_Loc = glGetUniformLocation(particleThicknessShader, "screenSize");
-    particleThicknessShader.terrainTex = glGetUniformLocation(particleThicknessShader, "terrainTexture");
+    //particleThicknessShader.terrainTex = glGetUniformLocation(particleThicknessShader, "terrainTexture");
     // Bind output variables
     glBindFragDataLocation(particleThicknessShader, 0, "particleThickness");
 
@@ -347,9 +348,10 @@ int main() {
 
     //COMPOSITION SHADER
     compositionShader.MV_Loc = glGetUniformLocation(compositionShader, "MV");
+    compositionShader.P_Loc = glGetUniformLocation(compositionShader, "P");
     compositionShader.backgroundTex = glGetUniformLocation(compositionShader, "backgroundTexture");
-    compositionShader.terrainTex = glGetUniformLocation(compositionShader, "terrainTexture");
     compositionShader.particleTex = glGetUniformLocation(compositionShader, "particleTexture");
+    //compositionShader.terrainTex = glGetUniformLocation(compositionShader, "terrainTexture");
     // Bind output variables
     glBindFragDataLocation(compositionShader, 0, "outColor");
 
@@ -382,6 +384,7 @@ int main() {
 
         /*--------------------------------RENDERING---------------------------------------------*/
         //------------BACKGROUND SHADER
+        /*
         //Set viewport to whole window
         glViewport(0, 0, WIDTH, HEIGHT);
         // Clear everything first thing.
@@ -392,6 +395,7 @@ int main() {
 
         //Activate shader
         backgroundShader();
+        */
 
         //Calculate matrices and textures
         // Get mouse and key input
@@ -403,7 +407,6 @@ int main() {
         glm::mat4 VTrans = glm::translate(M, glm::vec3(trans.horizontal, 0.0f, trans.zoom));
 
         glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
-        glm::vec4 camPos = eye_position;
         glm::mat4 V = VTrans * glm::lookAt(glm::vec3(eye_position), scene_center,
                                            glm::vec3(0.0f, 1.0f, 0.0f));
         P = glm::perspectiveFov(50.0f, static_cast<float>(WIDTH), static_cast<float>(HEIGHT), 0.1f, 100.0f);
@@ -412,7 +415,7 @@ int main() {
         //Calculate light direction
         lDir = glm::vec3(1.0f);
 
-
+        /*
         //Send uniforms
         glUniformMatrix4fv(backgroundShader.MV_Loc, 1, GL_FALSE, &MV[0][0]);
         glUniformMatrix4fv(backgroundShader.P_Loc, 1, GL_FALSE, &P[0][0]);
@@ -443,7 +446,7 @@ int main() {
                 glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
         #endif
         glEnable(GL_CULL_FACE);
-
+        */
 
         //----------------PARTICLE_DEPTH SHADER
         //Set viewport to low-res
@@ -459,9 +462,10 @@ int main() {
         particleDepthShader();
 
         //Send textures
-        glActiveTexture(GL_TEXTURE0);
+        /*glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, backgroundTexture);
         glUniform1i(particleDepthShader.terrainTex, 0);
+        */
 
         //Send uniform variables
         glUniformMatrix4fv(particleDepthShader.MV_Loc, 1, GL_FALSE, &MV[0][0]);
@@ -474,18 +478,20 @@ int main() {
         #else
                 glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
         #endif
+        glBindVertexArray(0);
 
 
         //-----------------------------PARTICLE_THICKNESS SHADER
-        glBindFramebuffer(GL_FRAMEBUFFER, particleThicknessFBO[0]);
+        glBindFramebuffer(GL_FRAMEBUFFER, particleThicknessFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         particleThicknessShader();
 
         // Set textures
-        glActiveTexture(GL_TEXTURE0);
+        /*glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, backgroundTexture);
         glUniform1i(particleThicknessShader.terrainTex, 0);
+        */
 
         //Send uniform variables
         glUniformMatrix4fv(particleThicknessShader.MV_Loc, 1, GL_FALSE, &MV[0][0]);
@@ -508,6 +514,7 @@ int main() {
         // Turn blending back off and depth test back on
         glDisable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
+        glBindVertexArray(0);
 
         //----------------------------PARTICLE_VELOCITY SHADER
         glBindFramebuffer(GL_FRAMEBUFFER, velocityFBO);
@@ -526,6 +533,7 @@ int main() {
         #else
                 glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
         #endif
+        glBindVertexArray(0);
 
 
 
@@ -538,10 +546,10 @@ int main() {
         //Send uniform variables
         glUniformMatrix4fv(curvatureFlowShader.P_Loc, 1, GL_FALSE, &P_LowRes[0][0]);
         glUniform2fv(curvatureFlowShader.screenSize_Loc, 1, &screenSize[0]);
-        glUniform1i(curvatureFlowShader.particleTex, 0); //Why not in loop?
+        //glUniform1i(curvatureFlowShader.particleTex, 0); //Why not in loop?
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindVertexArray(vao);
+        //glActiveTexture(GL_TEXTURE0);
+        //glBindVertexArray(vao);
 
         // Smoothing loop
         glDisable(GL_DEPTH_TEST);
@@ -551,18 +559,15 @@ int main() {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
             // Bind texture
+            glActiveTexture(GL_TEXTURE0); //move back?
             glBindTexture(GL_TEXTURE_2D, particleTexture[pingpong]);
+            glUniform1i(curvatureFlowShader.particleTex, 0); //move back?
 
             // Activate proper FBO and clear
             glBindFramebuffer(GL_FRAMEBUFFER, particleFBO[1 - pingpong]);
 
             // Draw a quad
-            glDrawElements(
-                    GL_TRIANGLES,
-                    6,
-                    GL_UNSIGNED_INT,
-                    (void*)0
-            );
+            //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0); //Gives error
 
             // Switch buffers
             pingpong = 1 - pingpong;
@@ -583,7 +588,7 @@ int main() {
         glUniform1i(liquidShadeShader.particleTex, 0);
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, particleThicknessTexture[0]);
+        glBindTexture(GL_TEXTURE_2D, particleThicknessTexture);
         glUniform1i(liquidShadeShader.particleThicknessTex, 1);
 
         glActiveTexture(GL_TEXTURE2);
@@ -609,6 +614,8 @@ int main() {
                 glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
         #endif
         glEnable(GL_DEPTH_TEST);
+        glBindVertexArray(0);
+
 
 
 
@@ -632,12 +639,13 @@ int main() {
         glBindTexture(GL_TEXTURE_2D, particleColorTexture);
         glUniform1i(compositionShader.particleTex, 1);
 
-        glActiveTexture(GL_TEXTURE2);
+        /*glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, backgroundTexture);
         glUniform1i(compositionShader.terrainTex, 2);
-
+*/
         // Send uniforms
         glUniformMatrix4fv(compositionShader.MV_Loc, 1, GL_FALSE, &MV[0][0]);
+        glUniformMatrix4fv(compositionShader.P_Loc, 1, GL_FALSE, &P[0][0]);
         glBindVertexArray(vao);
 
         glDisable(GL_DEPTH_TEST);
@@ -647,6 +655,7 @@ int main() {
                 glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
         #endif
         glEnable(GL_DEPTH_TEST);
+        glBindVertexArray(0);
 
         /*-----------------------------------------------------------------------------------*/
 

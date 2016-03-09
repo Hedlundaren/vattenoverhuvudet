@@ -1,7 +1,5 @@
 #include "rendering/texture.hpp"
 
-
-
 // Helper function to make a buffer object of some size
 GLuint makeTextureBuffer(int w, int h, GLenum format, GLint internalFormat) {
 	GLuint buffertex;

@@ -1,11 +1,12 @@
 #pragma once
 
-// Includes
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
-#include <GL/gl.h>
 
+#ifdef __WIN32
+#include <GL/glew.h>
+#endif
 
 GLuint makeTextureBuffer(int w, int h, GLenum format, GLint internalFormat);
 

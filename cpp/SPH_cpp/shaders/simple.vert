@@ -15,10 +15,9 @@ void main() {
 	objectPos = position;
 
 	// Transform the vertex according to MV
-	vec4 viewVertex;
-	viewVertex = vec4(position, 1.0f) * MV;
+	vec4 viewVertex = MV * vec4(position, 1.0f); // * MV;
 	worldPos = viewVertex.xyz;
 
 	// Project and send to the fragment shader
-	gl_Position = viewVertex * P;
+	gl_Position = P * viewVertex; //* P;
 }

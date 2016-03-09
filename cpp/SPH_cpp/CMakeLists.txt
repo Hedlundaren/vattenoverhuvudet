@@ -20,7 +20,7 @@ if (APPLE)
 endif (APPLE)
 
 ## Comment out this line to use C++ simulation
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENCL_SIMULATION")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENCL_SIMULATION")
 
 ## Define if in debug mode or not (comment out line below to disable logging -> faster)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMY_DEBUG")

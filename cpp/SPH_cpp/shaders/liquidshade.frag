@@ -27,9 +27,8 @@ vec2 spheremap(vec3 dir) {
 	return vec2(dir.x / m + 0.5f, dir.y / m + 0.5f);
 }
 
-vec3 eyespacePos(vec2 pos) {
-	float depth = texture(particleTexture, pos).z;
-	pos = (pos - vec2(0.5f)) * 2.0f;
+vec3 eyespacePos(vec2 pos, float depth) {
+	//pos = (pos - vec2(0.5f)) * 2.0f;
 	return(depth * vec3(-pos.x * P[0][0], -pos.y * P[1][1], 1.0f));
 }
 
@@ -88,7 +87,7 @@ float fresnel(float rr1, float rr2, vec3 n, vec3 d) {
 void main() {
 	float particleDepth = texture(particleTexture, coords).z;
 	float particleThickness = texture(particleThicknessTexture, coords).z;
-	float velocity = texture(velocityTexture, coords).z;
+	float velocity = texture(velocityTexture, coords).w;
 
 	vec3 normal = eyespaceNormal(coords);
 	normal = normal * inverse(mat3(MV));
@@ -100,11 +99,11 @@ void main() {
 		outColor = vec4(0.0f);
 	}
 	else {
-		vec3 pos = eyespacePos(coords);
+		vec3 pos = eyespacePos(coords, particleDepth);
 		pos = (vec4(pos, 1.0f) * inverse(MV)).xyz;
 
 		// float thickness = vec4(particleThickness) / 10.0f;
-		float thickness = (particleThickness) / 10.0f;
+		float thickness = particleThickness / 10.0f;
 
 		float lambert = max(0.0f, dot(normalize(lDir), normal));
 
@@ -117,10 +116,10 @@ void main() {
 		// De-specularize fast particles
 		//specular = max(0.0f, specular - (velocity / 15.0f));
 
-		vec4 environmentColor = texture(environmentTexture, spheremap(reflectedEye));
+		//vec4 environmentColor = texture(environmentTexture, spheremap(reflectedEye));
 		vec4 particleColor = exp(-vec4(0.6f, 0.2f, 0.05f, 3.0f) * thickness);
 		particleColor.w = clamp(1.0f - particleColor.w, 0.0f, 1.0f);
-		particleColor.rgb = (lambert + 0.2f) * particleColor.rgb * (1.0f - specular) + specular * environmentColor.rgb;
+		particleColor.rgb = (lambert + 0.2f) * particleColor.rgb * (1.0f - specular) + specular; // * environmentColor.rgb;
 
 
 		// Oil

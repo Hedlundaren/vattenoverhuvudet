@@ -13,10 +13,10 @@ out float vVelocity;
 
 void main() {
 
-    vec4 pos4 = vec4(position, 1.0f) * MV; //Fel ordning?
+    vec4 pos4 = MV * vec4(position, 1.0f); //Fel ordning?  * MV
     vPosition = vec3(pos4);
     vRadius = 10.0f / (-vPosition.z *4.0f * (1.0f/ screenSize.y));
-    vec4 clipspacePos = pos4 * P; //Fel ordning?
+    vec4 clipspacePos = P * pos4; //Fel ordning?  * P
 
     gl_Position = clipspacePos;
     gl_PointSize = vRadius;

@@ -10,7 +10,7 @@ uniform mat4 P;
 uniform vec2 screenSize;
 
 // Textures
-uniform sampler2D terrainTexture;
+//uniform sampler2D terrainTexture;
 
 // Output
 out float particleThickness;
@@ -48,8 +48,8 @@ void main() {
 	float fragDepth = (((far - near) * deviceDepth) + near + far) / 2.0;
 	gl_FragDepth = fragDepth;
 
-	if(fragDepth > texture(terrainTexture, gl_FragCoord.xy / screenSize).w) {
-		discard;
-	}
+	//if(fragDepth > texture(terrainTexture, gl_FragCoord.xy / screenSize).w) {
+	//	discard;
+	//}
 }
 
