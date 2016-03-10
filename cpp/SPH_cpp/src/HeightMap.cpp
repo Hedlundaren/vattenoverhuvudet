@@ -295,7 +295,7 @@ void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
             position.z = origin.z + (static_cast<float>(imy) / height) * dimensions.z;
 
             // Read y-coord of vertex from heightmap
-            position.y = origin.y + heightmap[imx + width * imy] * dimensions.y;
+            position.y = - (origin.y + heightmap[imx + width * imy] * dimensions.y);
 
             positions[imx + width * imy] = position;
         }
