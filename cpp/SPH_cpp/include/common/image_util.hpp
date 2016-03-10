@@ -46,7 +46,7 @@ inline bool loadPNGfromImagesFolder(std::vector<unsigned char> &img_out,
             colortype = "";
             break;
     }
-    std::cout << "bitdepth=" << info.color.bitdepth << ", color type =\"" << colortype << "\"" << std::endl;
+    std::cout << "bitdepth=" << info.color.bitdepth << ", color type =\"" << colortype << "\"" << endl;
 
 #endif
 

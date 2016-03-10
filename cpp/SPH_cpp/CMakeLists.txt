@@ -19,7 +19,10 @@ if (APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGLFW_INCLUDE_GLCOREARB")
 endif (APPLE)
 
-# Uncomment this line to enable debug printouts
+## Comment out this line to use C++ simulation
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENCL_SIMULATION")
+
+## Define if in debug mode or not (comment out line below to disable logging -> faster)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMY_DEBUG")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
@@ -35,7 +38,7 @@ set(PROJECT_CPP_DIR ${PROJECT_SOURCE_DIR}/src)
 set(PROJECT_EXT_DIR ${PROJECT_SOURCE_DIR}/external)
 
 # Configuration of OpenCL simulation parameters
-set(VOXEL_CELL_PARTICLE_COUNT 16)
+set(VOXEL_CELL_PARTICLE_COUNT 64)
 add_definitions(-DVOXEL_CELL_PARTICLE_COUNT=${VOXEL_CELL_PARTICLE_COUNT})
 configure_file(${PROJECT_KERNELS_DIR}/configurable/simulate_fluid_particles.cl ${PROJECT_KERNELS_DIR}/simulate_fluid_particles.cl @ONLY)
 

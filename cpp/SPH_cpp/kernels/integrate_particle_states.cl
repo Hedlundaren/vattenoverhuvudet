@@ -5,7 +5,6 @@
 __constant float EPSILON = 1e-5;
 __constant float PI = 3.1415926535f;
 #define MAX_VEL 5.0f
-__constant float ACC_CONSTANT = 100000.0f;
 __constant float3 VELOCITY_CLAMP = (float3)(MAX_VEL, MAX_VEL, MAX_VEL);
 
 typedef struct def_FluidInfo {
@@ -70,14 +69,12 @@ float3 gradW_spiky(const float3 r, const float h) {
 __kernel void integrate_particle_states(__global float* restrict positions,
 										__global float* restrict velocities,
 										__global const float3* restrict forces,
-										__global const float* restrict densities,
 										const VoxelGridInfo grid_info,
 										const FluidInfo fluid_info,
 										const float dt) {
 	const uint particle_id = get_global_id(0);
 	const uint particle_position_id = 3 * particle_id;
 
-	const float density = densities[particle_id];
 	float3 force = forces[particle_id];
 
 	float3 position = (float3)(positions[particle_position_id],
@@ -87,7 +84,6 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 									 velocities[particle_position_id + 1],
 									 velocities[particle_position_id + 2]);
 
-/*
 	// Apply forces from the walls
 	float3 boundary_force = zero3;
 	float diff = 0.0f;
@@ -105,11 +101,9 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 
     // Apply external forces
     force = force + boundary_force;
-*/
 
 	// Acceleration according to Newton's law: a = F / m
 	const float3 acceleration = force / fluid_info.mass + fluid_info.gravity;
-	//const float3 acceleration = ACC_CONSTANT * force / density + fluid_info.gravity;
 
 	// Integrate to new state using simple Euler integration
 	// Todo investigate other methods such as velocity verlet or leap-frog
