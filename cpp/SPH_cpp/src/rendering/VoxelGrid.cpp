@@ -1,11 +1,14 @@
+#include "rendering/ShaderProgram.hpp"
+
 #include "rendering/VoxelGrid.hpp"
 
 #include <cmath>
 #include "glm/gtx/string_cast.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-#include "rendering/ShaderProgram.hpp"
 #include "common/GLerror.hpp"
+
+typedef unsigned int uint;
 
 template<typename T>
 T clamp(const T &value, const T &min, const T &max) {
@@ -36,6 +39,8 @@ void VoxelGrid::initGL(glm::vec3 origin, glm::vec3 dimensions) {
 
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glEnable(GL_LINE_WIDTH);
+    glLineWidth(10);
 }
 
 void VoxelGrid::render(glm::mat4 P, glm::mat4 MV, float kernel_size) {

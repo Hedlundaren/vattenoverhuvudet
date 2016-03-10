@@ -3,7 +3,6 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <rendering/VoxelGrid.hpp>
 
 #ifdef _WIN32
 #include "GL/glew.h"
@@ -11,6 +10,7 @@
 
 #include "GLFW/glfw3.h"
 
+#include "rendering/VoxelGrid.hpp"
 #include "common/tic_toc.hpp"
 #include "common/GLerror.hpp"
 
@@ -100,6 +100,16 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+    /* Request a RGBA8 buffer without MSAA */
+    glfwWindowHint(GLFW_SAMPLES, 16);
+    glfwWindowHint(GLFW_RED_BITS, 8);
+    glfwWindowHint(GLFW_GREEN_BITS, 8);
+    glfwWindowHint(GLFW_BLUE_BITS, 8);
+    glfwWindowHint(GLFW_ALPHA_BITS, 8);
+    glfwWindowHint(GLFW_STENCIL_BITS, 8);
+    glfwWindowHint(GLFW_DEPTH_BITS, 24);
+    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+
     //Open a window
     window = glfwCreateWindow(640, 480, "Totally fluids", NULL, NULL);
     if (!window) {
@@ -116,12 +126,6 @@ int main() {
     //Set the GLFW-context the current window
     glfwMakeContextCurrent(window);
     cout << glGetString(GL_VERSION) << "\n";
-
-    glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
-    glDepthFunc(GL_LESS);
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // VSync: enable = 1, disable = 0
     glfwSwapInterval(0);
@@ -283,9 +287,13 @@ int main() {
                      params.bg_color.b,
                      1.0f);
 
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
+        glEnable(GL_CULL_FACE);
+        glCullFace(GL_BACK);
+
         //Send VAO to the GPU
         glBindVertexArray(vao);
-        glCullFace(GL_BACK);
         glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
         //glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
 
@@ -487,7 +495,7 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
                       }
     );
     cb->setFontSize(16);
-    cb->setChecked(true);
+    cb->setChecked(false);
 
     cb = new CheckBox(window, "Render particle grid",
                       [=](bool state) {
@@ -495,7 +503,7 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
                       }
     );
     cb->setFontSize(16);
-    cb->setChecked(true);
+    cb->setChecked(false);
 
     Widget *panel_fps = new Widget(window);
     panel_fps->setLayout(new BoxLayout(Orientation::Horizontal,

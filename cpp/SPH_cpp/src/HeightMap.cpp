@@ -285,7 +285,7 @@ void HeightMap::calcVoxelSamplers(std::function<float(const std::vector<float>, 
 
 void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
     std::vector<glm::vec3> positions(width * height);
-    std::vector<uint> indices((width - 1) * (height - 1) * 3 * 2);
+    std::vector<uint> indices(width * height * 3 * 2);
 
     glm::vec3 position;
     for (uint imx = 0; imx < width; ++imx) {
@@ -340,13 +340,13 @@ void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
 
             // triangle A
             indices[6 * flat_index + 0] = flat_index;
-            indices[6 * flat_index + 1] = calc_flat_index(imx + 1, imy);
-            indices[6 * flat_index + 2] = calc_flat_index(imx + 1, imy + 1);
+            indices[6 * flat_index + 1] = calc_flat_index(imx + 1, imy + 1);
+            indices[6 * flat_index + 2] = calc_flat_index(imx + 1, imy);
 
             // triangle B
             indices[6 * flat_index + 3] = flat_index;
-            indices[6 * flat_index + 4] = calc_flat_index(imx + 1, imy + 1);
-            indices[6 * flat_index + 5] = calc_flat_index(imx, imy + 1);
+            indices[6 * flat_index + 4] = calc_flat_index(imx, imy + 1);
+            indices[6 * flat_index + 5] = calc_flat_index(imx + 1, imy + 1);
         }
     }
 
