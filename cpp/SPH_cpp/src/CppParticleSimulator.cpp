@@ -91,7 +91,7 @@ void CppParticleSimulator::updateSimulation(const Parameters &parameters, float 
 
     }
 
-     //checkBoundariesGlass();
+     checkBoundariesGlass();
 
     glBindBuffer (GL_ARRAY_BUFFER, vbo_pos);
     glBufferData (GL_ARRAY_BUFFER, positions.size() * 3 * sizeof (float), positions.data(), GL_STATIC_DRAW);

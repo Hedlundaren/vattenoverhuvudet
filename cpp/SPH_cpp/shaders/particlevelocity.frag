@@ -1,9 +1,10 @@
 #version 330 core
 
 // Parameters from the vertex shader
-in vec3 vPosition;
+//in vec3 vPosition;
 in float vRadius;
 in float vVelocity;
+in float vDepth;
 
 // Uniforms
 uniform mat4 P;

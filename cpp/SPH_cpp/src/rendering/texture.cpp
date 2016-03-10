@@ -1,5 +1,15 @@
 #include "rendering/texture.hpp"
 
+
+// Simple helper to make a single buffer object.
+GLuint makeBO(GLenum type, void* data, GLsizei size, int accessFlags) {
+    GLuint bo;
+    glGenBuffers(1, &bo);
+    glBindBuffer(type, bo);
+    glBufferData(type, size, data, accessFlags);
+    return(bo);
+}
+
 // Helper function to make a buffer object of some size
 GLuint makeTextureBuffer(int w, int h, GLenum format, GLint internalFormat) {
 	GLuint buffertex;

@@ -19,7 +19,7 @@ uniform vec3 lDir;
 out vec4 outColor;
 
 float noise(vec2 coord) {
-    return fract(sin(dot(coord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+    return fract(sin(dot(coord, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 vec2 spheremap(vec3 dir) {
@@ -28,7 +28,7 @@ vec2 spheremap(vec3 dir) {
 }
 
 vec3 eyespacePos(vec2 pos, float depth) {
-	//pos = (pos - vec2(0.5f)) * 2.0f;
+	pos = (pos - vec2(0.5f)) * 2.0f;
 	return(depth * vec3(-pos.x * P[0][0], -pos.y * P[1][1], 1.0f));
 }
 
@@ -85,12 +85,12 @@ float fresnel(float rr1, float rr2, vec3 n, vec3 d) {
 }
 
 void main() {
-	float particleDepth = texture(particleTexture, coords).z;
-	float particleThickness = texture(particleThicknessTexture, coords).z;
+	float particleDepth = texture(particleTexture, coords).w; //QA?
+	float particleThickness = texture(particleThicknessTexture, coords).w;
 	float velocity = texture(velocityTexture, coords).w;
 
 	vec3 normal = eyespaceNormal(coords);
-	normal = normal * inverse(mat3(MV));
+	normal = inverse(mat3(MV)) * normal;
 	normal.xz = -normal.xz;
 
 	// vec3 lightDir = vec3(1.0f, 1.0f, -1.0f);
@@ -100,26 +100,27 @@ void main() {
 	}
 	else {
 		vec3 pos = eyespacePos(coords, particleDepth);
-		pos = (vec4(pos, 1.0f) * inverse(MV)).xyz;
-
-		// float thickness = vec4(particleThickness) / 10.0f;
-		float thickness = particleThickness / 10.0f;
-
-		float lambert = max(0.0f, dot(normalize(lDir), normal));
+		pos = vec3(inverse(MV) * vec4(pos, 1.0f));
 
 		vec3 fromEye = normalize(pos);
+        fromEye.xz = -fromEye.xz;
 
-		fromEye.xz = -fromEye.xz;
+		float thickness = particleThickness / 1.0f; //10.0f
+
+		float diffuse = max(0.0f, dot(normalize(lDir), normal));
+
+
 		vec3 reflectedEye = normalize(reflect(fromEye, normal));
 		float specular = clamp(fresnel(1.0f, 1.5f, normal, fromEye), 0.0f, 0.4f);
 
 		// De-specularize fast particles
-		//specular = max(0.0f, specular - (velocity / 15.0f));
+		specular = max(0.0f, specular - (velocity / 15.0f));
 
-		//vec4 environmentColor = texture(environmentTexture, spheremap(reflectedEye));
+		vec4 environmentColor = texture(environmentTexture, spheremap(reflectedEye));
+
 		vec4 particleColor = exp(-vec4(0.6f, 0.2f, 0.05f, 3.0f) * thickness);
 		particleColor.w = clamp(1.0f - particleColor.w, 0.0f, 1.0f);
-		particleColor.rgb = (lambert + 0.2f) * particleColor.rgb * (1.0f - specular) + specular; // * environmentColor.rgb;
+		particleColor.rgb = (diffuse + 0.2f) * particleColor.rgb * (1.0f - specular) + specular * environmentColor.rgb;
 
 
 		// Oil

@@ -70,7 +70,7 @@ vec3 meanCurvature(vec2 pos) {
 }
 
 void main() {
-	float particleDepth = texture(particleTexture, coords).z;
+	float particleDepth = texture(particleTexture, coords).w; //QA .z or .w?
 
 	if(particleDepth == 0.0f) {
 		outDepth = 0.0f;

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <chrono>
+#include <vector>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -55,6 +56,7 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+
     //Open a window
     window = glfwCreateWindow(WIDTH, HEIGHT, "Totally fluids", NULL, NULL);
     if (!window) {
@@ -78,6 +80,7 @@ int main() {
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glClearColor(0.0,0.1,0.2,1);
+    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
     // VSync: enable = 1, disable = 0
     glfwSwapInterval(0);
@@ -162,10 +165,10 @@ int main() {
 
     simulator->setupSimulation(params, positions, velocities, pos_vbo, vel_vbo);
 
-    // Generate VAO with all VBOs
-    GLuint vao = 0;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    // Generate particle VAO with 2 VBOs
+    GLuint part_vao = 0;
+    glGenVertexArrays(1, &part_vao);
+    glBindVertexArray(part_vao);
     glBindBuffer(GL_ARRAY_BUFFER, pos_vbo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL); //position
     glBindBuffer(GL_ARRAY_BUFFER, vel_vbo);
@@ -174,6 +177,28 @@ int main() {
     //How many attributes do we have? Enable them!
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
+
+    // Prepare a screen quad to render postprocessed things.
+    glm::vec3 quadData[] = {
+            glm::vec3(-1.0f, -1.0f, 0.0f),
+            glm::vec3( 1.0f, -1.0f, 0.0f),
+            glm::vec3( 1.0f,  1.0f, 0.0f),
+            glm::vec3(-1.0f,  1.0f, 0.0f)};
+    GLuint quadElements[] = {0, 1, 3, 1, 2, 3}; //Order to write
+
+    GLuint quadVBO = makeBO(GL_ARRAY_BUFFER, quadData, sizeof(glm::vec3)*4, GL_STATIC_DRAW);
+    GLuint quadElemVBO = makeBO(GL_ELEMENT_ARRAY_BUFFER, quadElements, sizeof(GLuint)*6, GL_STATIC_DRAW);
+
+    // Generate quad VAO with 2 VBOs
+    GLuint quad_vao = 0;
+    glGenVertexArrays(1, &quad_vao);
+    glBindVertexArray(quad_vao);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(GLfloat) * 3, (void*)0);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, quadElemVBO);
+
+    //Unbind VAOs
     glBindVertexArray(0);
 
     /*----------------------------------------------------------------------------------------*/
@@ -307,6 +332,7 @@ int main() {
     particleDepthShader.P_Loc = glGetUniformLocation(particleDepthShader, "P");
     particleDepthShader.screenSize_Loc = glGetUniformLocation(particleDepthShader, "screenSize");
     //particleDepthShader.terrainTex = glGetUniformLocation(particleDepthShader, "terrainTexture");
+    particleDepthShader.camPos_Loc = glGetUniformLocation(particleDepthShader, "camPos");
     // Bind output variables
     glBindFragDataLocation(particleDepthShader, 0, "particleDepth");
 
@@ -407,8 +433,8 @@ int main() {
         glm::mat4 VTrans = glm::translate(M, glm::vec3(trans.horizontal, 0.0f, trans.zoom));
 
         glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
-        glm::mat4 V = VTrans * glm::lookAt(glm::vec3(eye_position), scene_center,
-                                           glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::vec4 camPos = eye_position;
+        glm::mat4 V = VTrans * glm::lookAt(glm::vec3(eye_position), scene_center, glm::vec3(0.0f, 1.0f, 0.0f));
         P = glm::perspectiveFov(50.0f, static_cast<float>(WIDTH), static_cast<float>(HEIGHT), 0.1f, 100.0f);
         MV = V * M;
 
@@ -471,8 +497,10 @@ int main() {
         glUniformMatrix4fv(particleDepthShader.MV_Loc, 1, GL_FALSE, &MV[0][0]);
         glUniformMatrix4fv(particleDepthShader.P_Loc, 1, GL_FALSE, &P_LowRes[0][0]);
         glUniform2fv(particleDepthShader.screenSize_Loc, 1, &screenSize[0]);
+        glUniform4fv(particleDepthShader.camPos_Loc, 1, &camPos[0]);
 
-        glBindVertexArray(vao);
+
+        glBindVertexArray(part_vao);
         #ifdef USE_TESS_SHADER
                 glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
         #else
@@ -498,7 +526,7 @@ int main() {
         glUniformMatrix4fv(particleThicknessShader.P_Loc, 1, GL_FALSE, &P_LowRes[0][0]);
         glUniform2fv(particleThicknessShader.screenSize_Loc, 1, &screenSize[0]);
 
-        glBindVertexArray(vao);
+        glBindVertexArray(part_vao);
 
         // Enable additive blending and disable depth test
         glEnable(GL_BLEND);
@@ -527,7 +555,7 @@ int main() {
         glUniformMatrix4fv(particleVelocityShader.P_Loc, 1, GL_FALSE, &P_LowRes[0][0]);
         glUniform2fv(particleVelocityShader.screenSize_Loc, 1, &screenSize[0]);
 
-        glBindVertexArray(vao);
+        glBindVertexArray(part_vao);
         #ifdef USE_TESS_SHADER
                 glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
         #else
@@ -538,18 +566,18 @@ int main() {
 
 
         //-------------------------------CURVATURE_FLOW SHADER
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); //_Fuck quad right!?
+/*
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         curvatureFlowShader();
 
         //Send uniform variables
         glUniformMatrix4fv(curvatureFlowShader.P_Loc, 1, GL_FALSE, &P_LowRes[0][0]);
         glUniform2fv(curvatureFlowShader.screenSize_Loc, 1, &screenSize[0]);
-        //glUniform1i(curvatureFlowShader.particleTex, 0); //Why not in loop?
+        glUniform1i(curvatureFlowShader.particleTex, 0); //Why not in loop?
 
-        //glActiveTexture(GL_TEXTURE0);
-        //glBindVertexArray(vao);
+        glActiveTexture(GL_TEXTURE0);
+        glBindVertexArray(quad_vao);
 
         // Smoothing loop
         glDisable(GL_DEPTH_TEST);
@@ -559,21 +587,22 @@ int main() {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
             // Bind texture
-            glActiveTexture(GL_TEXTURE0); //move back?
+            //glActiveTexture(GL_TEXTURE0); //move back?
             glBindTexture(GL_TEXTURE_2D, particleTexture[pingpong]);
-            glUniform1i(curvatureFlowShader.particleTex, 0); //move back?
+            //glUniform1i(curvatureFlowShader.particleTex, 0); //move back?
 
             // Activate proper FBO and clear
             glBindFramebuffer(GL_FRAMEBUFFER, particleFBO[1 - pingpong]);
 
             // Draw a quad
-            //glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0); //Gives error
+            glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
 
             // Switch buffers
             pingpong = 1 - pingpong;
         }
         glEnable(GL_DEPTH_TEST);
-
+        glBindVertexArray(0);
+*/
 
         //----------------------------LIQUID_SHADE SHADER
         // Activate particle color FBO
@@ -606,17 +635,17 @@ int main() {
         glUniform2fv(liquidShadeShader.screenSize_Loc, 1, &screenSize[0]);
         glUniform3fv(liquidShadeShader.lDir_Loc, 1, &lDir[0]);
 
-        glBindVertexArray(vao);
+
         glDisable(GL_DEPTH_TEST);
+        glBindVertexArray(quad_vao);
         #ifdef USE_TESS_SHADER
                 glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
         #else
-                glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
+                //glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
+                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
         #endif
-        glEnable(GL_DEPTH_TEST);
         glBindVertexArray(0);
-
-
+        glEnable(GL_DEPTH_TEST);
 
 
         //-----------------------------COMPOSITION SHADER
@@ -636,7 +665,7 @@ int main() {
         glUniform1i(compositionShader.backgroundTex, 0);
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, particleColorTexture);
+        glBindTexture(GL_TEXTURE_2D, particleTexture[0] ); //   particleColorTexture
         glUniform1i(compositionShader.particleTex, 1);
 
         /*glActiveTexture(GL_TEXTURE2);
@@ -646,16 +675,17 @@ int main() {
         // Send uniforms
         glUniformMatrix4fv(compositionShader.MV_Loc, 1, GL_FALSE, &MV[0][0]);
         glUniformMatrix4fv(compositionShader.P_Loc, 1, GL_FALSE, &P[0][0]);
-        glBindVertexArray(vao);
 
         glDisable(GL_DEPTH_TEST);
+        glBindVertexArray(quad_vao);
+
         #ifdef USE_TESS_SHADER
                 glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
         #else
-                glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
+                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
         #endif
-        glEnable(GL_DEPTH_TEST);
         glBindVertexArray(0);
+        glEnable(GL_DEPTH_TEST);
 
         /*-----------------------------------------------------------------------------------*/
 
