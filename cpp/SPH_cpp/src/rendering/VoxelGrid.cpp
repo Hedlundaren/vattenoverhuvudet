@@ -36,11 +36,6 @@ void VoxelGrid::initGL(glm::vec3 origin, glm::vec3 dimensions) {
 
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
-
-    glEnable(GL_LINE_SMOOTH);
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-    glEnable(GL_LINE_WIDTH);
-    glLineWidth(10);
 }
 
 void VoxelGrid::render(glm::mat4 P, glm::mat4 MV, float kernel_size) {
@@ -61,6 +56,9 @@ void VoxelGrid::render(glm::mat4 P, glm::mat4 MV, float kernel_size) {
 }
 
 void VoxelGrid::render_voxel_grid_wireframe(glm::mat4 MVP) {
+    glEnable(GL_LINE_SMOOTH);
+    CheckGLerror(__FILE__, __LINE__);
+
     glBindVertexArray(VAO);
     CheckGLerror(__FILE__, __LINE__);
 
@@ -85,6 +83,9 @@ void VoxelGrid::render_voxel_grid_wireframe(glm::mat4 MVP) {
     CheckGLerror(__FILE__, __LINE__);
 
     glBindVertexArray(0);
+    CheckGLerror(__FILE__, __LINE__);
+
+    glDisable(GL_LINE_SMOOTH);
     CheckGLerror(__FILE__, __LINE__);
 }
 
@@ -199,6 +200,8 @@ void VoxelGrid::generate_wireframe_vertices() {
     // push vertices to GPU
     glBindVertexArray(VAO);
 
+    glDeleteBuffers(1, &VBO);
+    glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(float) * vertices.size(), vertices.data(), GL_DYNAMIC_DRAW);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);

@@ -11,7 +11,7 @@ typedef struct /*__attribute__ ((packed))*/ def_ParticleData {
 //typedef struct __attribute__ ((packed)) def_VoxelGridInfo {
 typedef struct /*__attribute__ ((packed))*/ def_VoxelGridInfo {
 	// How many grid cells there are in each dimension (i.e. [x=8 y=8 z=10])
-	uint3 grid_dimensions;
+	uint3 grid_cells;
 
 	// How many grid cells there are in total
 	uint total_grid_cells;
@@ -22,6 +22,8 @@ typedef struct /*__attribute__ ((packed))*/ def_VoxelGridInfo {
 	// The bottom-most corner of the grid, where the grid cell [0 0 0] starts
 	float3 grid_origin;
 
+	float3 grid_dimensions;
+
 	uint max_cell_particle_count;
 } VoxelGridInfo;
 
@@ -31,13 +33,13 @@ int3 calculate_voxel_cell_indices(const float3 position, const VoxelGridInfo gri
 	//return convert_int3(ceil((position - grid_info.grid_origin) / grid_info.grid_cell_size));
 	return clamp(convert_int3(floor((position - grid_info.grid_origin) / grid_info.grid_cell_size)), 
 		(int3)(0, 0, 0), // Minimum indices
-		(int3)(convert_int3(grid_info.grid_dimensions) - (int3)(1, 1, 1)) // Maximum indices
+		(int3)(convert_int3(grid_info.grid_cells) - (int3)(1, 1, 1)) // Maximum indices
 	);
 }
 
 // Calculate the 1D-mapped voxel cell index for the given 3D voxel cell indices (x/y/z)
 uint calculate_voxel_cell_index(const uint3 voxel_cell_indices, const VoxelGridInfo grid_info) {
-	return voxel_cell_indices.x + grid_info.grid_dimensions.x * (voxel_cell_indices.y + grid_info.grid_dimensions.y * voxel_cell_indices.z);
+	return voxel_cell_indices.x + grid_info.grid_cells.x * (voxel_cell_indices.y + grid_info.grid_cells.y * voxel_cell_indices.z);
 }
 
 __kernel void calculate_voxel_grid(__global const float *positions, // The position of each particle
@@ -53,13 +55,6 @@ __kernel void calculate_voxel_grid(__global const float *positions, // The posit
 									 positions[particle_positions_id + 2]);
 
 	const int3 voxel_cell_indices = calculate_voxel_cell_indices(position, grid_info);
-	// Make sure that the voxel indices are within the grid itself
-	/*
-	if (voxel_cell_indices.x != clamp(voxel_cell_indices.x, (int)(0), (int)(grid_info.grid_dimensions.x - (1))) || 
-		voxel_cell_indices.y != clamp(voxel_cell_indices.y, (int)(0), (int)(grid_info.grid_dimensions.y - (1))) || 
-		voxel_cell_indices.z != clamp(voxel_cell_indices.z, (int)(0), (int)(grid_info.grid_dimensions.z - (1)))) {
-		return;
-	}*/
 
 	// Safe to convert voxel cell indices to unsigned
 	const uint voxel_cell_index = calculate_voxel_cell_index(convert_uint3(voxel_cell_indices), grid_info);

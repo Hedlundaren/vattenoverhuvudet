@@ -105,9 +105,9 @@ void OpenClParticleSimulator::allocateVoxelGridBuffer(const Parameters &params) 
     params.set_voxel_grid_info(grid_info);
 
     grid_cells_count = new size_t[3];
-    grid_cells_count[0] = grid_info.grid_dimensions.s[0];
-    grid_cells_count[1] = grid_info.grid_dimensions.s[1];
-    grid_cells_count[2] = grid_info.grid_dimensions.s[2];
+    grid_cells_count[0] = grid_info.grid_cells.s[0];
+    grid_cells_count[1] = grid_info.grid_cells.s[1];
+    grid_cells_count[2] = grid_info.grid_cells.s[2];
 
     /* Setup voxel cell particle indices */
     std::vector<cl_uint> voxel_cell_particle_indices_zeroes(

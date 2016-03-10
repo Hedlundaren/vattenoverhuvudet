@@ -1,6 +1,12 @@
 #pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
 
-#define zero3 (float3)(0.0f, 0.0f, 0.0f);
+#define INTERPOLATE_NEAREST_NEIGHBOUR
+//define INTEPOLATE_BILINEAR
+
+#define zero3f (float3)(0.0f, 0.0f, 0.0f)
+#define zero3u (uint3)(0, 0, 0)
+#define one3f (float3)(1.0f, 1.0f, 1.0f)
+#define one3u (uint3)(1, 1, 1)
 
 __constant float PI = 3.1415926535f;
 __constant float EPSILON = 1e-5;
@@ -10,7 +16,7 @@ __constant float DENSITY_MAX = 100000.0f;
 
 typedef struct def_VoxelGridInfo {
 	// How many grid cells there are in each dimension (i.e. [x=8 y=8 z=10])
-	uint3 grid_dimensions;
+	uint3 grid_cells;
 
 	// How many grid cells there are in total
 	uint total_grid_cells;
@@ -20,6 +26,8 @@ typedef struct def_VoxelGridInfo {
 
 	// The bottom-most corner of the grid, where the grid cell [0 0 0] starts
 	float3 grid_origin;
+
+	float3 grid_dimensions;
 
 	uint max_cell_particle_count;
 } VoxelGridInfo;
@@ -80,7 +88,43 @@ float3 get_particle_velocity(const uint voxel_cell_index,
 					 		 __global const float* restrict velocities);
 
 // Calculate the 1D-mapped voxel cell index for the given 3D voxel cell indices (x/y/z)
-uint calculate_voxel_cell_index(const uint3 voxel_cell_indices, const VoxelGridInfo grid_info);
+uint calculate_1D_index(const uint3 voxel_cell_indices, const uint3 dimensions);
+
+float3 calculate_boundary_sampler_indices(const float3 position,
+                                          const uint3 bounds_voxel_sampler_size,
+                                          const float3 origin,
+                                          const float3 dimensions) {
+    // calculate the unrounded (x/y/z)-indices into the sampler
+    const float3 idx = clamp(((position - origin) / dimensions), zero3f, one3f) * (convert_float3(bounds_voxel_sampler_size - (uint3)(1, 1, 1)));
+}
+
+float calculate_boundary_density_contribution(const float3 sampler_index,
+                                              __global const float* bounds_density_voxel_sampler,
+                                              const uint3 bounds_voxel_sampler_size) {
+#ifdef INTERPOLATE_NEAREST_NEIGHBOUR
+    const uint3 idxyz = clamp(convert_uint3(round(sampler_index)), zero3u, bounds_voxel_sampler_size - one3u);
+    const uint id = calculate_1D_index(idxyz, bounds_voxel_sampler_size);
+
+    return bounds_density_voxel_sampler[id];
+
+#elif INTERPOLATE_BILINEAR
+
+#endif
+}
+
+float3 calculate_boundary_force_contribution(const float3 sampler_index,
+                                             __global const float* bounds_density_voxel_sampler,
+                                             const uint3 bounds_voxel_sampler_size) {
+#ifdef INTERPOLATE_NEAREST_NEIGHBOUR
+    const uint3 idxyz = clamp(convert_uint3(round(sampler_index)), zero3u, bounds_voxel_sampler_size - one3u);
+    const uint id = calculate_1D_index(idxyz, bounds_voxel_sampler_size);
+
+    return bounds_density_voxel_sampler[id];
+
+#elif INTERPOLATE_BILINEAR
+
+#endif
+}
 
 __kernel void calculate_forces(__global const float* restrict positions, // The position of each particle
 							   __global const float* restrict velocities, // The position of each particle
@@ -95,7 +139,7 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 						   	   const uint3 bounds_voxel_sampler_size) {
 	
 	const uint3 voxel_cell_indices = (uint3)(get_global_id(0), get_global_id(1), get_global_id(2));
-	const uint voxel_cell_index = calculate_voxel_cell_index(voxel_cell_indices, grid_info);
+	const uint voxel_cell_index = calculate_1D_index(voxel_cell_indices, grid_info.grid_cells);
 	const uint particle_count = cell_particle_count[voxel_cell_index];
 
 	// Store the cumulative forces locally (in private kernel memory) during calc
@@ -140,7 +184,7 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 	}
 
 	// Pre-define this before x*y*z loop
-	const int3 max_cell_indices = convert_int3(grid_info.grid_dimensions) - (int3)(1, 1, 1);
+	const int3 max_cell_indices = convert_int3(grid_info.grid_cells) - (int3)(1, 1, 1);
 
 	// Pre-declare memory for relative position, for speeeeeeeeeeeed
 	float3 relative_position = (float3)(0.0f, 0.0f, 0.0f);
@@ -162,7 +206,7 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 						// Check if the x-index lies outside the voxel grid
 						const int idz = convert_int(voxel_cell_indices.z) + d_idz;
 						if (idz == clamp(idz, 0, max_cell_indices.z)) {
-							const uint current_voxel_cell_index = calculate_voxel_cell_index((uint3)(idx, idy, idz), grid_info);
+							const uint current_voxel_cell_index = calculate_1D_index((uint3)(idx, idy, idz), grid_info.grid_cells);
 							const uint current_voxel_particle_count = cell_particle_count[current_voxel_cell_index];
 
 							// Iterate through this cell's particles
@@ -251,8 +295,9 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 								   	       const FluidInfo fluid_info,
 								   	       __global const float* bounds_density_voxel_sampler,
 				   	   					   const uint3 bounds_voxel_sampler_size) {
+
 	const uint3 voxel_cell_indices = (uint3)(get_global_id(0), get_global_id(1), get_global_id(2));
-	const uint voxel_cell_index = calculate_voxel_cell_index(voxel_cell_indices, grid_info);
+	const uint voxel_cell_index = calculate_1D_index(voxel_cell_indices, grid_info.grid_cells);
 	const uint particle_count = cell_particle_count[voxel_cell_index];
 
 	// Store the densities locally (in private kernel memory) during calculation
@@ -266,15 +311,20 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 																  grid_info.max_cell_particle_count,
 																  indices,
 																  positions);
-		processed_particle_densities[idp] = 0.0f;
-	}
 
-	for (uint idp = 0; idp < particle_count; ++idp) {
-		// Calculate boundary density contribution
+        // Calculate boundary density contribution
+        const float3 boundary_sampler_index = calculate_boundary_sampler_indices(processed_particle_positions[idp],
+                                                                                 bounds_voxel_sampler_size,
+                                                                                 grid_info.grid_origin,
+                                                                                 grid_info.grid_dimensions);
+
+		processed_particle_densities[idp] = 10000.0f * calculate_boundary_density_contribution(boundary_sampler_index,
+                                                                                                  bounds_density_voxel_sampler,
+                                                                                                  bounds_voxel_sampler_size);
 	}
 
 	// Pre-define this before x*y*z loop
-	const int3 max_cell_indices = convert_int3(grid_info.grid_dimensions) - (int3)(1, 1, 1);
+	const int3 max_cell_indices = convert_int3(grid_info.grid_cells) - (int3)(1, 1, 1);
 
 	// Loop through all voxel cells around the currently processed voxel cell
 	// todo optimize these for-loops and voxel cell index generation
@@ -293,7 +343,7 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 						// Check if the x-index lies outside the voxel grid
 						const int idz = convert_int(voxel_cell_indices.z) + d_idz;
 						if (idz == clamp(idz, 0, max_cell_indices.z)) {
-							const uint current_voxel_cell_index = calculate_voxel_cell_index((uint3)(idx, idy, idz), grid_info);
+							const uint current_voxel_cell_index = calculate_1D_index((uint3)(idx, idy, idz), grid_info.grid_cells);
 							const uint current_voxel_particle_count = cell_particle_count[current_voxel_cell_index];
 
 							// Iterate through this cell's particles
@@ -356,10 +406,10 @@ float W_poly6(const float3 r, const float h) {
 float3 gradW_poly6(const float3 r, const float h) {
 	const float radius2 = euclidean_distance2(r);
 	if (radius2 >= h * h) {
-		return zero3;
+		return zero3f;
 	}
 	if (radius2 <= EPSILON) {
-		return zero3;
+		return zero3f;
 	}
 
 	const float kernel_constant = - (315 /(64 * PI * pow(h, 9))) * 6 * pow((h * h - euclidean_distance2(r)), 2);
@@ -381,10 +431,10 @@ float laplacianW_poly6(const float3 r, const float h) {
 float3 gradW_spiky(const float3 r, const float h) {
 	const float radius2 = euclidean_distance2(r);
 	if (radius2 >= h * h) {
-		return zero3;
+		return zero3f;
 	}
 	if (radius2 <= EPSILON) {
-		return zero3;
+		return zero3f;
 	}
 
 	const float radius = sqrt(radius2);
@@ -404,8 +454,8 @@ float laplacianW_viscosity(const float3 r, const float h) {
 	return (45 / (PI * pow(h, 6))) * (h - euclidean_distance(r));
 }
 
-uint calculate_voxel_cell_index(const uint3 voxel_cell_indices, const VoxelGridInfo grid_info) {
-	return voxel_cell_indices.x + grid_info.grid_dimensions.x * (voxel_cell_indices.y + grid_info.grid_dimensions.y * voxel_cell_indices.z);
+uint calculate_1D_index(const uint3 voxel_cell_indices, const uint3 dimensions) {
+	return voxel_cell_indices.x + dimensions.x * (voxel_cell_indices.y + dimensions.y * voxel_cell_indices.z);
 }
 
 uint get_particle_buffer_index(const uint voxel_cell_index, 

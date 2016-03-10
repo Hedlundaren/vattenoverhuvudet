@@ -85,19 +85,23 @@ struct Parameters {
     inline void set_voxel_grid_info(clVoxelGridInfo &grid_info) const {
         grid_info.grid_cell_size = kernel_size;
 
-        grid_info.grid_dimensions.s[0] = static_cast<unsigned int>(ceilf(get_volume_size_x() / kernel_size));
-        grid_info.grid_dimensions.s[1] = static_cast<unsigned int>(ceilf(get_volume_size_y() / kernel_size));;
-        grid_info.grid_dimensions.s[2] = static_cast<unsigned int>(ceilf(get_volume_size_z() / kernel_size));;
+        grid_info.grid_cells.s[0] = static_cast<unsigned int>(ceilf(get_volume_size_x() / kernel_size));
+        grid_info.grid_cells.s[1] = static_cast<unsigned int>(ceilf(get_volume_size_y() / kernel_size));;
+        grid_info.grid_cells.s[2] = static_cast<unsigned int>(ceilf(get_volume_size_z() / kernel_size));;
 
         grid_info.grid_origin.s[0] = left_bound;
         grid_info.grid_origin.s[1] = bottom_bound;
         grid_info.grid_origin.s[2] = near_bound;
 
+        grid_info.grid_dimensions.s[0] = right_bound - left_bound;
+        grid_info.grid_dimensions.s[1] = top_bound - bottom_bound;
+        grid_info.grid_dimensions.s[2] = far_bound - near_bound;
+
         grid_info.max_cell_particle_count = VOXEL_CELL_PARTICLE_COUNT;
 
-        grid_info.total_grid_cells = grid_info.grid_dimensions.s[0] *
-                                     grid_info.grid_dimensions.s[1] *
-                                     grid_info.grid_dimensions.s[2];
+        grid_info.total_grid_cells = grid_info.grid_cells.s[0] *
+                                     grid_info.grid_cells.s[1] *
+                                     grid_info.grid_cells.s[2];
     }
 
 

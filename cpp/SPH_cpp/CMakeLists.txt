@@ -94,7 +94,7 @@ if (MINGW)
 endif (MINGW)
 
 # Lump all external- and project includes into one variable
-set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR} ${PROJECT_KERNELS_DIR})
+set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
 # Set the include directories so that #include statements work
 include_directories(${ALL_INCLUDES})

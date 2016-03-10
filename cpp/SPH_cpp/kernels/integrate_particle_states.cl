@@ -23,9 +23,10 @@ typedef struct def_FluidInfo {
 	float3 gravity;
 } FluidInfo;
 
-typedef struct def_VoxelGridInfo {
+//typedef struct __attribute__ ((packed)) def_VoxelGridInfo {
+typedef struct /*__attribute__ ((packed))*/ def_VoxelGridInfo {
 	// How many grid cells there are in each dimension (i.e. [x=8 y=8 z=10])
-	uint3 grid_dimensions;
+	uint3 grid_cells;
 
 	// How many grid cells there are in total
 	uint total_grid_cells;
@@ -35,6 +36,8 @@ typedef struct def_VoxelGridInfo {
 
 	// The bottom-most corner of the grid, where the grid cell [0 0 0] starts
 	float3 grid_origin;
+
+	float3 grid_dimensions;
 
 	uint max_cell_particle_count;
 } VoxelGridInfo;
@@ -96,7 +99,7 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 
 	float distance = sqrt(pow(position.x, 2) + pow(position.z, 2));
 	// Using 1/2 of grid_origin.x as radius of cylinder
-	diff = 0.5f * grid_info.grid_dimensions.x * grid_info.grid_cell_size - distance;
+	diff = 0.5f * grid_info.grid_cells.x * grid_info.grid_cell_size - distance;
 	r = - (float3)(position / distance) * diff;
 	boundary_force = boundary_force - fluid_info.mass * hardness * gradW_spiky(r, 5.0f * grid_info.grid_cell_size);
 

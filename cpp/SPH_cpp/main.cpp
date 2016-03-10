@@ -64,11 +64,11 @@ bool render_particle_grid = false;
 int main() {
     using namespace nanogui;
 
-    //HeightMap::SetMaxVoxelSamplerSize(32, 4, 32);
-    HeightMap::SetMaxVoxelSamplerSize(4, 2, 4);
+    HeightMap::SetMaxVoxelSamplerSize(32, 4, 32);
+    //HeightMap::SetMaxVoxelSamplerSize(4, 2, 4);
 
     // normalized "kernel radius" for precomputed density-LUT
-    const float density_contribution_radius = 0.01f;
+    const float density_contribution_radius = 0.1f;
     std::string nmap_name;
     cout << "Heightmap name: ";
     std::cin >> nmap_name;
