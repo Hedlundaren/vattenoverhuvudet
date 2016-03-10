@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <rendering/VoxelGrid.hpp>
 
 #ifdef _WIN32
 #include "GL/glew.h"
@@ -11,6 +12,7 @@
 #include "GLFW/glfw3.h"
 
 #include "common/tic_toc.hpp"
+#include "common/GLerror.hpp"
 
 #include "rendering/ShaderProgram.hpp"
 #include "math/randomized.hpp"
@@ -23,6 +25,7 @@
 #include "nanogui/nanogui.h"
 
 #include "HeightMap.hpp"
+#include "rendering/VoxelGrid.hpp"
 
 nanogui::Screen *screen;
 
@@ -60,8 +63,8 @@ bool hmap_wireframe = false;
 int main() {
     using namespace nanogui;
 
-    HeightMap::SetMaxVoxelSamplerSize(32, 4, 32);
-    //HeightMap::SetMaxVoxelSamplerSize(8, 2, 8);
+    //HeightMap::SetMaxVoxelSamplerSize(32, 4, 32);
+    HeightMap::SetMaxVoxelSamplerSize(4, 2, 4);
 
     // normalized "kernel radius" for precomputed density-LUT
     const float density_contribution_radius = 0.01f;
@@ -116,6 +119,8 @@ int main() {
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
     glDepthFunc(GL_LESS);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
 
     // VSync: enable = 1, disable = 0
     glfwSwapInterval(0);
@@ -165,6 +170,13 @@ int main() {
                                hmap.get_density_voxel_sampler(),
                                hmap.get_normal_voxel_sampler(),
                                hmap.get_voxel_sampler_size());
+
+    // Initialize voxel grid wireframe rendering
+    VoxelGrid voxelGrid;
+    voxelGrid.initGL(glm::vec3(params.left_bound, params.bottom_bound, params.near_bound),
+                     glm::vec3(params.right_bound - params.left_bound,
+                               params.top_bound   - params.bottom_bound,
+                               params.far_bound   - params.near_bound));
 
     // Generate VAO with all VBOs
     GLuint vao = 0;
@@ -277,6 +289,7 @@ int main() {
         //glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
 
         hmap.render(P, MV, hmap_wireframe);
+        voxelGrid.render(P, MV, params.kernel_size);
 
         screen->drawWidgets();
 
