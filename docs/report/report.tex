@@ -9,9 +9,12 @@
 \usepackage[utf8]{inputenc} 
 %\usepackage[latin1]{inputenc} %windows 
 
-\usepackage{amsmath, amsfonts,amsthm} % some math packages
+\usepackage{amsmath, amsfonts,amsthm, bm, mathtools} % some math packages
 \usepackage{lipsum} % for dummy text, remove later
 \usepackage{sectsty} % Allows customizing section commands
+\usepackage{graphicx}
+\usepackage{titlepic}
+
 
 \usepackage{fancyhdr} % Custom headers and footers
 %\pagestyle{fancyplain} % Makes all pages in the document conform to the custom headers and footers
@@ -29,35 +32,40 @@
 \renewcommand{\footrulewidth}{0pt} % Remove footer underlines
 \setlength{\headheight}{13.6pt} % Customize the height of the header
 
+\setlength\parindent{0pt}   % inga indents, ska vi ha det?
+
 %-------
 % Title
 %-------
 
 \title{
 \normalfont \normalsize 
-\textsc{Linköpings Universitet} \\ [25pt] % Your university, school and/or department name(s)
+\textsc{Linköping University} \\ [25pt] % Your university, school and/or department name(s)
 %\horrule{0.5pt} \\[0.4cm] % Thin top horizontal rule
-\huge Fluidsimulering  \\ % The assignment title
+\Huge Fluid Simulation\\
+\LARGE Smoothed Particle Hydrodynamics on the GPU  \\
 %\horrule{2pt} \\[0.5cm] % Thick bottom horizontal rule
 }
 
 \author{Adam Alsegård \and Benjamin Wiberg \and Emil Juopperi \and Jonathan Grangien \and Simon Hedlund} 
-
 \date{\normalsize\today} % Today's date or a custom date
+\titlepic{\includegraphics[width=4cm]{hahaa.jpg}}
 
 \begin{document}
 
-\maketitle % Print the title
+\maketitle 
 
 \chapter*{Abstract}
-This report describes the physical concept of fluids as well as a mathematical model for fluids governed by the Navier-Stokes equations. The Smoothed Particle Hydrodynamics method (SPH) for simulating fluids is described, and implementation details of the method. Numerical integration methods such as Euler and Leap-Frog integration are discussed. \\
+This report describes the physical concept of fluids as well as a mathematical model for fluids governed by the Navier-Stokes equations. The Smoothed Particle Hydrodynamics method (SPH) for simulating fluids is described, and implementation details of the method. Numerical integration methods such as Euler and Leap-Frog integration are discussed. \\ 
+
 The presented result is a program with support for real-time simulation and rendering of three-dimensional fluids. The properties of the fluid can be adjusted through a graphical interface, and the fluid particles can be rendered either as spheres or as an approximative fluid surface. The program is written in C++ with the SPH simulation implemented in OpenCL and rendering implemented in OpenGL.
 
 \tableofcontents
 
 \chapter{Introduction}
 \section{Background}
-Simulating fluids, e.g.\ water, with computer graphics has been done with many different techniques in different contexts. At limited volumes, advanced techniques can produce very realistic looking fluids -- often at a great cost of performance, which may not be of interest in applications where high performance is otherwise desired, such as video games. \\
+Simulating fluids, e.g. water, with computer graphics has been done with many different techniques in different contexts. At limited volumes, advanced techniques can produce very realistic looking fluids -- often at a great cost of performance, which may not be of interest in applications where high performance is otherwise desired, such as video games. \\ 
+
 As technology and computing resources have advanced, some of the different approaches that have surfaced have become more common than others. One such approach is smoothed particle hydrodynamics (SPH), an implementation of which is described in this report.
 
 % math tips
@@ -81,11 +89,82 @@ As technology and computing resources have advanced, some of the different appro
 \chapter{Fluid physics}
 %Discussion of physics of fluid. What causes it to be fluid-like? Keywords: incompressible, viscosity, surface tension, pressure
 
+Simulating a fluid involves simulating several of its physical attributes such as viscosity, surface tension, pressure and incompressibility. A realistic enough interaction of these produces the realistic behaviour of water. It is often decided that a behaviour realistic enough for a human observer to be unable to distinguish it from that of an actual fluid is good enough. \\
+
+To emulate physical attributes, one can make use of the Euler equations for fluid dynamics or the Navier-Stokes equations, the former being the simpler of the two. 
+% mer om det
+
 \section{The Navier-Stokes equations}
 %Description of the NS-equations. Keywords: incompressible vs.\ compressible, viscosity, advection, pressure, density, surface tension
+The Navier-Stokes equations were put together in the 1800's by applying Newton's second law to fluid dynamics, and are fundamental in the modelling and analysing of fluid and fluid-like phenomena. \\
+
+% keywords bla bla
+ 
+Since the increasing availability to solve equations numerically started taking form, different methods to implement these equations as a foundation for fluid simulation have surfaced. Particle systems were introduced as a technique in 1983 by Reeves \cite{reeves}, and since then both particle-based and grid-based approaches have been used. 
 
 \section{Smoothed particle hydrodynamics}
+
 %Description of the SPH-method. Awesome figure of some particles and a smoothing kernel. Keywords: scalar and vector fields, smoothing kernels, density, numerical stability with few vs.\ many particles, parameters, boundary conditions (constraint- or force-based)
+        
+%\begin{equation}
+%    a + b = c
+%
+%   a_b bas
+%   a^b exponent
+%   \frac{}{} division
+%   \rho rå
+%   \bm{} fetstil (vektor)
+%   \sum_{n=1}^{N}
+%   
+%\end{equation}        
+
+\begin{equation}
+    A_S(\bm{r}) = \sum_{j}(m_j\frac{A_j}{\rho_j} W(\bm{r} - \bm{r}_j, h))
+\end{equation}
+
+%förjävligt
+%Hur gör man ekvationer? Måste ju kunna
+
+\subsection{Surface tension}
+%This is not included in The Navier-Stokes equations and should be described aswell.
+
+\subsection{Interaction with solid objects}
+
+the quick brown fox jumps over the lazy dog.
+
+\subsubsection{Boundary conditions for smoothed particles}
+derp
+
+\subsection{Parameters}
+%Not sure if should be a section or if it's better to include it when the equations is introduced
+
+The Navier-Stokes equations and the surface tension calculations includes several parameters that manipulates the properties of the fluid. How each of them interacts and what kind of effect they have on the fluid is described here. Values given to the parameters need to be carefully considered and to study their effect on the fluid is necessary to give a simulated fluid our desired properties.
+
+\begin{itemize}
+    \item Kernel size
+    %Maby this should be in Spatial partitioning instead
+    
+    \item Mass
+    \\%hej
+    
+    \item Gas constant
+    \\This parameter affects the magnitude of the pressure forces in a way that a larger Gas constant results in stronger pressure forces. The fluid gets a more gas-like appearance when the magnitude of the pressure forces increases since the particles will not stay close together. A larger pressure force makes the particles keep a distance between each other and the volume of the particle system increases. When simulating water a low value, close to zero, is chosen for the Gas constant. In conclusion this parameter will decide how gas-like the particle system behaves.
+    
+    \item Viscosity constant
+    \\A fluid can be more or less viscous, which means how inclined particles are to be affected by the movement of particles close by. Increasing the viscosity constant makes the fluid look thicker and decreasing it gives the impression of a lighter fluid with less tendency of sticking together. Water is not thick and viscosity forces is not important for a realistic water simulation, hence a small value or zero is given to the viscosity constant.
+    
+    \item Surface tension constant
+    \\A factor which the tension force is multiplied by and gives a linear increment in the magnitude of tension force.
+    
+    \item Threshold for surface tension
+    \\Needed because when evaluating tension forces numerical problems can appear if certain properties are close to zero.
+    % "sertain properties" will change to a cite when the equations has been described in this report.
+    
+    \item Rest density
+    \\Rest density works as an offset for the pressure field calculations. Mathematically it won't affect the pressure forces since they only depend on the gradients of the pressure field but with SPH smoothing kernels the offset will matter and makes the simulation numerically more stable.
+    
+\end{itemize}
+
 
 \chapter{Fluid simulation}
 \section{Numerical methods}
@@ -93,8 +172,16 @@ As technology and computing resources have advanced, some of the different appro
 \subsection{Leap-frog integration}
 
 \section{Simulation}
+
 \subsection{Spatial partitioning}
-%Description of voxel grid partitioning method, reduction of O(n\^2) simulation to O(n*m) simulation.
+
+The SPH method involves calculating the physical properties of each particle as a combination of the properties of the ones surrounding it. The smoothing kernels have a hard radius, outside of which the contribution to the property is zero. Therefore, each particle only depends on particles in its close proximity. \\
+
+A naïve implementation of the property calculation would simply calculate a particle's property using the contribution from all particles in the simulation. Since all particles will have to access all other particles the algorithm has a complexity of $\mathcal{O}{(n^2)}$, where \emph{n} is the number of particles. \\
+
+Improvements to the naïve property calculation can be made by partitioning the particles spatially. There are many ways of spatial partitioning; binary space partitioning, k-d trees and octrees, but a method well-suited for SPH is a uniform grid. \\
+
+The simulation volume is divided uniformly into a three-dimensional grid. Each particle gets placed into a grid cell depending on its own position. The cell size is chosen to the radius of the smoothing kernel. This means that each particle only has to access all particles in its own- and neighbouring grid cells to calculate a property. The complexity of the property calculation is now $\mathcal{O}{(n*m)}$, where \emph{n} is the number of particles and \emph{m} is the number of grid cells.
 
 \subsection{Boundary conditions}
 One of the central parts of a natural-looking fluid is its interaction with other physical objects, e.g.\ a floor or wall. There are multiple ways of 
@@ -112,8 +199,21 @@ Rendering of particles as spheres
 \chapter{Results}
 
 \chapter{Discussion}
+it was a good project you can go on forever
 
-%bibliography thing?
-\chapter{References}
+\begin{thebibliography}{99}
+\addcontentsline{toc}{chapter}{\bibname}
+
+\bibitem{mueller} Matthias Müller, David Charypar and Markus Gross, \emph{Particle-based fluid simulation for interactive applications}, In: Proc. of Sig- graph Symposium on Computer Animation (2003)\newline
+
+\bibitem{gpu} Takahiro Harada, Seiichi Koshizuka, Yoichiro Kawaguchi, \emph{Smoothed Particle Hydrodynamics on GPUs}, <varifrån> (2007)\newline
+
+\bibitem{nvidia-ss-rendering} Simon Green (NVIDIA), \emph{Screen Space Fluid Rendering for Games}, From: Game Developers Conference (2010)\newline
+
+\bibitem{nvidia-cl-physics} Erwin Coumans (NVIDIA), \emph{OpenCL Game Physics}, (2009) \newline
+
+\bibitem{reeves} W. T. Reeves, \emph{Particle systems -- a technique for modelling a class of fuzzy onjects}, ACM Transactions on on Graphics 2(2) \newline
+
+\end{thebibliography}
 
 \end{document}
