@@ -59,6 +59,7 @@ std::chrono::duration<double> second_accumulator;
 unsigned int frames_last_second;
 nanogui::TextBox *fpsBox;
 bool hmap_wireframe = false;
+bool render_particle_grid = false;
 
 int main() {
     using namespace nanogui;
@@ -120,7 +121,7 @@ int main() {
     glEnable(GL_CULL_FACE);
     glDepthFunc(GL_LESS);
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // VSync: enable = 1, disable = 0
     glfwSwapInterval(0);
@@ -175,8 +176,8 @@ int main() {
     VoxelGrid voxelGrid;
     voxelGrid.initGL(glm::vec3(params.left_bound, params.bottom_bound, params.near_bound),
                      glm::vec3(params.right_bound - params.left_bound,
-                               params.top_bound   - params.bottom_bound,
-                               params.far_bound   - params.near_bound));
+                               params.top_bound - params.bottom_bound,
+                               params.far_bound - params.near_bound));
 
     // Generate VAO with all VBOs
     GLuint vao = 0;
@@ -289,7 +290,10 @@ int main() {
         //glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
 
         hmap.render(P, MV, hmap_wireframe);
-        voxelGrid.render(P, MV, params.kernel_size);
+
+        if (render_particle_grid) {
+            voxelGrid.render(P, MV, params.kernel_size);
+        }
 
         screen->drawWidgets();
 
@@ -480,6 +484,14 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     cb = new CheckBox(window, "Heightmap wireframe",
                       [=](bool state) {
                           hmap_wireframe = state;
+                      }
+    );
+    cb->setFontSize(16);
+    cb->setChecked(true);
+
+    cb = new CheckBox(window, "Render particle grid",
+                      [=](bool state) {
+                          render_particle_grid = state;
                       }
     );
     cb->setFontSize(16);
