@@ -8,6 +8,8 @@
 #include <GL/glew.h>
 #endif
 
+#include "GLFW/glfw3.h"
+
 GLuint makeBO(GLenum type, void* data, GLsizei size, int accessFlags);
 
 GLuint makeTextureBuffer(int w, int h, GLenum format, GLint internalFormat);
