@@ -66,12 +66,24 @@ float3 gradW_spiky(const float3 r, const float h) {
 				   	kernel_constant * r.z);
 }
 
+float W_poly6(const float3 r, const float h) {
+	const float tmp = h * h - euclidean_distance2(r);
+	if (tmp < EPSILON) {
+		return 0.0f;
+	}
+
+	return ( 315.0f / (64.0f * PI * pow(h,9)) ) * pow((tmp), 3);
+}
+
 __kernel void integrate_particle_states(__global float* restrict positions,
 										__global float* restrict velocities,
 										__global const float3* restrict forces,
 										const VoxelGridInfo grid_info,
 										const FluidInfo fluid_info,
-										const float dt) {
+										const float dt,
+										const float3 cursor_position,
+										const float3 cursor_force_center,
+										const float cursor_radius) {
 	const uint particle_id = get_global_id(0);
 	const uint particle_position_id = 3 * particle_id;
 
@@ -83,6 +95,10 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 	float3 velocity = (float3)(velocities[particle_position_id],
 									 velocities[particle_position_id + 1],
 									 velocities[particle_position_id + 2]);
+
+	// Apply cursor interaction force
+	const float3 relative_position = cursor_position - position;
+	float3 cursor_force = W_poly6(relative_position, cursor_radius) * cursor_force_center;
 
 	// Apply forces from the walls
 	float3 boundary_force = zero3;
@@ -100,7 +116,7 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 	boundary_force = boundary_force - fluid_info.mass * hardness * gradW_spiky(r, 5.0f * grid_info.grid_cell_size);
 
     // Apply external forces
-    force = force + boundary_force;
+    force = force + boundary_force + cursor_force;
 
 	// Acceleration according to Newton's law: a = F / m
 	const float3 acceleration = force / fluid_info.mass + fluid_info.gravity;

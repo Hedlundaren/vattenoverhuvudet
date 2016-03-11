@@ -634,6 +634,18 @@ void OpenClParticleSimulator::runIntegrateParticleStatesKernel(float dt_seconds)
 #ifdef MY_DEBUG
     std::cout << ">> integrate_particle_states\n";
 #endif
+    cl_float3 cursor_position;
+    cursor_position.s[0] = 7.5f;
+    cursor_position.s[1] = 0.0f;
+    cursor_position.s[2] = 0.0f;
+    
+    cl_float3 cursor_force;
+    cursor_force.s[0] = 0.0f;
+    cursor_force.s[1] = 0.0f;
+    cursor_force.s[2] = 100000.0f;
+
+    cl_float cursor_radius = 5.0f;
+    
     cl_int error = CL_SUCCESS;
 
     error = clSetKernelArg(integrate_particle_states, 0, sizeof(cl_mem), (void *) &cl_positions);
@@ -648,6 +660,13 @@ void OpenClParticleSimulator::runIntegrateParticleStatesKernel(float dt_seconds)
     CheckError(error, __LINE__);
     error = clSetKernelArg(integrate_particle_states, 5, sizeof(float), (void *) &dt_seconds);
     CheckError(error, __LINE__);
+    error = clSetKernelArg(integrate_particle_states, 6, sizeof(cl_float3), (void *) &cursor_position);
+    CheckError(error, __LINE__);
+    error = clSetKernelArg(integrate_particle_states, 7, sizeof(cl_float3), (void *) &cursor_force);
+    CheckError(error, __LINE__);
+    error = clSetKernelArg(integrate_particle_states, 8, sizeof(cl_float), (void *) &cursor_radius);
+    CheckError(error, __LINE__);
+    
 
 #ifdef MY_DEBUG
     std::cout << "  global_work_size = " << (const size_t) n_particles << "\n";

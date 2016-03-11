@@ -42,25 +42,21 @@ void MouseRotator::init(GLFWwindow *window) {
 }
 
 void MouseRotator::poll(GLFWwindow *window) {
-
-  double currentX;
-  double currentY;
   int currentLeft;
-  int currentRight;
   double moveX;
   double moveY;
   int windowWidth;
   int windowHeight;
 
   // Find out where the mouse pointer is, and which buttons are pressed
-  glfwGetCursorPos(window, &currentX, &currentY);
+  glfwGetCursorPos(window, &thisX, &thisY);
   currentLeft = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
   currentRight = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT); //Not used yet
   glfwGetWindowSize( window, &windowWidth, &windowHeight );
 
   if(currentLeft && lastLeft) { // If a left button drag is in progress
-    moveX = currentX - lastX;
-    moveY = currentY - lastY;
+    moveX = thisX - lastX;
+    moveY = thisY - lastY;
   	phi += M_PI * moveX/windowWidth; // Longest drag rotates 180 degrees
 	if (phi > M_PI*2.0) phi = 0.0f;
 	if (phi < 0.0) phi = M_PI*2.0f;
@@ -71,6 +67,17 @@ void MouseRotator::poll(GLFWwindow *window) {
   }
   lastLeft = currentLeft;
   lastRight = currentRight;
-  lastX = currentX;
-  lastY = currentY;
+  lastX = thisX;
+  lastY = thisY;
+}
+
+const FluidInteraction MouseRotator::get_fluid_interaction() const {
+    FluidInteraction interaction;
+
+    interaction.is_interacting = currentRight != 0;
+    interaction.cursor_position.x = static_cast<float>(thisX);
+    interaction.cursor_position.y = static_cast<float>(thisY);
+
+    interaction.cursor_velocity.x = static_cast<float>(thisX - lastX);
+    interaction.cursor_velocity.y = static_cast<float>(thisY - lastY);
 }
