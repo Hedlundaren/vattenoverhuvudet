@@ -95,9 +95,17 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 	float dp = 0.1f;
 	float particle_distance = sqrt(pow(position.x,2.0f) + pow(position.z,2.0f));
 
+	//Bottom
 	if (position.y < grid_info.grid_origin.y ) {
 		position.y = grid_info.grid_origin.y;
 		velocity.y = wallDamper * (- velocity.y);
+	}
+	float new_pos = sin(position.z)/2.0f + pow(position.x, 2.0f)/5.0f + 0.5f;
+
+
+	if(position.y < new_pos){
+		position.y = new_pos;
+		velocity.y = - velocity.y;
 	}
 
 	if(particle_distance > 7.5){

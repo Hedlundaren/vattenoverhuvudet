@@ -110,8 +110,8 @@ int main() {
     //Generate particles
     int n = -1;
     std::cout << "How many particles? ";
-    // std::cin >> n;
-    n = 20000; // TODO change back!
+     //std::cin >> n;
+    n = 10000; // TODO change back!
     const int n_particles = n;
 
     Parameters params(n_particles);
