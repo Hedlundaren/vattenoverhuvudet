@@ -27,6 +27,8 @@
 #include "HeightMap.hpp"
 #include "rendering/VoxelGrid.hpp"
 
+#include "sph_kernels.h"
+
 nanogui::Screen *screen;
 
 using std::cout;
@@ -83,7 +85,7 @@ int main() {
     hmap.calcVoxelSamplers([](const std::vector<float> &distances, const float max_radius) {
         float sum = 0.0f;
         for (const auto distance : distances) {
-            sum += (max_radius - distance);
+            sum += Wpoly6(glm::vec3(distance, 0.0f, 0.0f), max_radius);
         }
         return sum;
     }, density_contribution_radius);
@@ -435,6 +437,8 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
         p->kernel_size = value * 2 + 0.1;
     });
 
+
+
     new Label(window, "Gas Constant", "sans-bold");
     Widget *panel_gas = new Widget(window);
     panel_gas->setLayout(new BoxLayout(Orientation::Horizontal,
@@ -456,6 +460,8 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
         p->k_gas = value_gas;
     });
 
+
+
     new Label(window, "Viscosity constant", "sans-bold");
     Widget *panel_vis = new Widget(window);
     panel_vis->setLayout(new BoxLayout(Orientation::Horizontal,
@@ -470,12 +476,61 @@ void createGUI(nanogui::Screen *screen, Parameters &params) {
     stream_vis << std::fixed << std::setprecision(1) << (double) p->k_viscosity;
     textBox_vis->setValue(stream_vis.str());
 
-    slider_vis->setCallback([=](float value_gas) {
+    slider_vis->setCallback([=](float value_vis) {
         std::stringstream stream_vis;
         stream_vis << std::fixed << std::setprecision(1) << (double) p->k_viscosity;
         textBox_vis->setValue(stream_vis.str());
-        p->k_viscosity = 20 * value_gas;
+        p->k_viscosity = 20 * value_vis;
     });
+
+
+
+    new Label(window, "Boundary density", "sans-bold");
+    Widget *panel_density = new Widget(window);
+    panel_density->setLayout(new BoxLayout(Orientation::Horizontal,
+                                           Alignment::Minimum, 0, 25));
+
+    Slider *slider_density = new Slider(panel_density);
+    slider_density->setValue(p->k_wall_density / 10);
+    slider_density->setFixedWidth(80);
+
+    TextBox *textBox_density = new TextBox(panel_density);
+    std::stringstream stream_density;
+    stream_density << std::fixed << std::setprecision(1) << (double) p->k_wall_density;
+    textBox_density->setValue(stream_density.str());
+
+    slider_density->setCallback([=](float value_density) {
+        p->k_wall_density = 10 * value_density;
+
+        std::stringstream stream_density;
+        stream_density << std::fixed << std::setprecision(1) << (double) p->k_wall_density;
+        textBox_density->setValue(stream_density.str());
+    });
+
+
+    new Label(window, "Boundary force", "sans-bold");
+    Widget *panel_force = new Widget(window);
+    panel_force->setLayout(new BoxLayout(Orientation::Horizontal,
+                                           Alignment::Minimum, 0, 25));
+
+    Slider *slider_force = new Slider(panel_force);
+    slider_force->setValue(p->k_wall_force / 10);
+    slider_force->setFixedWidth(80);
+
+    TextBox *textBox_force = new TextBox(panel_force);
+    std::stringstream stream_force;
+    stream_force << std::fixed << std::setprecision(1) << (double) p->k_wall_force;
+    textBox_force->setValue(stream_force.str());
+
+    slider_force->setCallback([=](float value_force) {
+        p->k_wall_force = 10 * value_force;
+
+        std::stringstream stream_force;
+        stream_force << std::fixed << std::setprecision(1) << (double) p->k_wall_force;
+        textBox_force->setValue(stream_force.str());
+    });
+
+
 
     new Label(window, "Other", "sans-bold");
     CheckBox *cb = new CheckBox(window, "Gravity",

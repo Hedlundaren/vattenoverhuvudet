@@ -4,7 +4,7 @@
 
 __constant float EPSILON = 1e-5;
 __constant float PI = 3.1415926535f;
-#define MAX_VEL 5.0f
+#define MAX_VEL 10.0f
 __constant float3 VELOCITY_CLAMP = (float3)(MAX_VEL, MAX_VEL, MAX_VEL);
 
 typedef struct def_FluidInfo {

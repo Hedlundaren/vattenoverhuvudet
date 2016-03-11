@@ -47,6 +47,11 @@ typedef struct def_FluidInfo {
 	float3 gravity;
 } FluidInfo;
 
+typedef struct def_BoundsInfo {
+	float k_wall_density;
+	float k_wall_force;
+} BoundsInfo;
+
 // Calculates the euclidean length of the vector r
 float euclidean_distance(const float3 r);
 
@@ -100,12 +105,13 @@ float3 calculate_boundary_sampler_indices(const float3 position,
 
 float calculate_boundary_density_contribution(const float3 sampler_index,
                                               __global const float* bounds_density_voxel_sampler,
-                                              const uint3 bounds_voxel_sampler_size) {
+                                              const uint3 bounds_voxel_sampler_size,
+				   	   					 	  const BoundsInfo bounds_info) {
 #ifdef INTERPOLATE_NEAREST_NEIGHBOUR
     const uint3 idxyz = clamp(convert_uint3(round(sampler_index)), zero3u, bounds_voxel_sampler_size - one3u);
     const uint id = calculate_1D_index(idxyz, bounds_voxel_sampler_size);
 
-    return bounds_density_voxel_sampler[id];
+    return bounds_info.k_wall_density * bounds_density_voxel_sampler[id];
 
 #elif INTERPOLATE_BILINEAR
 
@@ -113,13 +119,16 @@ float calculate_boundary_density_contribution(const float3 sampler_index,
 }
 
 float3 calculate_boundary_force_contribution(const float3 sampler_index,
-                                             __global const float* bounds_density_voxel_sampler,
-                                             const uint3 bounds_voxel_sampler_size) {
+                                             __global const float* bound_closest_voxel_sampler,
+                                             const uint3 bounds_voxel_sampler_size,
+				   	   					 	 const BoundsInfo bounds_info) {
 #ifdef INTERPOLATE_NEAREST_NEIGHBOUR
     const uint3 idxyz = clamp(convert_uint3(round(sampler_index)), zero3u, bounds_voxel_sampler_size - one3u);
     const uint id = calculate_1D_index(idxyz, bounds_voxel_sampler_size);
 
-    return bounds_density_voxel_sampler[id];
+    return bounds_info.k_wall_force * (float3)(bound_closest_voxel_sampler[3 * id],
+										       bound_closest_voxel_sampler[3 * id + 1],
+										       bound_closest_voxel_sampler[3 * id + 2]);
 
 #elif INTERPOLATE_BILINEAR
 
@@ -136,8 +145,9 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 						   	   const VoxelGridInfo grid_info,
 						   	   const FluidInfo fluid_info,
 						   	   __global const float* bounds_density_voxel_sampler,
-						   	   __global const float* bounds_normal_voxel_sampler,
-						   	   const uint3 bounds_voxel_sampler_size) {
+						   	   __global const float* bound_closest_voxel_sampler,
+						   	   const uint3 bounds_voxel_sampler_size,
+		   	   				   const BoundsInfo bounds_info) {
 	
 	const uint3 voxel_cell_indices = (uint3)(get_global_id(0), get_global_id(1), get_global_id(2));
 	const uint voxel_cell_index = calculate_1D_index(voxel_cell_indices, grid_info.grid_cells);
@@ -290,14 +300,15 @@ __kernel void calculate_forces(__global const float* restrict positions, // The 
 }
 
 __kernel void calculate_particle_densities(__global const float* restrict positions, // The position of each particle
-											     __global float* restrict out_densities,   // The density of each particle. Is [max_cell_particle_count * total_grid_cells] long, since
-											 											   // it does NOT need to match up with the particle's global positions/velocities buffers 
-										   	     __global const uint* restrict indices, // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
-										   	     __global const uint* restrict cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
-										   	     const VoxelGridInfo grid_info,
-										   	     const FluidInfo fluid_info,
-										   	     __global const float* bounds_density_voxel_sampler,
-						   	   					 const uint3 bounds_voxel_sampler_size) {
+									     __global float* restrict out_densities,   // The density of each particle. Is [max_cell_particle_count * total_grid_cells] long, since
+									 											   // it does NOT need to match up with the particle's global positions/velocities buffers 
+								   	     __global const uint* restrict indices, // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
+								   	     __global const uint* restrict cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
+								   	     const VoxelGridInfo grid_info,
+								   	     const FluidInfo fluid_info,
+								   	     __global const float* bounds_density_voxel_sampler,
+				   	   					 const uint3 bounds_voxel_sampler_size,
+				   	   					 const BoundsInfo bounds_info) {
 	const uint3 voxel_cell_indices = (uint3)(get_global_id(0), get_global_id(1), get_global_id(2));
 	const uint voxel_cell_index = calculate_1D_index(voxel_cell_indices, grid_info.grid_cells);
 	const uint particle_count = cell_particle_count[voxel_cell_index];
@@ -321,8 +332,9 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
                                                                                  grid_info.grid_dimensions);
 
 		processed_particle_densities[idp] = 10000.0f * calculate_boundary_density_contribution(boundary_sampler_index,
-                                                                                                  bounds_density_voxel_sampler,
-                                                                                                  bounds_voxel_sampler_size);
+                                                                                          	   bounds_density_voxel_sampler,
+                                                                                               bounds_voxel_sampler_size,
+                                                                                               bounds_info);
 	}
 
 	// Pre-define this before x*y*z loop

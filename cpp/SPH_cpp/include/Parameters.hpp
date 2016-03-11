@@ -20,6 +20,7 @@
 
 #include "OpenCL/clFluidInfo.hpp"
 #include "OpenCL/clVoxelGridInfo.hpp"
+#include "OpenCL/clBoundsInfo.hpp"
 
 struct Parameters {
     Parameters(unsigned int particle_count) : n_particles(particle_count) {};
@@ -41,6 +42,8 @@ struct Parameters {
     float far_bound;
     float k_wall_damper;
     float k_wall_friction;
+    float k_wall_density;
+    float k_wall_force;
 
     float fps;
 
@@ -104,6 +107,11 @@ struct Parameters {
                                      grid_info.grid_cells.s[2];
     }
 
+    inline void set_bounds_info(clBoundsInfo &bounds_info) const {
+        bounds_info.k_wall_density = k_wall_density;
+        bounds_info.k_wall_force = k_wall_force;
+    }
+
 
     inline static Parameters set_default_parameters(Parameters &p) {
         p.total_mass = 1000000.0f;
@@ -124,6 +132,8 @@ struct Parameters {
 
         p.k_wall_damper = 0.75f;
         p.k_wall_friction = 1.0f;
+        p.k_wall_density = 1.0f;
+        p.k_wall_force = 1.0f;
 
         p.fps = 0.0f;
 

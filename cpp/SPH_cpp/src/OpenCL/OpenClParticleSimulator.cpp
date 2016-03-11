@@ -237,6 +237,7 @@ void OpenClParticleSimulator::setupSimulation(const Parameters &params,
 void OpenClParticleSimulator::updateSimulation(const Parameters &parameters, float dt_seconds) {
     parameters.set_voxel_grid_info(grid_info);
     parameters.set_fluid_info(fluid_info, parameters.n_particles);
+    parameters.set_bounds_info(bounds_info);
     n_particles = parameters.n_particles;
 
     // Make sure all OpenGL commands will run before enqueueing OpenCL kernels
@@ -522,6 +523,8 @@ void OpenClParticleSimulator::runCalculateParticleDensitiesKernel(float dt_secon
     CheckError(error, __LINE__);
     error = clSetKernelArg(calculate_particle_densities, 7, sizeof(cl_uint3), (void *) &cl_voxel_sampler_size);
     CheckError(error, __LINE__);
+    error = clSetKernelArg(calculate_particle_densities, 8, sizeof(clBoundsInfo), (void *) &bounds_info);
+    CheckError(error, __LINE__);
 
     error = clEnqueueNDRangeKernel(command_queue, calculate_particle_densities, 3, NULL,
                                    (const size_t *) grid_cells_count, NULL,
@@ -589,6 +592,8 @@ void OpenClParticleSimulator::runCalculateParticleForcesKernel() {
     error = clSetKernelArg(calculate_particle_forces, 9, sizeof(cl_mem), (void *) &cl_hmap_density_voxel_sampler);
     CheckError(error, __LINE__);
     error = clSetKernelArg(calculate_particle_forces, 10, sizeof(cl_uint3), (void *) &cl_voxel_sampler_size);
+    CheckError(error, __LINE__);
+    error = clSetKernelArg(calculate_particle_forces, 11, sizeof(clBoundsInfo), (void *) &bounds_info);
     CheckError(error, __LINE__);
 
     error = clFinish(command_queue);

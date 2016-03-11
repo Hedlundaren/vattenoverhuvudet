@@ -21,6 +21,7 @@
 
 #include "OpenCL/clVoxelGridInfo.hpp"
 #include "OpenCL/clFluidInfo.hpp"
+#include "OpenCL/clBoundsInfo.hpp"
 
 class OpenClParticleSimulator : public ParticleSimulator {
 public:
@@ -46,6 +47,7 @@ private:
 
     clVoxelGridInfo grid_info;
     clFluidInfo fluid_info;
+    clBoundsInfo bounds_info;
 
     // points to array of 3 size_t
     size_t *grid_cells_count;
