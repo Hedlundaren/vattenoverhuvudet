@@ -42,6 +42,10 @@ struct Parameters {
     float k_wall_damper;
     float k_wall_friction;
 
+    float fps;
+
+    glm::vec3 bg_color;
+
     inline float get_particle_mass() const {
         return total_mass / n_particles;
     }
@@ -81,28 +85,33 @@ struct Parameters {
     inline void set_voxel_grid_info(clVoxelGridInfo &grid_info) const {
         grid_info.grid_cell_size = kernel_size;
 
-        grid_info.grid_dimensions.s[0] = static_cast<unsigned int>(ceilf(get_volume_size_x() / kernel_size));
-        grid_info.grid_dimensions.s[1] = static_cast<unsigned int>(ceilf(get_volume_size_y() / kernel_size));;
-        grid_info.grid_dimensions.s[2] = static_cast<unsigned int>(ceilf(get_volume_size_z() / kernel_size));;
+        grid_info.grid_cells.s[0] = static_cast<unsigned int>(ceilf(get_volume_size_x() / kernel_size));
+        grid_info.grid_cells.s[1] = static_cast<unsigned int>(ceilf(get_volume_size_y() / kernel_size));;
+        grid_info.grid_cells.s[2] = static_cast<unsigned int>(ceilf(get_volume_size_z() / kernel_size));;
 
         grid_info.grid_origin.s[0] = left_bound;
         grid_info.grid_origin.s[1] = bottom_bound;
         grid_info.grid_origin.s[2] = near_bound;
 
+        grid_info.grid_dimensions.s[0] = right_bound - left_bound;
+        grid_info.grid_dimensions.s[1] = top_bound - bottom_bound;
+        grid_info.grid_dimensions.s[2] = far_bound - near_bound;
+
         grid_info.max_cell_particle_count = VOXEL_CELL_PARTICLE_COUNT;
 
-        grid_info.total_grid_cells = grid_info.grid_dimensions.s[0] *
-                                     grid_info.grid_dimensions.s[1] *
-                                     grid_info.grid_dimensions.s[2];
+        grid_info.total_grid_cells = grid_info.grid_cells.s[0] *
+                                     grid_info.grid_cells.s[1] *
+                                     grid_info.grid_cells.s[2];
     }
+
 
     inline static Parameters set_default_parameters(Parameters &p) {
         p.total_mass = 100.0f;
         p.kernel_size = 0.4f;
         p.k_gas = 1.5f;
         p.k_viscosity = 20.0f;
-        p.rest_density = 0.0f;
-        p.sigma = 0.2f;
+        p.rest_density = 100.0f;
+        p.sigma = 1.0f;
         p.k_threshold = 0.1f;
         p.gravity = glm::vec3(0.0f, -9.82f, 0.0f);
 
@@ -115,5 +124,9 @@ struct Parameters {
 
         p.k_wall_damper = 0.75f;
         p.k_wall_friction = 1.0f;
-}
+
+        p.fps = 0.0f;
+
+        p.bg_color = glm::vec3(0.1f, 0.1f, 0.1f);
+    }
 };

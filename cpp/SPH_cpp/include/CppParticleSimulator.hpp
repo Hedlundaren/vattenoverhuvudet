@@ -9,17 +9,20 @@ public:
                          const std::vector<glm::vec3> &particle_positions,
                          const std::vector<glm::vec3> &particle_velocities,
                          const GLuint &vbo_positions,
-                         const GLuint &vbo_velocities);
+                         const GLuint &vbo_velocities,
+                         const std::vector<float> &density_voxel_sampler,
+                         const std::vector<glm::vec3> &normal_voxel_sampler,
+                         const glm::uvec3 voxel_sampler_size);
 
     void updateSimulation(const Parameters &params, float dt_seconds);
 
-    void checkBoundaries();
+    void checkBoundaries(const Parameters &params);
 
-    void checkBoundariesGlass();
+    void checkBoundariesGlass(const Parameters &params);
 
-    glm::vec3 calculateBoundaryForce(int i);
+    glm::vec3 calculateBoundaryForce(const Parameters &params, int i);
 
-    glm::vec3 calculateBoundaryForceGlass(int i);
+    glm::vec3 calculateBoundaryForceGlass(const Parameters &params, int i);
 
 private:
     std::vector<glm::vec3> positions, velocities;

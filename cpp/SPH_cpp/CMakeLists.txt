@@ -20,7 +20,7 @@ if (APPLE)
 endif (APPLE)
 
 ## Comment out this line to use C++ simulation
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENCL_SIMULATION")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_OPENCL_SIMULATION")
 
 ## Define if in debug mode or not (comment out line below to disable logging -> faster)
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMY_DEBUG")
@@ -68,11 +68,20 @@ if (NOT DEFINED OPENCL_LIBRARIES)
 endif (NOT DEFINED OPENCL_LIBRARIES)
 set(ALL_LIBRARIES ${ALL_LIBRARIES} ${OPENCL_LIBRARIES})
 
-### GLFW ###
-set(GLFW_DIR ${PROJECT_EXT_DIR}/glfw-3.1.2)
-add_subdirectory(${GLFW_DIR})
-set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${GLFW_DIR}/include)
-set(ALL_LIBRARIES ${ALL_LIBRARIES} glfw ${OPENGL_glu_LIBRARY} ${GLFW_LIBRARIES})
+### NanoGUI ###
+set(NANOGUI_BUILD_EXAMPLE NO)
+add_subdirectory(${PROJECT_EXT_DIR}/nanogui)
+set(ALL_LIBRARIES ${ALL_LIBRARIES} nanogui)
+set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${NanoGUI_SOURCE_DIR}/include ${GLFW_SOURCE_DIR}/include)
+
+### LodePNG ###
+add_subdirectory(${PROJECT_EXT_DIR}/lodepng)
+set(ALL_LIBRARIES ${ALL_LIBRARIES} lodepng)
+set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${lodepng_SOURCE_DIR})
+
+### nanoflann ###
+add_subdirectory(${PROJECT_EXT_DIR}/nanoflann)
+set(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS} ${nanoflann_SOURCE_DIR}/include)
 
 ### GLEW on Windows
 if (MINGW)
@@ -88,7 +97,7 @@ if (MINGW)
 endif (MINGW)
 
 # Lump all external- and project includes into one variable
-set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR} ${PROJECT_KERNELS_DIR})
+set(ALL_INCLUDES ${EXTERNAL_INCLUDE_DIRS} ${PROJECT_INCLUDE_DIR})
 
 # Set the include directories so that #include statements work
 include_directories(${ALL_INCLUDES})
@@ -97,7 +106,7 @@ message(WARNING "All include dirs: ${ALL_INCLUDES}")
 # Get all source files by traversing the source directory recursively
 file(GLOB_RECURSE PROJECT_CPP_FILES ${PROJECT_CPP_DIR}/*.cpp)
 
-set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES} src/rendering/texture.cpp include/rendering/texture.hpp)
+set(SOURCE_FILES main.cpp ${PROJECT_CPP_FILES})
 add_executable(SPH_cpp ${SOURCE_FILES})
 
 target_link_libraries(SPH_cpp ${ALL_LIBRARIES})

@@ -1,0 +1,22 @@
+Rabbit is a parrot
+Polly is a parrot
+Molly is a dog
+Woof!
+func(43) = 44
+Payload constructor
+Payload copy constructor
+Payload move constructor
+Payload destructor
+Payload destructor
+Payload destructor
+Rabbit is a parrot
+Polly is a parrot
+Molly is a dog
+The following error is expected: Incompatible function arguments. The following argument types are supported:
+    1. (example.Dog) -> NoneType
+
+Callback function 1 called!
+False
+Callback function 2 called : Hello, x, True, 5
+5
+func(43) = 44

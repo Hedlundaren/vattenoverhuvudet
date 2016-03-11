@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <vector>
+#include <iomanip>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -11,11 +12,14 @@
 
 #include "GLFW/glfw3.h"
 
+#include "rendering/VoxelGrid.hpp"
+#include "common/tic_toc.hpp"
+#include "common/GLerror.hpp"
+
 #include "rendering/ShaderProgram.hpp"
 #include "rendering/texture.hpp"
 #include "math/randomized.hpp"
 #include "common/Rotator.hpp"
-#include "constants.hpp"
 
 #include "ParticleSimulator.hpp"
 #include "OpenCL/OpenClParticleSimulator.hpp"
@@ -23,11 +27,44 @@
 
 //#define USE_TESS_SHADER
 //You still need to change comments in vert- and frag-shaders
+#include "nanogui/nanogui.h"
+
+#include "HeightMap.hpp"
+#include "rendering/VoxelGrid.hpp"
+
+nanogui::Screen *screen;
+
+using std::cout;
+using std::endl;
+
+ParticleSimulator *createSimulator(std::vector<glm::vec3> &positions, std::vector<glm::vec3> &velocities,
+                                   Parameters &params);
 
 void setWindowFPS(GLFWwindow *window, float fps);
 
+void setNanoScreenCallbacksGLFW(GLFWwindow *window, nanogui::Screen *screen);
+
+void cursorPosCallback(GLFWwindow *window, double x, double y);
+
+void mouseButtonCallback(GLFWwindow *window, int button, int action, int modifiers);
+
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+
+void charCallback(GLFWwindow *window, unsigned int codepoint);
+
+void dropCallback(GLFWwindow *window, int count, const char **filenames);
+
+void scrollCallback(GLFWwindow *window, double x, double y);
+
+void framebufferSizeCallback(GLFWwindow *window, int width, int height);
+
+void createGUI(nanogui::Screen *screen, Parameters &params);
+
 std::chrono::duration<double> second_accumulator;
 unsigned int frames_last_second;
+nanogui::TextBox *fpsBox;
+bool hmap_wireframe = false;
+bool render_particle_grid = false;
 
 static int WIDTH = 720;
 static int HEIGHT = 720;
@@ -45,6 +82,33 @@ struct {
 } terrain;
 
 int main() {
+    using namespace nanogui;
+
+    //HeightMap::SetMaxVoxelSamplerSize(32, 4, 32);
+    HeightMap::SetMaxVoxelSamplerSize(8, 2, 8);
+
+    // normalized "kernel radius" for precomputed density-LUT
+    const float density_contribution_radius = 0.1f;
+    std::string nmap_name;
+    cout << "Heightmap name: ";
+    std::cin >> nmap_name;
+
+    HeightMap hmap;
+    if (!hmap.initFromPNGs(nmap_name)) {
+        return 0;
+    }
+
+    //hmap.debug_print(50);
+    tic();
+    hmap.calcVoxelSamplers([](const std::vector<float> &distances, const float max_radius) {
+        float sum = 0.0f;
+        for (const auto distance : distances) {
+            sum += (max_radius - distance);
+        }
+        return sum;
+    }, density_contribution_radius);
+    toc();
+
     GLFWwindow *window;
 
     if (!glfwInit()) {
@@ -57,6 +121,16 @@ int main() {
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
+
+    /* Request a RGBA8 buffer without MSAA */
+    glfwWindowHint(GLFW_SAMPLES, 16);
+    glfwWindowHint(GLFW_RED_BITS, 8);
+    glfwWindowHint(GLFW_GREEN_BITS, 8);
+    glfwWindowHint(GLFW_BLUE_BITS, 8);
+    glfwWindowHint(GLFW_ALPHA_BITS, 8);
+    glfwWindowHint(GLFW_STENCIL_BITS, 8);
+    glfwWindowHint(GLFW_DEPTH_BITS, 24);
+    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
 
     //Open a window
     window = glfwCreateWindow(WIDTH, HEIGHT, "Totally fluids", NULL, NULL);
@@ -92,30 +166,31 @@ int main() {
     if (GLEW_OK != err)
     {
         /* Problem: glewInit failed, something is seriously wrong. */
-        std::cout << "GLEW init error: " << glewGetErrorString(err) << "\n";
+        cout << "GLEW init error: " << glewGetErrorString(err) << "\n";
         return -1;
     }
 #endif
 
 
-    ParticleSimulator *simulator;
-
-#ifdef USE_OPENCL_SIMULATION
-    simulator = new OpenClParticleSimulator();
-#else
-    simulator = new CppParticleSimulator();
-#endif
-
-
-    //Generate particles
-    int n = -1;
-    std::cout << "How many particles? ";
-     //std::cin >> n;
-    n = 10000; // TODO change back!
-    const int n_particles = n;
+    cout << "How many particles? ";
+    int n_particles;
+    std::cin >> n_particles;
 
     Parameters params(n_particles);
     Parameters::set_default_parameters(params);
+
+    std::vector<glm::vec3> positions, velocities;
+    ParticleSimulator *simulator = createSimulator(positions, velocities, params);
+
+    screen = new Screen;
+    screen->initialize(window, true);
+    setNanoScreenCallbacksGLFW(window, screen);
+    createGUI(screen, params);
+
+    hmap.initGL(glm::vec3(params.left_bound, params.bottom_bound, params.near_bound),
+                glm::vec3(params.right_bound - params.left_bound,
+                          0.25f * (params.top_bound - params.bottom_bound),
+                          params.far_bound - params.near_bound));
 
     /*-------------------------------Declare variables-------------------------------------*/
     //Declare uniform variables
@@ -135,24 +210,6 @@ int main() {
     second_accumulator = std::chrono::duration<double>(0);
     frames_last_second = 0;
 
-    /*------------------------------------------------------------------------------------------*/
-
-#ifdef USE_OPENCL_SIMULATION
-    // Cylinder generation
-    const float cylinder_radius = params.left_bound / 2;
-    const glm::vec3 origin(- cylinder_radius * 0.75f, params.top_bound / 2, - cylinder_radius * 0.75f);
-    const glm::vec3 size(cylinder_radius / 2, params.top_bound, cylinder_radius / 2);
-
-    std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles,
-                                                              origin.x, origin.x + size.x,
-                                                              origin.y, origin.y + size.y,
-                                                              origin.z, origin.z + size.z);
-    std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
-#else
-    std::vector<glm::vec3> positions = generate_uniform_vec3s(n_particles, -1, -0.2, 0, 1, -1, 1);
-    std::vector<glm::vec3> velocities = generate_uniform_vec3s(n_particles, 0, 0, 0, 0, 0, 0);
-#endif
-
     /*---------------------------Generate VBA & VAO---------------------------------*/
     //Generate VBOs
     GLuint pos_vbo = 0;
@@ -165,7 +222,17 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, vel_vbo);
     glBufferData(GL_ARRAY_BUFFER, n_particles * 3 * sizeof(float), velocities.data(), GL_DYNAMIC_DRAW);
 
-    simulator->setupSimulation(params, positions, velocities, pos_vbo, vel_vbo);
+    simulator->setupSimulation(params, positions, velocities, pos_vbo, vel_vbo,
+                               hmap.get_density_voxel_sampler(),
+                               hmap.get_normal_voxel_sampler(),
+                               hmap.get_voxel_sampler_size());
+
+    // Initialize voxel grid wireframe rendering
+    VoxelGrid voxelGrid;
+    voxelGrid.initGL(glm::vec3(params.left_bound, params.bottom_bound, params.near_bound),
+                     glm::vec3(params.right_bound - params.left_bound,
+                               params.top_bound - params.bottom_bound,
+                               params.far_bound - params.near_bound));
 
     // Generate particle VAO with 2 VBOs
     GLuint part_vao = 0;
@@ -389,6 +456,9 @@ int main() {
 
     /*-----------------------------------RENDER LOOP-------------------------------------------*/
 
+    // show the screen
+    screen->setVisible(true);
+
     while (!glfwWindowShouldClose(window)) {
 
         /*------------------Update clock and FPS---------------------------------------------*/
@@ -402,12 +472,14 @@ int main() {
         #ifdef MY_DEBUG
                 std::cout << "Seconds: " << dt_s << "\n";
         #endif
+
         //dt_s = std::min(dt_s, 1.0f / 60);
         /*----------------------------------------------------------------------------------------*/
 
         int w, h;
         // Update window size
         glfwGetFramebufferSize(window, &w, &h);
+        glViewport(0, 0, w, h);
 
         //Update positions
         simulator->updateSimulation(params, dt_s);
@@ -420,7 +492,7 @@ int main() {
         // Clear everything first thing.
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, backgroundFBO);
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         //Activate shader
@@ -445,38 +517,25 @@ int main() {
         //Calculate light direction
         lDir = glm::vec3(1.0f);
 
-        /*
-        //Send uniforms
-        glUniformMatrix4fv(backgroundShader.MV_Loc, 1, GL_FALSE, &MV[0][0]);
-        glUniformMatrix4fv(backgroundShader.P_Loc, 1, GL_FALSE, &P[0][0]);
-        glUniform3fv(backgroundShader.lDir_Loc, 1, &lDir[0]);
+        // Clear the buffers
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClearColor(params.bg_color.r,
+                     params.bg_color.g,
+                     params.bg_color.b,
+                     1.0f);
 
-        // Set heightmap texture
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, terrain.heightTexture );
-        glUniform1i(backgroundShader.terrainTex, 0);
-
-        // Set color textures
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, terrain.lowTexture);
-        glUniform1i(backgroundShader.lowTex, 1);
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, terrain.highTexture);
-        glUniform1i(backgroundShader.highTex, 2);
-
-
-        //Bind VAO and draw
-        glDisable(GL_CULL_FACE);
-        //Send VAO to the GPU
-        glBindVertexArray(vao);
-        #ifdef USE_TESS_SHADER
-                glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
-        #else
-                glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
-        #endif
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LESS);
         glEnable(GL_CULL_FACE);
-        */
+        glCullFace(GL_BACK);
+        glBindFramebuffer(GL_FRAMEBUFFER, backgroundFBO);
+
+        hmap.render(P, MV, hmap_wireframe);
+
+        if (render_particle_grid) {
+            voxelGrid.render(P, MV, params.kernel_size);
+        }
+
 
         //----------------PARTICLE_DEPTH SHADER
         //Set viewport to low-res
@@ -673,10 +732,10 @@ int main() {
         glBindTexture(GL_TEXTURE_2D, particleColorTexture ); //   particleColorTexture
         glUniform1i(compositionShader.particleTex, 1);
 
-        /*glActiveTexture(GL_TEXTURE2);
+        glActiveTexture(GL_TEXTURE2);
         glBindTexture(GL_TEXTURE_2D, backgroundTexture);
         glUniform1i(compositionShader.terrainTex, 2);
-*/
+
         // Send uniforms
         glUniformMatrix4fv(compositionShader.MV_Loc, 1, GL_FALSE, &MV[0][0]);
         glUniformMatrix4fv(compositionShader.P_Loc, 1, GL_FALSE, &P[0][0]);
@@ -694,6 +753,10 @@ int main() {
 
         /*-----------------------------------------------------------------------------------*/
 
+        screen->drawWidgets();
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+
         glfwSwapBuffers(window);
         ++frames_last_second;
         glfwPollEvents();
@@ -707,11 +770,22 @@ int main() {
         if (second_accumulator.count() >= 1.0) {
             float newFPS = static_cast<float>( frames_last_second / second_accumulator.count());
             setWindowFPS(window, newFPS);
+            params.fps = newFPS;
+            std::stringstream fpsString;
+            fpsString << std::fixed << std::setprecision(0) << newFPS;
+            fpsBox->setValue(fpsString.str());
             frames_last_second = 0;
             second_accumulator = std::chrono::duration<double>(0);
         }
         /*--------------------------------------------------------------------------------*/
     }
+
+    glDeleteBuffers(1, &pos_vbo);
+    glDeleteBuffers(1, &vel_vbo);
+    glDeleteBuffers(1, &quadElemVBO);
+    glDeleteBuffers(1, &quadVBO);
+    glDeleteVertexArrays(1, &part_vao);
+    glDeleteVertexArrays(1, &quad_vao);
 
     glfwDestroyWindow(window);
     glfwTerminate();
@@ -725,3 +799,206 @@ void setWindowFPS(GLFWwindow *window, float fps) {
     glfwSetWindowTitle(window, ss.str().c_str());
 }
 
+void setNanoScreenCallbacksGLFW(GLFWwindow *window, nanogui::Screen *screen) {
+    /* Propagate GLFW events to the appropriate Screen instance */
+    glfwSetCursorPosCallback(window, &cursorPosCallback);
+    glfwSetMouseButtonCallback(window, &mouseButtonCallback);
+    glfwSetKeyCallback(window, &keyCallback);
+    glfwSetCharCallback(window, &charCallback);
+    glfwSetDropCallback(window, &dropCallback);
+    glfwSetScrollCallback(window, &scrollCallback);
+
+    /* React to framebuffer size events -- includes window
+       size events and also catches things like dragging
+       a window from a Retina-capable screen to a normal
+       screen on Mac OS X */
+    glfwSetFramebufferSizeCallback(window, &framebufferSizeCallback);
+}
+
+void cursorPosCallback(GLFWwindow *window, double x, double y) {
+    screen->cursorPosCallbackEvent(x, y);
+}
+
+void mouseButtonCallback(GLFWwindow *window, int button, int action, int modifiers) {
+    screen->mouseButtonCallbackEvent(button, action, modifiers);
+}
+
+void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    screen->keyCallbackEvent(key, scancode, action, mods);
+}
+
+void charCallback(GLFWwindow *window, unsigned int codepoint) {
+    screen->charCallbackEvent(codepoint);
+}
+
+void dropCallback(GLFWwindow *window, int count, const char **filenames) {
+    screen->dropCallbackEvent(count, filenames);
+}
+
+void scrollCallback(GLFWwindow *window, double x, double y) {
+    screen->scrollCallbackEvent(x, y);
+}
+
+void framebufferSizeCallback(GLFWwindow *window, int width, int height) {
+    screen->resizeCallbackEvent(width, height);
+}
+
+void createGUI(nanogui::Screen *screen, Parameters &params) {
+    using namespace nanogui;
+    Parameters *p = &params;
+
+    Window *window_bgcolor = new Window(screen, "Background color");
+    window_bgcolor->setPosition(Vector2i(425, 288));
+    GridLayout *layout =
+            new GridLayout(Orientation::Horizontal, 2,
+                           Alignment::Middle, 15, 5);
+    layout->setColAlignment(
+            {Alignment::Maximum, Alignment::Fill});
+    layout->setSpacing(0, 10);
+    window_bgcolor->setLayout(layout);
+
+    ColorWheel *colorwheel = new ColorWheel(window_bgcolor);
+
+    colorwheel->setCallback([=](const Color &value) {
+        p->bg_color.r = value.r();
+        p->bg_color.g = value.g();
+        p->bg_color.b = value.b();
+    });
+
+    Window *window = new Window(screen, "Fluid parameters");
+    window->setPosition(Vector2i(15, 15));
+    window->setLayout(new GroupLayout());
+
+    new Label(window, "Kernel size", "sans-bold");
+    Widget *panel_kernel = new Widget(window);
+    panel_kernel->setLayout(new BoxLayout(Orientation::Horizontal,
+                                          Alignment::Minimum, 0, 25));
+
+    Slider *slider_kernel = new Slider(panel_kernel);
+    slider_kernel->setValue(p->kernel_size);
+    slider_kernel->setFixedWidth(80);
+
+    TextBox *textBox_kernel = new TextBox(panel_kernel);
+
+    std::stringstream stream;
+    stream << std::fixed << std::setprecision(1) << (double) p->kernel_size;
+    textBox_kernel->setValue(stream.str());
+
+    slider_kernel->setCallback([=](float value) {
+        std::stringstream stream_kernel;
+        stream_kernel << std::fixed << std::setprecision(1) << (double) p->kernel_size;
+        textBox_kernel->setValue(stream_kernel.str());
+        p->kernel_size = value * 2 + 0.1;
+    });
+
+    new Label(window, "Gas Constant", "sans-bold");
+    Widget *panel_gas = new Widget(window);
+    panel_gas->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Minimum, 0, 25));
+
+    Slider *slider_gas = new Slider(panel_gas);
+    slider_gas->setValue(p->k_gas);
+    slider_gas->setFixedWidth(80);
+
+    TextBox *textBox_gas = new TextBox(panel_gas);
+    std::stringstream stream_gas;
+    stream_gas << std::fixed << std::setprecision(1) << (double) p->k_gas;
+    textBox_gas->setValue(stream_gas.str());
+
+    slider_gas->setCallback([=](float value_gas) {
+        std::stringstream stream_gas;
+        stream_gas << std::fixed << std::setprecision(1) << (double) p->k_gas;
+        textBox_gas->setValue(stream_gas.str());
+        p->k_gas = value_gas;
+    });
+
+    new Label(window, "Viscosity constant", "sans-bold");
+    Widget *panel_vis = new Widget(window);
+    panel_vis->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Minimum, 0, 25));
+
+    Slider *slider_vis = new Slider(panel_vis);
+    slider_vis->setValue(1);
+    slider_vis->setFixedWidth(80);
+
+    TextBox *textBox_vis = new TextBox(panel_vis);
+    std::stringstream stream_vis;
+    stream_vis << std::fixed << std::setprecision(1) << (double) p->k_viscosity;
+    textBox_vis->setValue(stream_vis.str());
+
+    slider_vis->setCallback([=](float value_gas) {
+        std::stringstream stream_vis;
+        stream_vis << std::fixed << std::setprecision(1) << (double) p->k_viscosity;
+        textBox_vis->setValue(stream_vis.str());
+        p->k_viscosity = 20 * value_gas;
+    });
+
+    new Label(window, "Other", "sans-bold");
+    CheckBox *cb = new CheckBox(window, "Gravity",
+                                [=](bool state) {
+                                    if (state)
+                                        p->gravity.y = -9.82f;
+                                    else
+                                        p->gravity.y = 0.0f;
+                                }
+    );
+    cb->setFontSize(16);
+    cb->setChecked(true);
+
+    cb = new CheckBox(window, "Heightmap wireframe",
+                      [=](bool state) {
+                          hmap_wireframe = state;
+                      }
+    );
+    cb->setFontSize(16);
+    cb->setChecked(false);
+
+    cb = new CheckBox(window, "Render particle grid",
+                      [=](bool state) {
+                          render_particle_grid = state;
+                      }
+    );
+    cb->setFontSize(16);
+    cb->setChecked(false);
+
+    Widget *panel_fps = new Widget(window);
+    panel_fps->setLayout(new BoxLayout(Orientation::Horizontal,
+                                       Alignment::Maximum, 5, 10));
+    new Label(panel_fps, "FPS: ", "sans-bold");
+    fpsBox = new TextBox(panel_fps);
+    fpsBox->setFixedSize(Vector2i(100, 20));
+    fpsBox->setDefaultValue("0.0");
+    fpsBox->setFontSize(16);
+    fpsBox->setFormat("[-]?[0-9]*\\.?[0-9]+");
+
+    screen->performLayout();
+}
+
+ParticleSimulator *createSimulator(std::vector<glm::vec3> &positions, std::vector<glm::vec3> &velocities,
+                                   Parameters &params) {
+    cout << "Use C++ [0] or OpenCL [1] for fluid simulation? ";
+    int choice = -1;
+    std::cin >> choice;
+
+    if (choice == 0) {
+        positions = generate_uniform_vec3s(params.n_particles, -1, -0.2, 0, 1, -1, 1);
+        velocities = generate_uniform_vec3s(params.n_particles, 0, 0, 0, 0, 0, 0);
+
+        return new CppParticleSimulator;
+    } else if (choice == 1) {
+        // Cylinder generation
+        const float cylinder_radius = params.left_bound / 2;
+        const glm::vec3 origin(-cylinder_radius * 0.75f, params.top_bound / 2, -cylinder_radius * 0.75f);
+        const glm::vec3 size(cylinder_radius / 2, params.top_bound, cylinder_radius / 2);
+
+        positions = generate_uniform_vec3s(params.n_particles,
+                                           origin.x, origin.x + size.x,
+                                           origin.y, origin.y + size.y,
+                                           origin.z, origin.z + size.z);
+        velocities = generate_uniform_vec3s(params.n_particles, 0, 0, 0, 0, 0, 0);
+
+        return new OpenClParticleSimulator;
+    }
+
+    std::exit(EXIT_FAILURE);
+}

@@ -30,7 +30,10 @@ public:
                          const std::vector<glm::vec3> &particle_positions,
                          const std::vector<glm::vec3> &particle_velocities,
                          const GLuint &vbo_positions,
-                         const GLuint &vbo_velocities);
+                         const GLuint &vbo_velocities,
+                         const std::vector<float> &density_voxel_sampler,
+                         const std::vector<glm::vec3> &normal_voxel_sampler,
+                         const glm::uvec3 voxel_sampler_size);
 
     void updateSimulation(const Parameters &parameters, float dt_seconds);
 
@@ -69,11 +72,18 @@ private:
 
     cl_command_queue command_queue;
 
-    cl_mem cl_dt_obj;
+    // Heightmap voxel sampler buffers
+    cl_mem cl_hmap_density_voxel_sampler;
+    cl_mem cl_hmap_normal_voxel_sampler;
+    cl_uint3 cl_voxel_sampler_size;
 
     void initOpenCL();
 
     void setupSharedBuffers(const GLuint &vbo_positions, const GLuint &vbo_velocities);
+
+    void setupHeightmapVoxelSamplerBuffers(const std::vector<float> &density_voxel_sampler,
+                                           const std::vector<glm::vec3> &normal_voxel_sampler,
+                                           const glm::uvec3 voxel_sampler_size);
 
     void createAndBuildKernel(cl_kernel &kernel_out, std::string kernel_name, std::string kernel_file_name);
 
@@ -81,33 +91,18 @@ private:
 
     /* Kernels */
 
-    /// A simple, stand-alone kernel that integrates the positions based on the velocities
-    /// Is not a part of the fluid simulation processing chain
-    void runSimpleIntegratePositionsKernel(float dt_seconds);
-
-    cl_kernel simple_integration = NULL;
-
     void runCalculateVoxelGridKernel(float dt_seconds);
-
     cl_kernel calculate_voxel_grid = NULL;
 
     void runResetVoxelGridKernel();
-
     cl_kernel reset_voxel_grid = NULL;
 
-    void runSimpleVoxelGridMoveKernel(float dt_seconds);
-
-    cl_kernel simple_voxel_grid_move = NULL;
-
     void runCalculateParticleDensitiesKernel(float dt_seconds);
-
     cl_kernel calculate_particle_densities = NULL;
 
     void runCalculateParticleForcesKernel();
-
     cl_kernel calculate_particle_forces = NULL;
 
     void runIntegrateParticleStatesKernel(float dt_seconds);
-
     cl_kernel integrate_particle_states;
 };
