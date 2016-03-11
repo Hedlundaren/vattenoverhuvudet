@@ -20,6 +20,8 @@ vec2 spheremap(vec3 dir) {
 }
 
 void main() {
+
+    float light = 10.0f;
 	vec3 dir = normalize(vec3((coords.xy - vec2(0.5f)) * 2.0f, -1.0f));
 
 	dir = mat3(MV) * dir;
@@ -32,5 +34,10 @@ void main() {
 	//float blend = (terrainColor.a == 1.0f) ? 0.0f : 1.0f;
 	//backgroundColor = blend * terrainColor + (1.0f - blend) * backgroundColor;
 
-	outColor = particleColor * particleColor.w; // + backgroundColor * (1.0f - particleColor.w);
+	outColor = light * particleColor * particleColor.w; // + backgroundColor * (1.0f - particleColor.w);
+
+	//Depth
+	particleColor = texture(particleTexture, coords);
+	//outColor = vec4(vec3(particleColor.x * particleColor.w), 1.0f);
+
 }

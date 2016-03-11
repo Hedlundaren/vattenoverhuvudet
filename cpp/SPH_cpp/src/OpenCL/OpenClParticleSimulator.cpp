@@ -285,7 +285,8 @@ void OpenClParticleSimulator::initOpenCL() {
 
     std::cout << "Choose a device id from the devices above: ";
 
-    std::cin >> chosen_device_id;
+    //std::cin >> chosen_device_id;
+    chosen_device_id = 1; // TODO change back
 
     command_queue = clCreateCommandQueue(context, deviceIds[chosen_device_id - 1],
                                          0, &error);

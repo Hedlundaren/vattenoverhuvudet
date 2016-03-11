@@ -19,9 +19,9 @@ void main() {
     //vPosition = position;
     //vPosition = vec3(MV * vec4(position, 1.0f));
     //vRadius = 1.0f / (-vPosition.z *4.0f * (1.0f/ screenSize.y)); //?
-    vRadius = 12.0f;
+    vRadius = 27.0f;
 
-    gl_Position = P * MV * vec4(position, 1.0f);
+    gl_Position = P * MV * vec4(position.x, -position.y, position.z, 1.0f);
     gl_PointSize = vRadius;
 
     vVelocity = length(velocity);

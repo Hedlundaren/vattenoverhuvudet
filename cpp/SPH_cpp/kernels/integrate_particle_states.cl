@@ -89,16 +89,30 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 
 	// Bottom bound
 	float3 r = (float3)(0.0f, fabs(position.y - grid_info.grid_origin.y), 0.0f);
-	boundary_force = boundary_force - fluid_info.mass * 10.0f * hardness * gradW_spiky(r, 5.0f * grid_info.grid_cell_size);
+	//boundary_force = boundary_force - fluid_info.mass * 10.0f * hardness * gradW_spiky(r, 5.0f * grid_info.grid_cell_size);
 
 
 	float dp = 0.1f;
-	float radius = sqrt(pow(position.x,2.0f) + pow(position.z,2.0f));
+	float particle_distance = sqrt(pow(position.x,2.0f) + pow(position.z,2.0f));
 
 	if (position.y < grid_info.grid_origin.y ) {
 		position.y = grid_info.grid_origin.y;
 		velocity.y = wallDamper * (- velocity.y);
 	}
+
+	if(particle_distance > 7.5){
+		float3 wall_normal = (float3) -(position.x, 0.0f, position.z);
+		wall_normal = normalize(wall_normal);
+		velocity = 2.0f*(dot(-velocity, wall_normal))*wall_normal;
+		position = normalize(position)*7.5f;
+	}
+
+
+
+	/*float3 wall_normal = (float3) -(position.x, 0.0f, position.z);
+	wall_normal = rsqrt(dot(wall_normal, wall_normal) * wall_normal);
+	velocity = 2.0f*(dot(-velocity, wall_normal))*wall_normal + velocity;
+	position = rsqrt(dot(position, position) * position)*7.5f;*/
 
 	/*if (particle_distance > grid_info.grid_origin.x ) {
 		// Send particle into circle
@@ -108,7 +122,7 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 
 		// Give particle new velocity: R = 2(L*N)N - L;
 		velocity = 2.0f*(dot(-velocity, wall_normal))*wall_normal + velocity;
-	}*/
+	}
 
 	if (radius > 7.5f && position.x > 0.0f && position.z > 0.0f) {
 		position.x -= dp;
@@ -137,6 +151,7 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 		velocity.x = wallDamper * (- velocity.x);
 		velocity.z = wallDamper * (- velocity.x);
 	}
+*/
 
 	float distance = sqrt(pow(position.x, 2) + pow(position.z, 2));
 	// Using 1/2 of grid_origin.x as radius of cylinder

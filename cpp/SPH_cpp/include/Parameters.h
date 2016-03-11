@@ -23,7 +23,7 @@ namespace Params {
     constexpr float totalMass = 100.0f;
     constexpr float mass = totalMass/n_particles;
     constexpr float kernelSize = 0.5f;
-    constexpr float gasConstantK = 1.0f;
+    constexpr float gasConstantK = 10.0f;
     constexpr float viscosityConstant = 2.0f;
     constexpr float restDensity = 0.0f;
     constexpr float sigma = 0.0072f;

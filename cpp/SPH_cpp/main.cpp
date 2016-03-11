@@ -29,8 +29,8 @@ void setWindowFPS(GLFWwindow *window, float fps);
 std::chrono::duration<double> second_accumulator;
 unsigned int frames_last_second;
 
-static int WIDTH = 640;
-static int HEIGHT = 480;
+static int WIDTH = 720;
+static int HEIGHT = 720;
 #define RESOLUTION 1
 #define SMOOTHING_ITERATIONS 120
 
@@ -55,6 +55,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); //TessShader = 0 otherwise 3
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
 
     //Open a window
@@ -109,7 +110,8 @@ int main() {
     //Generate particles
     int n = -1;
     std::cout << "How many particles? ";
-    std::cin >> n;
+    // std::cin >> n;
+    n = 20000; // TODO change back!
     const int n_particles = n;
 
     Parameters params(n_particles);
@@ -286,6 +288,7 @@ int main() {
     // Attach depth
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferLowres);
 
+    glBindRenderbuffer(GL_RENDERBUFFER, 0);
     /*----------------------------------------------------------------------------------------*/
 
     /*-----------------------------DECLARE SHADERS--------------------------------------------*/
@@ -402,8 +405,9 @@ int main() {
         //dt_s = std::min(dt_s, 1.0f / 60);
         /*----------------------------------------------------------------------------------------*/
 
+        int w, h;
         // Update window size
-        glfwGetFramebufferSize(window, &WIDTH, &HEIGHT);
+        glfwGetFramebufferSize(window, &w, &h);
 
         //Update positions
         simulator->updateSimulation(params, dt_s);
@@ -435,7 +439,7 @@ int main() {
         glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
         glm::vec4 camPos = eye_position;
         glm::mat4 V = VTrans * glm::lookAt(glm::vec3(eye_position), scene_center, glm::vec3(0.0f, 1.0f, 0.0f));
-        P = glm::perspectiveFov(50.0f, static_cast<float>(WIDTH), static_cast<float>(HEIGHT), 0.1f, 100.0f);
+        P = glm::perspectiveFov(50.0f, static_cast<float>(w), static_cast<float>(h), 0.1f, 100.0f);
         MV = V * M;
 
         //Calculate light direction
@@ -476,14 +480,15 @@ int main() {
 
         //----------------PARTICLE_DEPTH SHADER
         //Set viewport to low-res
-        glViewport(0, 0, WIDTH/RESOLUTION, HEIGHT/RESOLUTION);
-        glm::mat4 P_LowRes = glm::perspectiveFov(50.0f, static_cast<float>(WIDTH/RESOLUTION), static_cast<float>(HEIGHT/RESOLUTION), 0.1f, 100.0f);
-        glm::vec2 screenSize = glm::vec2(WIDTH/RESOLUTION, HEIGHT/RESOLUTION);
+        glViewport(0, 0, w/RESOLUTION, h/RESOLUTION);
+        glm::mat4 P_LowRes = glm::perspectiveFov(50.0f, static_cast<float>(w/RESOLUTION), static_cast<float>(h/RESOLUTION), 0.1f, 100.0f);
+        glm::vec2 screenSize = glm::vec2(w/RESOLUTION, h/RESOLUTION);
 
         // Activate particle depth FBO
         glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         glBindFramebuffer(GL_FRAMEBUFFER, particleFBO[0]);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w/RESOLUTION, h/RESOLUTION, 0, GL_R32F, GL_FLOAT, NULL);
 
         particleDepthShader();
 
@@ -512,6 +517,7 @@ int main() {
         //-----------------------------PARTICLE_THICKNESS SHADER
         glBindFramebuffer(GL_FRAMEBUFFER, particleThicknessFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w/RESOLUTION, h/RESOLUTION, 0, GL_R32F, GL_FLOAT, NULL);
 
         particleThicknessShader();
 
@@ -547,6 +553,7 @@ int main() {
         //----------------------------PARTICLE_VELOCITY SHADER
         glBindFramebuffer(GL_FRAMEBUFFER, velocityFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w/RESOLUTION, h/RESOLUTION, 0, GL_R32F, GL_FLOAT, NULL);
 
         particleVelocityShader();
 
@@ -566,7 +573,7 @@ int main() {
 
 
         //-------------------------------CURVATURE_FLOW SHADER
-/*
+
         //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         curvatureFlowShader();
@@ -587,9 +594,7 @@ int main() {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
             // Bind texture
-            //glActiveTexture(GL_TEXTURE0); //move back?
             glBindTexture(GL_TEXTURE_2D, particleTexture[pingpong]);
-            //glUniform1i(curvatureFlowShader.particleTex, 0); //move back?
 
             // Activate proper FBO and clear
             glBindFramebuffer(GL_FRAMEBUFFER, particleFBO[1 - pingpong]);
@@ -602,7 +607,7 @@ int main() {
         }
         glEnable(GL_DEPTH_TEST);
         glBindVertexArray(0);
-*/
+
 
         //----------------------------LIQUID_SHADE SHADER
         // Activate particle color FBO
@@ -650,7 +655,7 @@ int main() {
 
         //-----------------------------COMPOSITION SHADER
         //Set viewport to whole window
-        glViewport(0, 0, WIDTH, HEIGHT);
+        glViewport(0, 0, w, h);
 
         // Deactivate FBOs
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -665,7 +670,7 @@ int main() {
         glUniform1i(compositionShader.backgroundTex, 0);
 
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, particleTexture[0] ); //   particleColorTexture
+        glBindTexture(GL_TEXTURE_2D, particleColorTexture ); //   particleColorTexture
         glUniform1i(compositionShader.particleTex, 1);
 
         /*glActiveTexture(GL_TEXTURE2);
