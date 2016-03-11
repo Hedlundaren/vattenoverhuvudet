@@ -519,12 +519,6 @@ void OpenClParticleSimulator::runCalculateParticleDensitiesKernel(float dt_secon
     CheckError(error, __LINE__);
     error = clSetKernelArg(calculate_particle_densities, 5, sizeof(clFluidInfo), (void *) &fluid_info);
     CheckError(error, __LINE__);
-    error = clSetKernelArg(calculate_particle_densities, 6, sizeof(cl_mem), (void *) &cl_hmap_density_voxel_sampler);
-    CheckError(error, __LINE__);
-    error = clSetKernelArg(calculate_particle_densities, 7, sizeof(cl_uint3), (void *) &cl_voxel_sampler_size);
-    CheckError(error, __LINE__);
-    error = clSetKernelArg(calculate_particle_densities, 8, sizeof(clBoundsInfo), (void *) &bounds_info);
-    CheckError(error, __LINE__);
 
     error = clEnqueueNDRangeKernel(command_queue, calculate_particle_densities, 3, NULL,
                                    (const size_t *) grid_cells_count, NULL,
@@ -586,14 +580,6 @@ void OpenClParticleSimulator::runCalculateParticleForcesKernel() {
     error = clSetKernelArg(calculate_particle_forces, 6, sizeof(clVoxelGridInfo), (void *) &grid_info);
     CheckError(error, __LINE__);
     error = clSetKernelArg(calculate_particle_forces, 7, sizeof(clFluidInfo), (void *) &fluid_info);
-    CheckError(error, __LINE__);
-    error = clSetKernelArg(calculate_particle_forces, 8, sizeof(cl_mem), (void *) &cl_hmap_normal_voxel_sampler);
-    CheckError(error, __LINE__);
-    error = clSetKernelArg(calculate_particle_forces, 9, sizeof(cl_mem), (void *) &cl_hmap_density_voxel_sampler);
-    CheckError(error, __LINE__);
-    error = clSetKernelArg(calculate_particle_forces, 10, sizeof(cl_uint3), (void *) &cl_voxel_sampler_size);
-    CheckError(error, __LINE__);
-    error = clSetKernelArg(calculate_particle_forces, 11, sizeof(clBoundsInfo), (void *) &bounds_info);
     CheckError(error, __LINE__);
 
     error = clFinish(command_queue);
