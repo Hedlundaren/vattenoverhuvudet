@@ -16,12 +16,12 @@ out float vDepth;
 
 void main() {
 
-    //vPosition = position;
-    vPosition = vec3(P * MV * vec4(position, 1.0f));
-    vRadius = 70.0f;
+    vPosition = position;
+    //vPosition = vec3(MV * vec4(position, 1.0f));
+    vRadius = 0.3f;
 
-    gl_Position = P * MV * vec4(position.x, -position.y, position.z, 1.0f);
-    gl_PointSize = vRadius;
+    //gl_Position = P * MV * vec4(position.x, -position.y, position.z, 1.0f);
+    //gl_PointSize = vRadius;
 
     vVelocity = length(velocity);
 

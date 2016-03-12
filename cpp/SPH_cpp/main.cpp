@@ -25,7 +25,7 @@
 #include "OpenCL/OpenClParticleSimulator.hpp"
 #include "CppParticleSimulator.hpp"
 
-//#define USE_TESS_SHADER
+#define USE_TESS_SHADER
 //You still need to change comments in vert- and frag-shaders
 #include "nanogui/nanogui.h"
 
@@ -314,7 +314,7 @@ int main() {
     GLuint velocityFBO;
     glGenFramebuffers(1, &velocityFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, velocityFBO);
-    GLuint particleVelocityTexture = makeTextureBuffer(WIDTH / RESOLUTION, HEIGHT / RESOLUTION, GL_RED, GL_R32F);
+    GLuint particleVelocityTexture = makeTextureBuffer(WIDTH / RESOLUTION, HEIGHT / RESOLUTION, GL_RED, GL_R32F); //TODO:change back
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, particleVelocityTexture, 0);
     // Attach depth
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferLowres);
@@ -326,7 +326,7 @@ int main() {
     //for(int i = 0; i < 2; i++) {
         glGenFramebuffers(1, &particleThicknessFBO);
         glBindFramebuffer(GL_FRAMEBUFFER, particleThicknessFBO);
-        particleThicknessTexture = makeTextureBuffer(WIDTH / RESOLUTION, HEIGHT / RESOLUTION, GL_RED, GL_R32F);
+        particleThicknessTexture = makeTextureBuffer(WIDTH / RESOLUTION, HEIGHT / RESOLUTION, GL_RGBA, GL_RGBA32F);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, particleThicknessTexture, 0);
         // Attach depth
         glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBufferLowres);
@@ -349,12 +349,22 @@ int main() {
 
     /*-----------------------------DECLARE SHADERS--------------------------------------------*/
 
+#ifdef USE_TESS_SHADER
+    ShaderProgram particleDepthShader("../shaders/particles.vert", "../shaders/particles.tessCont.glsl", "../shaders/particles.tessEval.glsl", "", "../shaders/particledepth.frag");
+    ShaderProgram particleThicknessShader("../shaders/particles.vert", "../shaders/particles.tessCont.glsl", "../shaders/particles.tessEval.glsl", "", "../shaders/particlethickness.frag");
+    ShaderProgram particleVelocityShader("../shaders/particles.vert", "../shaders/particles.tessCont.glsl", "../shaders/particles.tessEval.glsl", "", "../shaders/particlevelocity.frag");
+    ShaderProgram curvatureFlowShader("../shaders/quad.vert", "", "", "", "../shaders/curvatureflow.frag");
+    ShaderProgram liquidShadeShader("../shaders/quad.vert", "", "", "", "../shaders/liquidshade.frag");
+    ShaderProgram compositionShader("../shaders/quad.vert", "", "", "", "../shaders/compose.frag");
+    glPatchParameteri(GL_PATCH_VERTICES, 1);  // tell OpenGL that every patch has 1 vertex
+#else
     ShaderProgram particleDepthShader("../shaders/particles.vert", "", "", "", "../shaders/particledepth.frag");
     ShaderProgram particleThicknessShader("../shaders/particles.vert", "", "", "", "../shaders/particlethickness.frag");
     ShaderProgram particleVelocityShader("../shaders/particles.vert", "", "", "", "../shaders/particlevelocity.frag");
     ShaderProgram curvatureFlowShader("../shaders/quad.vert", "", "", "", "../shaders/curvatureflow.frag");
     ShaderProgram liquidShadeShader("../shaders/quad.vert", "", "", "", "../shaders/liquidshade.frag");
     ShaderProgram compositionShader("../shaders/quad.vert", "", "", "", "../shaders/compose.frag");
+#endif
 
     /*------------------------------------------------------------------------------------*/
 
@@ -479,9 +489,7 @@ int main() {
         MV = V * M;
 
         //Calculate light direction
-        lDir = glm::vec3(1.0f);
-
-        //Set up OpenGL-functions, needs to be in loop
+        lDir = glm::vec3(1.0f, -1.0f, 1.0f);
 
         glBindFramebuffer(GL_FRAMEBUFFER, backgroundFBO);
 
@@ -526,8 +534,11 @@ int main() {
 
         glBindVertexArray(part_vao);
 
+#ifdef USE_TESS_SHADER
+        glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
+#else
         glDrawArrays(GL_POINTS, 0, n_particles);
-
+#endif
         glBindVertexArray(0);
 
 
@@ -556,7 +567,11 @@ int main() {
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);
 
+#ifdef USE_TESS_SHADER
+        glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
+#else
         glDrawArrays(GL_POINTS, 0, n_particles);
+#endif
 
         // Turn blending back off and depth test back on
         glDisable(GL_BLEND);
@@ -697,7 +712,7 @@ int main() {
         /*-----------------------------------------------------------------------------------*/
 
         glDisable(GL_DEPTH_TEST);
-        //screen->drawWidgets();
+        screen->drawWidgets();
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
         glDisable(GL_BLEND);

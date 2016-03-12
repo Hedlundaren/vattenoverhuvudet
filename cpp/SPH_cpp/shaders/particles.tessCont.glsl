@@ -6,10 +6,12 @@ layout(vertices = 1) out; //variables defined per-vertex=out, per-patch=patch ou
 in vec3 vPosition[];
 in float vRadius[];
 in float vDepth[];
+in float vVelocity[];
 
 patch out vec3 tcPosition;
 patch out float tcRadius;
 patch out float tcDepth;
+patch out float tcVelocity;
 
 float uDetail = 70;
 float TessLevelInner = 4;
@@ -34,5 +36,6 @@ void main()
     gl_TessLevelInner[1] = TessLevelInner * tcRadius * uDetail;
 
     tcDepth = vDepth[0];
+    tcVelocity = vVelocity[0];
 
 }

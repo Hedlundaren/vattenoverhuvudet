@@ -1,15 +1,20 @@
 #version 330 core
-
+/*
 // Parameters from the vertex shader
 in vec3 vPosition;
 in float vRadius;
 in float vVelocity;
 in float vDepth;
+*/
+in vec3 teNormal;
+in float teDepth;
+in float teVelocity;
 
 // Output
 out float velocityMap;
 
 void main() {
+/*
 	vec3 normal;
 
 	// See where we are inside the point sprite
@@ -22,4 +27,9 @@ void main() {
 	}
 
 	velocityMap = vVelocity;
+*/
+
+    velocityMap = teVelocity;
+
+
 }

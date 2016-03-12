@@ -1,4 +1,4 @@
-#version 420 core
+#version 330 core
 
 // Parameters from the vertex shader
 in vec2 coords;
@@ -27,13 +27,13 @@ vec3 meanCurvature(vec2 pos) {
 	// TODO better boundary conditions, possibly.
 	// Remark: This is not easy, get to choose between bad oblique view smoothing
 	// or merging of unrelated particles
-	float zdxp = texture(particleTexture, pos + dx).r;
-	float zdxn = texture(particleTexture, pos - dx).r;
+	float zdxp = texture(particleTexture, pos + dx).x;
+	float zdxn = texture(particleTexture, pos - dx).x;
 	float zdx = 0.5f * (zdxp - zdxn);
 	zdx = (zdxp == 0.0f || zdxn == 0.0f) ? 0.0f : zdx;
 
-	float zdyp = texture(particleTexture, pos + dy).r;
-	float zdyn = texture(particleTexture, pos - dy).r;
+	float zdyp = texture(particleTexture, pos + dy).x;
+	float zdyn = texture(particleTexture, pos - dy).x;
 	float zdy = 0.5f * (zdyp - zdyn);
 	zdy = (zdyp == 0.0f || zdyn == 0.0f) ? 0.0f : zdy;
 
@@ -42,10 +42,10 @@ vec3 meanCurvature(vec2 pos) {
 	float zdy2 = zdyp + zdyn - 2.0f * zc;
 
 	// Second order finite differences, alternating variables
-	float zdxpyp = texture(particleTexture, pos + dx + dy).r;
-	float zdxnyn = texture(particleTexture, pos - dx - dy).r;
-	float zdxpyn = texture(particleTexture, pos + dx - dy).r;
-	float zdxnyp = texture(particleTexture, pos - dx + dy).r;
+	float zdxpyp = texture(particleTexture, pos + dx + dy).x;
+	float zdxnyn = texture(particleTexture, pos - dx - dy).x;
+	float zdxpyn = texture(particleTexture, pos + dx - dy).x;
+	float zdxnyp = texture(particleTexture, pos - dx + dy).x;
 	float zdxy = (zdxpyp + zdxnyn - zdxpyn - zdxnyp) / 4.0f;
 
 	// Projection transform inversion terms
@@ -76,7 +76,7 @@ void main() {
 		outDepth = 0.0f;
 	}
 	else {
-		const float dt = 0.055f;
+		const float dt = 0.0055f;
 		const float dzt = 1000.0f;
 		vec3 dxyz = meanCurvature(coords);
 

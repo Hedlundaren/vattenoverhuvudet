@@ -86,6 +86,7 @@ void main() {
 	float particleDepth = texture(particleTexture, coords).r; //Red channel used
 	float particleThickness = texture(particleThicknessTexture, coords).r;
 	float velocity = texture(velocityTexture, coords).r;
+	vec3 inNormal = texture(particleThicknessTexture, coords).gba;
 
 	vec3 normal = eyespaceNormal(coords);
 	normal = inverse(mat3(MV)) * normal;
@@ -100,19 +101,22 @@ void main() {
 	    vec3 pos = eyespacePos(coords, particleDepth);
         pos = vec3(inverse(MV)* vec4(pos, 1.0f));
 
-        float thickness = (particleThickness) / 20.0f;
+        float thickness = (particleThickness) * 20.0f;
 
-        float diffuse = max(0.0f, dot(normalize(lDir), normal));
+        vec3 lightDir = normalize(lDir);
+        inNormal = normalize(inNormal);
+        float diffuse = max(0.0f, dot(lightDir, inNormal));
 
         vec3 fromEye = normalize(pos);
         fromEye.xz = -fromEye.xz;
         //vec3 fromEye = vec3(camPos);
 
-        float alpha = 10.0f;
-        vec3 R = reflect(fromEye, normal);
-        float specular = pow(max(0.0f, dot(R,fromEye)), alpha);
+        float alpha = 3.0f;
+        vec3 R = reflect(lightDir, inNormal);
+        float specular = pow(max(0.0f, dot(R,-fromEye)), alpha);
+        if ( diffuse == 0.0 ) specular = 0.0;
 
-        specular = clamp(fresnel(1.0f, 1.5f, normal, fromEye), 0.0f, 0.4f);
+        //specular = clamp(fresnel(1.0f, 1.5f, inNormal, fromEye), 0.0f, 0.4f);
 
         // De-specularize fast particles
         //specular = max(0.0f, specular - (velocity / 15.0f));
@@ -122,8 +126,8 @@ void main() {
         particleColor.w = clamp(1.0f - particleColor.w, 0.0f, 1.0f);
         particleColor.rgb = (diffuse + 0.2f) * particleColor.rgb * (1.0f - specular) + specular*particleColor.rgb + specular * skymapColor.rgb;
 
-        //outColor = vec4(normal, 1.0f);
-        //outColor = vec4(pos, 1.0f);
+        //outColor = vec4(inNormal, 1.0f);
+        //outColor = vec4(fromEye, 1.0f);
         //outColor = vec4(particleDepth);
         outColor = particleColor;
 	}
