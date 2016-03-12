@@ -4,7 +4,7 @@
 in vec2 coords;
 
 // Textures
-uniform sampler2D environmentTexture;
+uniform sampler2D skymapTexture;
 uniform sampler2D particleTexture;
 uniform sampler2D particleThicknessTexture;
 uniform sampler2D velocityTexture;
@@ -119,21 +119,21 @@ void main() {
         // De-specularize fast particles
         //specular = max(0.0f, specular - (velocity / 15.0f));
 
-        vec4 environmentColor = texture(environmentTexture, spheremap(R));
+        vec4 skymapColor = texture(skymapTexture, spheremap(R));
         vec4 particleColor = exp(-vec4(0.4f, 0.1f, 0.05f, 3.0f) * thickness);
         particleColor.w = clamp(1.0f - particleColor.w, 0.0f, 1.0f);
-        particleColor.rgb = (lambert + 0.2f) * particleColor.rgb * (1.0f - specular) + specular*particleColor.rgb; // + specular * environmentColor.rgb;
+        particleColor.rgb = (lambert + 0.2f) * particleColor.rgb * (1.0f - specular) + specular*particleColor.rgb; // + specular * skymapColor.rgb;
 
 
         // Oil
-        //particleColor.rgb = specular * environmentColor.rgb;
+        //particleColor.rgb = specular * skymapColor.rgb;
         //particleColor.w = 1.0f;
 
         // Add some superfake foam colouring
         //particleColor += lambert * vec4(velocity / 15.0f);
 
         outColor = particleColor;
-        //outColor = environmentColor;
+        //outColor = skymapColor;
         //outColor = vec4(lambert, lambert, lambert, 1.0f);
 	}
 }

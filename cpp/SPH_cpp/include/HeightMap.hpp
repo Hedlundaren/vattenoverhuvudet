@@ -54,7 +54,7 @@ public:
 
     void initGL(glm::vec3 origin, glm::vec3 dimensions);
 
-    void render(glm::mat4 P, glm::mat4 MV, bool render_as_wireframe);
+    void render(glm::mat4 P, glm::mat4 MV, bool render_as_wireframe, GLuint lowTexture, GLuint highTexture);
 
 private:
     uint width, height;
@@ -78,7 +78,7 @@ private:
     //////////////////////
 
     std::shared_ptr<ShaderProgram> shader;
-    GLint MV_loc, P_loc;
+    GLint MV_loc, P_loc, lowTex_Loc, highTex_Loc;
 
     GLuint VAO;
     GLuint VBO_positions, VBO_normals, VEO_indices;

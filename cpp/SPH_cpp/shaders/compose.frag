@@ -4,8 +4,8 @@
 in vec2 coords;
 
 // Textures
-uniform sampler2D backgroundTexture;
-uniform sampler2D terrainTexture;
+uniform sampler2D skymapTexture;
+uniform sampler2D heightmapTexture;
 uniform sampler2D particleTexture;
 
 // Uniforms
@@ -27,17 +27,17 @@ void main() {
 	dir = mat3(MV) * dir;
 	vec2 mapCoords = spheremap(dir);
 
-	vec4 terrainColor = texture(terrainTexture, coords);
-	vec4 backgroundColor = texture(backgroundTexture, mapCoords);
+	vec4 heightmapColor = texture(heightmapTexture, coords);
+	vec4 skymapColor = texture(skymapTexture, mapCoords);
 	vec4 particleColor = texture(particleTexture, coords);
 
-	float blend = (terrainColor.a == 1.0f) ? 0.0f : 1.0f;
-	backgroundColor = blend * terrainColor + (1.0f - blend) * backgroundColor;
+	float blend = (heightmapColor.a == 1.0f) ? 0.0f : 1.0f;
+	vec4 backgroundColor = blend * heightmapColor + (1.0f - blend) * skymapColor;
 
 	outColor = light * particleColor * particleColor.w + backgroundColor * (1.0f - particleColor.w);
 
 	//Depth
-	particleColor = texture(particleTexture, coords);
 	//outColor = vec4(vec3(particleColor.x * particleColor.w), 1.0f);
+
 
 }

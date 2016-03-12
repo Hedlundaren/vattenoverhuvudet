@@ -8,7 +8,7 @@ uniform mat4 MV;
 uniform vec2 screenSize;
 uniform vec4 camPos;
 
-//out vec3 vPosition;
+out vec3 vPosition;
 out float vRadius;
 out float vVelocity;
 out float vDepth;
@@ -17,7 +17,7 @@ out float vDepth;
 void main() {
 
     //vPosition = position;
-    //vPosition = vec3(MV * vec4(position, 1.0f));
+    vPosition = vec3(P * MV * vec4(position, 1.0f));
     //vRadius = 1.0f / (-vPosition.z *4.0f * (1.0f/ screenSize.y)); //?
     vRadius = 70.0f;
 

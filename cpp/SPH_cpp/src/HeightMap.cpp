@@ -307,6 +307,9 @@ void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
                                                               "../shaders/heightmap.frag"));
     MV_loc = glGetUniformLocation(*shader, "MV");
     P_loc = glGetUniformLocation(*shader, "P");
+    lowTex_Loc = glGetUniformLocation(*shader, "lowTex");
+    highTex_Loc = glGetUniformLocation(*shader, "highTex");
+    glBindFragDataLocation(*shader, 0, "outColor");
 
     // generate vertex buffer for positions
     glGenBuffers(1, &VBO_positions);
@@ -368,12 +371,19 @@ void HeightMap::initGL(glm::vec3 origin, glm::vec3 dimensions) {
     glEnableVertexAttribArray(1);
 }
 
-void HeightMap::render(glm::mat4 P, glm::mat4 MV, bool render_as_wireframe) {
+void HeightMap::render(glm::mat4 P, glm::mat4 MV, bool render_as_wireframe, GLuint lowTexture, GLuint highTexture) {
     if (render_as_wireframe) { glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); }
 
     glUseProgram(*shader);
     glUniformMatrix4fv(MV_loc, 1, GL_FALSE, &MV[0][0]);
     glUniformMatrix4fv(P_loc, 1, GL_FALSE, &P[0][0]);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, lowTexture);
+    glUniform1i(lowTex_Loc, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, highTexture);
+    glUniform1i(highTex_Loc, 1);
 
     glBindVertexArray(VAO);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, VEO_indices);
@@ -381,6 +391,7 @@ void HeightMap::render(glm::mat4 P, glm::mat4 MV, bool render_as_wireframe) {
     glCullFace(GL_FRONT);
     glDrawElements(GL_TRIANGLES, vertex_indices_count, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+    glCullFace(GL_BACK);
 
     if (render_as_wireframe) { glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); }
 }
