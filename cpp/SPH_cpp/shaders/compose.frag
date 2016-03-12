@@ -34,7 +34,7 @@ void main() {
 	float blend = (heightmapColor.a == 1.0f) ? 0.0f : 1.0f;
 	vec4 backgroundColor = blend * heightmapColor + (1.0f - blend) * skymapColor;
 
-	outColor = light * particleColor * particleColor.w + backgroundColor * (1.0f - particleColor.w);
+	outColor = particleColor * particleColor.w + backgroundColor * (1.0f - particleColor.w);
 
 	//Depth
 	//outColor = vec4(vec3(particleColor.x * particleColor.w), 1.0f);

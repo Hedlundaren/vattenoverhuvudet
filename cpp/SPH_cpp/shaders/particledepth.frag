@@ -51,8 +51,8 @@ void main() {
 
     if(vDepth > texture(heightmapTexture, vPosition.xy ).w) {
             discard;
-    }*/
-
+    }
+*/
     particleDepth = vDepth;
 
 }

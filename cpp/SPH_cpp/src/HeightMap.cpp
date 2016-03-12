@@ -391,7 +391,9 @@ void HeightMap::render(glm::mat4 P, glm::mat4 MV, bool render_as_wireframe, GLui
     glCullFace(GL_FRONT);
     glDrawElements(GL_TRIANGLES, vertex_indices_count, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-    glCullFace(GL_BACK);
+
 
     if (render_as_wireframe) { glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); }
+
+    glCullFace(GL_BACK);
 }

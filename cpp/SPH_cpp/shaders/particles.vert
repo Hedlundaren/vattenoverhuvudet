@@ -18,7 +18,6 @@ void main() {
 
     //vPosition = position;
     vPosition = vec3(P * MV * vec4(position, 1.0f));
-    //vRadius = 1.0f / (-vPosition.z *4.0f * (1.0f/ screenSize.y)); //?
     vRadius = 70.0f;
 
     gl_Position = P * MV * vec4(position.x, -position.y, position.z, 1.0f);
@@ -27,8 +26,8 @@ void main() {
     vVelocity = length(velocity);
 
     //Depth
-    float maxPos = length(camPos)+7.5f;
-    float minPos = length(camPos)-7.5f;
+    float maxPos = length(camPos)+6.3f;
+    float minPos = length(camPos)-6.3f;
     vec4 dis = vec4(position, 1.0f)-camPos;
     vDepth = (length(dis)-minPos)/(maxPos-minPos);
 

@@ -150,6 +150,8 @@ int main() {
     std::cout << glGetString(GL_VERSION) << "\n";
 
     //Set up OpenGL functions
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_LESS);
     glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
     // VSync: enable = 1, disable = 0
@@ -244,7 +246,7 @@ int main() {
             glm::vec3( 1.0f, -1.0f, 0.0f),
             glm::vec3( 1.0f,  1.0f, 0.0f),
             glm::vec3(-1.0f,  1.0f, 0.0f)};
-    GLuint quadElements[] = {0, 1, 3, 1, 2, 3}; //Order to write
+    GLuint quadElements[] = {0, 2, 3, 0, 1, 2}; //Order to write
 
     GLuint quadVBO = makeBO(GL_ARRAY_BUFFER, quadData, sizeof(glm::vec3)*4, GL_STATIC_DRAW);
     GLuint quadElemVBO = makeBO(GL_ELEMENT_ARRAY_BUFFER, quadElements, sizeof(GLuint)*6, GL_STATIC_DRAW);
@@ -404,6 +406,7 @@ int main() {
     liquidShadeShader.MV_Loc = glGetUniformLocation(liquidShadeShader, "MV");
     liquidShadeShader.P_Loc = glGetUniformLocation(liquidShadeShader, "P");
     liquidShadeShader.lDir_Loc = glGetUniformLocation(liquidShadeShader, "lDir");
+    liquidShadeShader.camPos_Loc = glGetUniformLocation(liquidShadeShader, "camPos");
     liquidShadeShader.screenSize_Loc = glGetUniformLocation(liquidShadeShader, "screenSize");
     liquidShadeShader.skymapTex = glGetUniformLocation(liquidShadeShader, "skymapTexture");
     liquidShadeShader.particleTex = glGetUniformLocation(liquidShadeShader, "particleTexture");
@@ -446,9 +449,11 @@ int main() {
         //dt_s = std::min(dt_s, 1.0f / 60);
         /*----------------------------------------------------------------------------------------*/
 
+
         int w = WIDTH;
         int h = HEIGHT;
         // Update window size
+        glfwMakeContextCurrent(window);
         glfwGetFramebufferSize(window, &w, &h);
         glViewport(0, 0, w, h);
 
@@ -477,10 +482,7 @@ int main() {
         lDir = glm::vec3(1.0f);
 
         //Set up OpenGL-functions, needs to be in loop
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LESS);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
+
         glBindFramebuffer(GL_FRAMEBUFFER, backgroundFBO);
 
         // Clear the buffers
@@ -502,10 +504,10 @@ int main() {
         glm::vec2 screenSize = glm::vec2(w/RESOLUTION, h/RESOLUTION);
 
         // Activate particle depth FBO
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glBindFramebuffer(GL_FRAMEBUFFER, particleFBO[0]);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w/RESOLUTION, h/RESOLUTION, 0, GL_R32F, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w/RESOLUTION, h/RESOLUTION, 0, GL_R32F, GL_FLOAT, NULL);
 
         particleDepthShader();
 
@@ -523,18 +525,16 @@ int main() {
 
 
         glBindVertexArray(part_vao);
-        #ifdef USE_TESS_SHADER
-                glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
-        #else
-                glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
-        #endif
+
+        glDrawArrays(GL_POINTS, 0, n_particles);
+
         glBindVertexArray(0);
 
 
         //-----------------------------PARTICLE_THICKNESS SHADER
         glBindFramebuffer(GL_FRAMEBUFFER, particleThicknessFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w/RESOLUTION, h/RESOLUTION, 0, GL_R32F, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w/RESOLUTION, h/RESOLUTION, 0, GL_R32F, GL_FLOAT, NULL);
 
         particleThicknessShader();
 
@@ -552,15 +552,11 @@ int main() {
         glBindVertexArray(part_vao);
 
         // Enable additive blending and disable depth test
+        glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_ONE, GL_ONE);
-        glDisable(GL_DEPTH_TEST);
 
-        #ifdef USE_TESS_SHADER
-                glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
-        #else
-                glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
-        #endif
+        glDrawArrays(GL_POINTS, 0, n_particles);
 
         // Turn blending back off and depth test back on
         glDisable(GL_BLEND);
@@ -570,7 +566,7 @@ int main() {
         //----------------------------PARTICLE_VELOCITY SHADER
         glBindFramebuffer(GL_FRAMEBUFFER, velocityFBO);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        //glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w/RESOLUTION, h/RESOLUTION, 0, GL_R32F, GL_FLOAT, NULL);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, w/RESOLUTION, h/RESOLUTION, 0, GL_R32F, GL_FLOAT, NULL);
 
         particleVelocityShader();
 
@@ -580,11 +576,9 @@ int main() {
         glUniform2fv(particleVelocityShader.screenSize_Loc, 1, &screenSize[0]);
 
         glBindVertexArray(part_vao);
-        #ifdef USE_TESS_SHADER
-                glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
-        #else
-                glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
-        #endif
+
+        glDrawArrays(GL_POINTS, 0, n_particles);
+
         glBindVertexArray(0);
 
 
@@ -595,7 +589,7 @@ int main() {
         //Send uniform variables
         glUniformMatrix4fv(curvatureFlowShader.P_Loc, 1, GL_FALSE, &P_LowRes[0][0]);
         glUniform2fv(curvatureFlowShader.screenSize_Loc, 1, &screenSize[0]);
-        glUniform1i(curvatureFlowShader.particleTex, 0); //Why not in loop?
+        glUniform1i(curvatureFlowShader.particleTex, 0);
 
         glActiveTexture(GL_TEXTURE0);
         glBindVertexArray(quad_vao);
@@ -653,6 +647,7 @@ int main() {
         glUniformMatrix4fv(liquidShadeShader.P_Loc, 1, GL_FALSE, &P_LowRes[0][0]);
         glUniform2fv(liquidShadeShader.screenSize_Loc, 1, &screenSize[0]);
         glUniform3fv(liquidShadeShader.lDir_Loc, 1, &lDir[0]);
+        glUniform4fv(liquidShadeShader.camPos_Loc, 1, &camPos[0]);
 
 
         glDisable(GL_DEPTH_TEST);
@@ -691,6 +686,7 @@ int main() {
         glUniformMatrix4fv(compositionShader.P_Loc, 1, GL_FALSE, &P[0][0]);
 
         glDisable(GL_DEPTH_TEST);
+
         glBindVertexArray(quad_vao);
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
@@ -700,9 +696,12 @@ int main() {
 
         /*-----------------------------------------------------------------------------------*/
 
-        screen->drawWidgets();
+        glDisable(GL_DEPTH_TEST);
+        //screen->drawWidgets();
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
+        glDisable(GL_BLEND);
+
 
         glfwSwapBuffers(window);
         ++frames_last_second;
