@@ -7,6 +7,10 @@
 #define zero3u (uint3)(0, 0, 0)
 #define one3f (float3)(1.0f, 1.0f, 1.0f)
 #define one3u (uint3)(1, 1, 1)
+#define three3u (uint3)(3, 3, 3)
+
+#define local_work_size (uint3)(get_local_size(0), get_local_size(1), get_local_size(2))
+#define global_work_size (uint3)(get_global_size(0), get_global_size(1), get_global_size(2))
 
 __constant float PI = 3.1415926535f;
 __constant float EPSILON = 1e-5;
@@ -260,12 +264,92 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 									     __global float* restrict out_densities,   // The density of each particle. Is [max_cell_particle_count * total_grid_cells] long, since
 									 											   // it does NOT need to match up with the particle's global positions/velocities buffers 
 								   	     __global const uint* restrict indices, // Indices from each voxel cell to each particle. Is [max_cell_particle_count * total_grid_cells] long
-								   	     __global const uint* restrict cell_particle_count, // Particle counter for each voxel cell. Is [total_grid_cells] long
+								   	     __global const uint* restrict cell_particle_counts, // Particle counter for each voxel cell. Is [total_grid_cells] long
 								   	     const VoxelGridInfo grid_info,
 								   	     const FluidInfo fluid_info) {
-	const uint3 voxel_cell_indices = (uint3)(get_global_id(0), get_global_id(1), get_global_id(2));
-	const uint voxel_cell_index = calculate_1D_index(voxel_cell_indices, grid_info.grid_cells);
-	const uint particle_count = cell_particle_count[voxel_cell_index];
+	#define THIS 14
+
+	// 27 cells in the neighbourhood, @VOXEL_CELL_PARTICLE_COUNT@ maximum particles/cell, 3 floats/position
+	__local float this_positions[27 * @VOXEL_CELL_PARTICLE_COUNT@ * 3];
+	__local uchar this_particle_counts[27];
+
+	const uint3 cell_indices = (uint3)(get_global_id(0) / @VOXEL_CELL_PARTICLE_COUNT@, 
+									   get_global_id(1) / @VOXEL_CELL_PARTICLE_COUNT@, 
+									   get_global_id(2) / @VOXEL_CELL_PARTICLE_COUNT@);
+	const uint cell_index = calculate_1D_index(cell_indices, grid_info.grid_cells);
+
+	// 3D and 1D global indices
+	const uint3 global_indices = (uint3)(get_global_id(0), 
+										 get_global_id(1), 
+										 get_global_id(2));
+	const uint global_index = calculate_1D_index(global_indices, global_work_size);
+
+	// 3D and 1D work-group indices
+	const uint3 local_indices = (uint3)(get_local_id(0), 
+										get_local_id(1), 
+										get_local_id(2));
+	const uint local_index = calculate_1D_index(local_indices, local_work_size);
+
+	if (local_index < three3u) {
+		const uint dcell_index = calculate_1D_index(cell_indices + (local_index - one3u), grid_info.grid_cells);
+		this_particle_counts[local_index] = cell_particle_counts[dcell_index];
+	}
+
+/*
+	if (local_index < 27) {
+		const uint dx = local_index % 3 - 1;
+		const uint dy = (local_index / 3) % 3 - 1;
+		const uint dz = (local_index / 9) % 3 - 1;
+		
+		const uint3 dxyz = (uint3)(dx, dy, dz);
+		const uint dcell_index = calculate_1D_index(cell_indices + dxyz, grid_info.grid_cells);
+
+		this_particle_counts[local_index] = cell_particle_counts[dcell_index];
+	}
+*/
+
+	// Wait until the particle count of this- and all neighbouring cells has been moved to local memory
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	// Loop through all voxel cells around the currently processed voxel cell
+	// todo optimize these for-loops and voxel cell index generation
+	for (int d_idx = -1; d_idx <= 1; ++d_idx) {
+
+		// Check if the x-index lies outside the voxel grid
+		const int idx = convert_int(voxel_cell_indices.x) + d_idx;
+		if (idx != clamp(idx, 0, max_cell_indices.x)) {
+			continue;
+		}
+
+		for (int d_idy = -1; d_idy <= 1; ++d_idy) {
+
+			// Check if the x-index lies outside the voxel grid
+			const int idy = convert_int(voxel_cell_indices.y) + d_idy;
+			if (idy != clamp(idy, 0, max_cell_indices.y)) {
+				continue;
+			}
+
+			for (int d_idz = -1; d_idz <= 1; ++d_idz) {
+
+				// Check if the x-index lies outside the voxel grid
+				const int idz = convert_int(voxel_cell_indices.z) + d_idz;
+				if (idz != clamp(idz, 0, max_cell_indices.z)) {
+					continue;
+				}
+
+				const uint neighbour_index = convert_uint((d_idx + 1) * (d_idy + 1) * (d_idz + 1));
+				const uint current_voxel_cell_index = calculate_1D_index((uint3)(idx, idy, idz), grid_info.grid_cells);
+				
+				this_positions[neighbour_index * @VOXEL_CELL_PARTICLE_COUNT@ * 3 + local_index] 	= positions[global_index];
+				this_positions[neighbour_index * @VOXEL_CELL_PARTICLE_COUNT@ * 3 + local_index + 1] = positions[global_index + 1];
+				this_positions[neighbour_index * @VOXEL_CELL_PARTICLE_COUNT@ * 3 + local_index + 2] = positions[global_index + 2];
+			}
+		}
+	}
+
+	// Wait until the particle positions of this- and all neighbouring cells has been moved to local memory
+	barrier(CLK_LOCAL_MEM_FENCE);
+
 
 	// Store the densities locally (in private kernel memory) during calculation
 	float processed_particle_densities[@VOXEL_CELL_PARTICLE_COUNT@];
@@ -303,7 +387,7 @@ __kernel void calculate_particle_densities(__global const float* restrict positi
 						const int idz = convert_int(voxel_cell_indices.z) + d_idz;
 						if (idz == clamp(idz, 0, max_cell_indices.z)) {
 							const uint current_voxel_cell_index = calculate_1D_index((uint3)(idx, idy, idz), grid_info.grid_cells);
-							const uint current_voxel_particle_count = cell_particle_count[current_voxel_cell_index];
+							const uint current_voxel_particle_count = cell_particle_counts[current_voxel_cell_index];
 
 							// Iterate through this cell's particles
 							for (uint idp = 0; idp < current_voxel_particle_count; ++idp) {

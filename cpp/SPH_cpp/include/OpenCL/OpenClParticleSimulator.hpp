@@ -49,6 +49,11 @@ private:
     clFluidInfo fluid_info;
     clBoundsInfo bounds_info;
 
+    size_t global_work_size[3];
+
+    size_t local_work_size[3];
+
+
     // points to array of 3 size_t
     size_t *grid_cells_count;
 

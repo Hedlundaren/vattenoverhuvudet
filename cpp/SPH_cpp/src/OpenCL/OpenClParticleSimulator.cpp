@@ -101,14 +101,6 @@ void OpenClParticleSimulator::setupSharedBuffers(const GLuint &vbo_positions, co
 void OpenClParticleSimulator::allocateVoxelGridBuffer(const Parameters &params) {
     cl_int error = CL_SUCCESS;
 
-    clVoxelGridInfo grid_info;
-    params.set_voxel_grid_info(grid_info);
-
-    grid_cells_count = new size_t[3];
-    grid_cells_count[0] = grid_info.grid_cells.s[0];
-    grid_cells_count[1] = grid_info.grid_cells.s[1];
-    grid_cells_count[2] = grid_info.grid_cells.s[2];
-
     /* Setup voxel cell particle indices */
     std::vector<cl_uint> voxel_cell_particle_indices_zeroes(
             grid_info.max_cell_particle_count * grid_info.total_grid_cells);
@@ -213,6 +205,19 @@ void OpenClParticleSimulator::setupSimulation(const Parameters &params,
 
     initOpenCL();
     std::cout << "\nOpenCL ready to use: context created.\n\n";
+
+    clVoxelGridInfo grid_info;
+    params.set_voxel_grid_info(grid_info);
+
+    grid_cells_count = new size_t[3];
+    grid_cells_count[0] = grid_info.grid_cells.s[0];
+    grid_cells_count[1] = grid_info.grid_cells.s[1];
+    grid_cells_count[2] = grid_info.grid_cells.s[2];
+
+    local_work_size[0] = local_work_size[1] = local_work_size[2] = VOXEL_CELL_CUBESQRT_PARTICLE_COUNT;
+    global_work_size[0] = grid_info.grid_cells.s[0] * VOXEL_CELL_CUBESQRT_PARTICLE_COUNT;
+    global_work_size[1] = grid_info.grid_cells.s[1] * VOXEL_CELL_CUBESQRT_PARTICLE_COUNT;
+    global_work_size[2] = grid_info.grid_cells.s[2] * VOXEL_CELL_CUBESQRT_PARTICLE_COUNT;
 
     n_particles = particle_positions.size();
 
@@ -521,7 +526,8 @@ void OpenClParticleSimulator::runCalculateParticleDensitiesKernel(float dt_secon
     CheckError(error, __LINE__);
 
     error = clEnqueueNDRangeKernel(command_queue, calculate_particle_densities, 3, NULL,
-                                   (const size_t *) grid_cells_count, NULL,
+                                   (const size_t *) &global_work_size[0],
+                                   (const size_t *) &local_work_size[0],
                                    NULL, NULL, NULL);
     CheckError(error, __LINE__);
 
@@ -586,7 +592,8 @@ void OpenClParticleSimulator::runCalculateParticleForcesKernel() {
     CheckError(error, __LINE__);
 
     error = clEnqueueNDRangeKernel(command_queue, calculate_particle_forces, 3, NULL,
-                                   (const size_t *) grid_cells_count, NULL,
+                                   (const size_t *) &global_work_size[0],
+                                   (const size_t *) &local_work_size[0],
                                    NULL, NULL, NULL);
     CheckError(error, __LINE__);
 
