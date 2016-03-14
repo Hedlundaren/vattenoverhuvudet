@@ -104,7 +104,7 @@ void main() {
         float thickness = (particleThickness) * 20.0f;
 
         vec3 lightDir = normalize(lDir);
-        inNormal = normalize(inNormal);
+        inNormal = normalize(normal); //inNormal vs. normal
         float diffuse = max(0.0f, dot(lightDir, inNormal));
 
         vec3 fromEye = normalize(pos);

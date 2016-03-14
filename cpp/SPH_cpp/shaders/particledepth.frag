@@ -56,5 +56,6 @@ void main() {
     */
 
     particleDepth = teDepth;
+    //gl_FragDepth = teDepth;
 
 }

@@ -69,7 +69,7 @@ bool render_particle_grid = false;
 static int WIDTH = 720;
 static int HEIGHT = 720;
 #define RESOLUTION 1
-#define SMOOTHING_ITERATIONS 120
+#define SMOOTHING_ITERATIONS 12
 
 // A terrain
 struct {
@@ -456,7 +456,7 @@ int main() {
                 std::cout << "Seconds: " << dt_s << "\n";
         #endif
 
-        //dt_s = std::min(dt_s, 1.0f / 60);
+        dt_s = std::min(dt_s, 1.0f / 60);
         /*----------------------------------------------------------------------------------------*/
 
 
