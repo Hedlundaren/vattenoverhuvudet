@@ -32,7 +32,7 @@ unsigned int frames_last_second;
 static int WIDTH = 720;
 static int HEIGHT = 720;
 #define RESOLUTION 1
-#define SMOOTHING_ITERATIONS 120
+#define SMOOTHING_ITERATIONS 1
 
 // A terrain
 struct {
@@ -51,8 +51,8 @@ int main() {
         exit(EXIT_FAILURE);
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); //TessShader = 4 otherwise 3
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3); //TessShader = 0 otherwise 3
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
@@ -110,8 +110,8 @@ int main() {
     //Generate particles
     int n = -1;
     std::cout << "How many particles? ";
-     //std::cin >> n;
-    n = 10000; // TODO change back!
+    std::cin >> n;
+    //n = 20000; // TODO change back!
     const int n_particles = n;
 
     Parameters params(n_particles);
@@ -402,7 +402,7 @@ int main() {
         #ifdef MY_DEBUG
                 std::cout << "Seconds: " << dt_s << "\n";
         #endif
-        //dt_s = std::min(dt_s, 1.0f / 60);
+        //dt_s = std::min(dt_s, 1.0f / 60.0f);
         /*----------------------------------------------------------------------------------------*/
 
         int w, h;
@@ -414,18 +414,7 @@ int main() {
 
         /*--------------------------------RENDERING---------------------------------------------*/
         //------------BACKGROUND SHADER
-        /*
-        //Set viewport to whole window
-        glViewport(0, 0, WIDTH, HEIGHT);
-        // Clear everything first thing.
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
-        glBindFramebuffer(GL_FRAMEBUFFER, backgroundFBO);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-        //Activate shader
-        backgroundShader();
-        */
 
         //Calculate matrices and textures
         // Get mouse and key input
@@ -439,49 +428,17 @@ int main() {
         glm::vec4 eye_position = VRotX * VRotY * glm::vec4(0.0f, 0.0f, 3 * (max_volume_side + 0.5f), 1.0f);
         glm::vec4 camPos = eye_position;
         glm::mat4 V = VTrans * glm::lookAt(glm::vec3(eye_position), scene_center, glm::vec3(0.0f, 1.0f, 0.0f));
-        P = glm::perspectiveFov(50.0f, static_cast<float>(w), static_cast<float>(h), 0.1f, 100.0f);
+        P = glm::perspectiveFov(50.0f, static_cast<float>(w), static_cast<float>(h), 0.1f, 120.0f);
         MV = V * M;
 
         //Calculate light direction
-        lDir = glm::vec3(1.0f);
+        lDir = glm::vec3(1.0f, -1.0f, 1.0f);
 
-        /*
-        //Send uniforms
-        glUniformMatrix4fv(backgroundShader.MV_Loc, 1, GL_FALSE, &MV[0][0]);
-        glUniformMatrix4fv(backgroundShader.P_Loc, 1, GL_FALSE, &P[0][0]);
-        glUniform3fv(backgroundShader.lDir_Loc, 1, &lDir[0]);
-
-        // Set heightmap texture
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, terrain.heightTexture );
-        glUniform1i(backgroundShader.terrainTex, 0);
-
-        // Set color textures
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, terrain.lowTexture);
-        glUniform1i(backgroundShader.lowTex, 1);
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, terrain.highTexture);
-        glUniform1i(backgroundShader.highTex, 2);
-
-
-        //Bind VAO and draw
-        glDisable(GL_CULL_FACE);
-        //Send VAO to the GPU
-        glBindVertexArray(vao);
-        #ifdef USE_TESS_SHADER
-                glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
-        #else
-                glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
-        #endif
-        glEnable(GL_CULL_FACE);
-        */
 
         //----------------PARTICLE_DEPTH SHADER
         //Set viewport to low-res
         glViewport(0, 0, w/RESOLUTION, h/RESOLUTION);
-        glm::mat4 P_LowRes = glm::perspectiveFov(50.0f, static_cast<float>(w/RESOLUTION), static_cast<float>(h/RESOLUTION), 0.1f, 100.0f);
+        glm::mat4 P_LowRes = glm::perspectiveFov(50.0f, static_cast<float>(w/RESOLUTION), static_cast<float>(h/RESOLUTION), 0.1f, 120.0f);
         glm::vec2 screenSize = glm::vec2(w/RESOLUTION, h/RESOLUTION);
 
         // Activate particle depth FBO
@@ -574,7 +531,7 @@ int main() {
 
         //-------------------------------CURVATURE_FLOW SHADER
 
-        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         curvatureFlowShader();
 
@@ -646,7 +603,6 @@ int main() {
         #ifdef USE_TESS_SHADER
                 glDrawArrays(GL_PATCHES, 0, n_particles); //TessShader
         #else
-                //glDrawArrays(GL_POINTS, 0, n_particles); //GeomShader
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, (void*)0);
         #endif
         glBindVertexArray(0);

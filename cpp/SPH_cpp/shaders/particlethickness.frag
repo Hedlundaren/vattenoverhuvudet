@@ -1,7 +1,7 @@
 #version 330 core
 
 // Parameters from the vertex shader
-//in vec3 vPosition;
+in vec3 vPosition;
 in float vRadius;
 in float vVelocity;
 in float vDepth;
@@ -32,7 +32,7 @@ void main() {
 	// Blur-ish effect is achieved by including length here.
 	particleThickness = 1.0f - length(normal);
 
-/*--------For terrain_depth_check
+//--------For terrain_depth_check
 
 	// Depth needs to be calculated so we can check against terrain
 	// Set up rest of normal
@@ -41,7 +41,7 @@ void main() {
 	normal = normalize(normal);
 
 	// Calculate fragment position in eye space, project to find depth
-	vec4 fragPos = vec4(vPosition + normal * vRadius, 1.0f);// vRadius/screenSize.y;
+	vec4 fragPos = vec4(vPosition + normal * vRadius/screenSize.y, 1.0f);// vRadius/screenSize.y;
     vec4 clipspacePos = P * fragPos;
 
 	// Set up output
@@ -51,9 +51,9 @@ void main() {
 	float fragDepth = (((far - near) * deviceDepth) + near + far) / 2.0;
 	gl_FragDepth = fragDepth;
 
-    if(fragDepth > texture(terrainTexture, gl_FragCoord.xy / screenSize).w) {
-		discard;
-	}
-	*/
+    //if(fragDepth > texture(terrainTexture, gl_FragCoord.xy / screenSize).w) {
+	//	discard;
+	//}
+
 }
 

@@ -99,9 +99,9 @@ struct Parameters {
     inline static Parameters set_default_parameters(Parameters &p) {
         p.total_mass = 100.0f;
         p.kernel_size = 0.4f;
-        p.k_gas = 1.5f;
-        p.k_viscosity = 20.0f;
-        p.rest_density = 0.0f;
+        p.k_gas = 1.0f;
+        p.k_viscosity = 10.0f;
+        p.rest_density = 10.0f;
         p.sigma = 0.2f;
         p.k_threshold = 0.1f;
         p.gravity = glm::vec3(0.0f, -9.82f, 0.0f);

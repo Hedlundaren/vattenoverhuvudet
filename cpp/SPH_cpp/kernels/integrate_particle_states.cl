@@ -100,14 +100,12 @@ __kernel void integrate_particle_states(__global float* restrict positions,
 		position.y = grid_info.grid_origin.y;
 		velocity.y = wallDamper * (- velocity.y);
 	}
-	float new_pos = sin(position.z)/2.0f + pow(position.x, 2.0f)/5.0f + 0.5f;
-
-
+/*	float new_pos = sin(position.z)/2.0f + pow(position.x, 2.0f)/5.0f + 0.5f;
 	if(position.y < new_pos){
 		position.y = new_pos;
 		velocity.y = - velocity.y;
 	}
-
+*/
 	if(particle_distance > 7.5){
 		float3 wall_normal = (float3) -(position.x, 0.0f, position.z);
 		wall_normal = normalize(wall_normal);

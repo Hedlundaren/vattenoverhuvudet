@@ -20,32 +20,32 @@ vec3 meanCurvature(vec2 pos) {
 	vec2 dy = vec2(0.0f, 1.0f / screenSize.y);
 
 	// Central z value
-	float zc =  texture(particleTexture, pos).x;
+	float zc =  texture(particleTexture, pos).r;
 
 	// Take finite differences
 	// Central differences give better results than one-sided here.
 	// TODO better boundary conditions, possibly.
 	// Remark: This is not easy, get to choose between bad oblique view smoothing
 	// or merging of unrelated particles
-	float zdxp = texture(particleTexture, pos + dx).x;
-	float zdxn = texture(particleTexture, pos - dx).x;
+	float zdxp = texture(particleTexture, pos + dx).r;
+	float zdxn = texture(particleTexture, pos - dx).r;
 	float zdx = 0.5f * (zdxp - zdxn);
-	zdx = (zdxp == 0.0f || zdxn == 0.0f) ? 0.0f : zdx;
+	//zdx = (zdxp == 0.0f || zdxn == 0.0f) ? 0.0f : zdx; //Comment if vDepth
 
-	float zdyp = texture(particleTexture, pos + dy).x;
-	float zdyn = texture(particleTexture, pos - dy).x;
+	float zdyp = texture(particleTexture, pos + dy).r;
+	float zdyn = texture(particleTexture, pos - dy).r;
 	float zdy = 0.5f * (zdyp - zdyn);
-	zdy = (zdyp == 0.0f || zdyn == 0.0f) ? 0.0f : zdy;
+	//zdy = (zdyp == 0.0f || zdyn == 0.0f) ? 0.0f : zdy; //Comment if vDepth
 
 	// Take second order finite differences
 	float zdx2 = zdxp + zdxn - 2.0f * zc;
 	float zdy2 = zdyp + zdyn - 2.0f * zc;
 
 	// Second order finite differences, alternating variables
-	float zdxpyp = texture(particleTexture, pos + dx + dy).x;
-	float zdxnyn = texture(particleTexture, pos - dx - dy).x;
-	float zdxpyn = texture(particleTexture, pos + dx - dy).x;
-	float zdxnyp = texture(particleTexture, pos - dx + dy).x;
+	float zdxpyp = texture(particleTexture, pos + dx + dy).r;
+	float zdxnyn = texture(particleTexture, pos - dx - dy).r;
+	float zdxpyn = texture(particleTexture, pos + dx - dy).r;
+	float zdxnyp = texture(particleTexture, pos - dx + dy).r;
 	float zdxy = (zdxpyp + zdxnyn - zdxpyn - zdxnyp) / 4.0f;
 
 	// Projection transform inversion terms
@@ -65,6 +65,7 @@ vec3 meanCurvature(vec2 pos) {
 
 	// Finally, mean curvature
 	float h = 0.5f * ((cy * ex + cx * ey) / pow(d, 1.5f));
+	h = clamp(h, -1.0f, 1.0f);
 
 	return(vec3(zdx, zdy, h));
 }
@@ -76,13 +77,19 @@ void main() {
 		outDepth = 0.0f;
 	}
 	else {
-		const float dt = 0.0055f;
-		const float dzt = 1000.0f;
+		//vDepth
+		//const float dt = 0.000045f;
+		//const float dzt = 2.0f;
+		//vDepth+dist
+		const float dt = 0.00055f;
+        const float dzt = 2.0f;
 		vec3 dxyz = meanCurvature(coords);
 
 		// Vary contribution with absolute depth differential - trick from pySPH
 		outDepth = particleDepth + dxyz.z * dt * (1.0f + (abs(dxyz.x) + abs(dxyz.y)) * dzt); //Why doesn't zdx & zdy work?
-		//outDepth = particleDepth + dxyz.z * dt;
+		//outDepth =  dxyz.z * dt * (1.0f + (abs(dxyz.x) + abs(dxyz.y)) * dzt);
+		//outDepth = (abs(dxyz.x) + abs(dxyz.y)) * dzt;
+		//outDepth = particleDepth;
 
 	}
 }

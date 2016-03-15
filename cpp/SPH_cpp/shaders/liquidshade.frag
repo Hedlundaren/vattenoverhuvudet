@@ -4,7 +4,7 @@
 in vec2 coords;
 
 // Textures
-uniform sampler2D environmentTexture;
+uniform sampler2D skymapTexture;
 uniform sampler2D particleTexture;
 uniform sampler2D particleThicknessTexture;
 uniform sampler2D velocityTexture;
@@ -17,10 +17,6 @@ uniform vec3 lDir;
 
 // Output
 out vec4 outColor;
-
-float noise(vec2 coord) {
-    return fract(sin(dot(coord, vec2(12.9898, 78.233))) * 43758.5453);
-}
 
 vec2 spheremap(vec3 dir) {
 	float m = 2.0f * sqrt(dir.x * dir.x + dir.y * dir.y + (dir.z + 1.0f) * (dir.z + 1.0f));
@@ -101,39 +97,35 @@ void main() {
 	else {
 
 	    vec3 pos = eyespacePos(coords, particleDepth);
-        pos = (vec4(pos, 1.0f) * inverse(MV)).xyz;
+        pos = vec3(inverse(MV)* vec4(pos, 1.0f));
 
-        float thickness = (particleThickness) / 10.0f;
+        float thickness = (particleThickness) / 2.0f;
 
-        float lambert = max(0.0f, dot(normalize(lDir), normal));
+        vec3 lightDir = normalize(lDir);
+        vec3 inNormal = normalize(normal); //inNormal vs. normal
+        float diffuse = max(0.0f, dot(lightDir, inNormal));
 
         vec3 fromEye = normalize(pos);
         fromEye.xz = -fromEye.xz;
 
-        float alpha = 3.0f;
-        vec3 R = reflect(fromEye, normal);
-        float specular = pow(max(0.0f, dot(R,fromEye)), alpha);
+        float alpha = 1.0f;
+        vec3 R = reflect(lightDir, inNormal);
+        float specular = pow(max(0.0f, dot(R,-fromEye)), alpha);
+        if ( diffuse == 0.0 ) specular = 0.0;
 
-        //float specular = clamp(fresnel(1.0f, 1.5f, normal, fromEye), 0.0f, 0.4f);
-        //specular = 0.36f;
+        specular = clamp(fresnel(1.0f, 1.5f, inNormal, fromEye), 0.0f, 0.4f);
+
         // De-specularize fast particles
         //specular = max(0.0f, specular - (velocity / 15.0f));
 
-        vec4 environmentColor = texture(environmentTexture, spheremap(R));
+        vec4 skymapColor = texture(skymapTexture, spheremap(R));
         vec4 particleColor = exp(-vec4(0.4f, 0.1f, 0.05f, 3.0f) * thickness);
         particleColor.w = clamp(1.0f - particleColor.w, 0.0f, 1.0f);
-        particleColor.rgb = (lambert + 0.2f) * particleColor.rgb * (1.0f - specular) + specular*particleColor.rgb; // + specular * environmentColor.rgb;
+        particleColor.rgb = (diffuse + 0.1f) * particleColor.rgb * (1.0f - specular) + specular*particleColor.rgb; // + specular * skymapColor.rgb;
 
-
-        // Oil
-        //particleColor.rgb = specular * environmentColor.rgb;
-        //particleColor.w = 1.0f;
-
-        // Add some superfake foam colouring
-        //particleColor += lambert * vec4(velocity / 15.0f);
-
+        //outColor = vec4(inNormal, 1.0f);
+        //outColor = vec4(fromEye, 1.0f);
+        //outColor = vec4(vec3(particleDepth), 1.0f);
         outColor = particleColor;
-        //outColor = environmentColor;
-        //outColor = vec4(lambert, lambert, lambert, 1.0f);
 	}
 }

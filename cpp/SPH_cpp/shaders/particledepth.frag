@@ -1,6 +1,6 @@
 #version 330 core
 
-//in vec3 vPosition;
+in vec3 vPosition;
 in float vRadius;
 in float vVelocity;
 in float vDepth;
@@ -27,14 +27,14 @@ void main() {
         discard;
     }
 
-/*
+
     // Set up rest of normal
     normal.z = sqrt(1.0f - dist);
     normal.y = -normal.y; //?
     normal = normalize(normal);
 
     // Calculate fragment position in eye space, project to find depth
-    vec4 fragPos = vec4(vPosition + normal * vRadius, 1.0f);// vRadius/screenSize.y;
+    vec4 fragPos = vec4(vPosition + normal * vRadius/screenSize.y, 1.0f);// vRadius/screenSize.y;
     vec4 clipspacePos = P * fragPos;
 
     // Set up output
@@ -42,14 +42,13 @@ void main() {
     float near = gl_DepthRange.near;
     float deviceDepth = clipspacePos.z / clipspacePos.w;
     float fragDepth = (((far - near) * deviceDepth) + near + far) / 2.0;
-    //gl_FragDepth = fragDepth;
+    gl_FragDepth = fragDepth;
 
     //if(fragDepth > texture(terrainTexture, gl_FragCoord.xy / screenSize).w) {
     //    discard;
     //}
-    particleDepth = clipspacePos.z;
-*/
+    //particleDepth = clipspacePos.z;
 
-    particleDepth = vDepth;
+    particleDepth = vDepth + dist/60.0f;
 
 }
